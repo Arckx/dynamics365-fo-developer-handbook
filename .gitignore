@@ -3,3 +3,6 @@ converter.py
 
 # Exclude .claude directory
 .claude/
+
+# Exclude PDF files
+*.pdf
