@@ -1,0 +1,14 @@
+# Exclude converter.py
+converter.py
+
+# Exclude .claude directory
+.claude/
+
+# Exclude PDF files
+*.pdf
+
+# Exclude MEMORY.md
+MEMORY.md
+
+# Exclude D365_Combined_Guide.md
+D365_Combined_Guide.md
