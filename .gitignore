@@ -1,0 +1,5 @@
+converter.py
+.claude/
+*.pdf
+MEMORY.md
+D365_Combined_Guide.md
