@@ -1,0 +1,5 @@
+# Exclude converter.py
+converter.py
+
+# Exclude .claude directory
+.claude/
