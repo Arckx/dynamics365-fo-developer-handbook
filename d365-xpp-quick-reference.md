@@ -25,27 +25,30 @@ Per Microsoft's official X++ primitive type list — these are the built-in scal
 |---|---|---|
 | `int` | `int i = 5;` | 32-bit signed integer |
 | `int64` | `int64 recId = 5637144576;` | 64-bit — used for `RecId` |
-| `real` | `real price = 19.99;` | 128-bit fixed-point decimal internally — safe for monetary values via EDTs like `AmountMST`; does NOT have the rounding problems that IEEE-754 doubles have in languages like C#/Java |
+| `real` | `real price = 19.99;` | X++'s `real` is internally represented with decimal-like precision (not standard IEEE-754 binary float), which is why it's safe to use for monetary values via EDTs like `AmountMST` — it does NOT have the rounding problems that IEEE-754 doubles have in languages like C#/Java |
 | `str` | `str name = "Customer";` | Unicode string |
 | `boolean` | `boolean flag = true;` | `true` / `false` |
 | `date` | `date d = today();` | No time component |
 | `utcdatetime` | `utcdatetime udt = DateTimeUtil::utcNow();` | UTC datetime |
 | `timeOfDay` | `timeOfDay t = 120000;` | Seconds since midnight (int) |
 | `enum` | `Status::New` | Named constant set |
-| `AnyType` | `AnyType val = 42;` | Universal type — use with care |
 | `guid` | `guid g = Guid::newGuid();` | Globally unique identifier |
+| `AnyType` | `AnyType val = 42;` | Universal type — use with care |
 
 ### Composite Types
 
 | Type | Example | Notes |
 |---|---|---|
-| `container` | `container c = [1, "two", 3.0];` | Typed ordered list — the only composite primitive in X++ |
+| `container` | `container c = [1, "two", 3.0];` | Typed ordered list — one of several composite types; array is the other most commonly used one |
+| `array` | `int a[3];` | Fixed-size array — another composite type |
 
-### Non-Primitive "Types" (clarification)
+### True Primitives vs. Other Constructs
+
+**True primitive types:** `anytype`, `boolean`, `date`, `enum`, `guid`, `int`, `int64`, `real`, `str`, `timeOfDay`, `utcdatetime`
 
 These are **not** primitive or composite data types — they are language constructs that serve different purposes:
 
-| Type | Example | What It Actually Is |
+| Construct | Example | What It Actually Is |
 |---|---|---|
 | `record` | `CustTable custTable;` | A **table buffer declaration** — a variable that holds a row from a data entity (table), not a standalone data type |
 | `class` | `MyService service;` | A **class instance reference** — declares a variable that will hold an object, not a scalar value |
@@ -533,7 +536,7 @@ error("Error message");             // Red
 | Ignoring deadlocks | Implement retry logic with `catch (Exception::Deadlock)` |
 | Using primitive types instead of EDTs | Always use EDTs for consistency and validation |
 | Manual `RecId` assignment | Let the system auto-generate `RecId` |
-| Using `real` without an EDT for monetary values | `real` is X++'s built-in real-type and is 128-bit fixed-point (NOT IEEE-754 binary float), so it's precision-safe — but you should still always use a monetary EDT (e.g. `AmountMST`, `AmountCur`) to carry display length, validation, and currency context rather than a bare `real` field |
+
 
 ---
 

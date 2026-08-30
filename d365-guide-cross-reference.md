@@ -24,7 +24,7 @@ metadata:
 | **Phase 4** | Extensibility Patterns (Months 4–6) | **Ch 7** | Chain of Command, method wrapping, event handlers, delegates, table/form extensions |
 | **Phase 5** | Business Logic & Backend (Months 5–7) | **Ch 6** + **Ch 11** | RunBase, SysOperation, batch processing, job framework |
 | **Phase 6** | Integration (Months 6–8) | **Ch 9** | Data entities, integration patterns, REST APIs, OData |
-| **Phase 7** | Reporting & Analytics (Months 7–9) | **Ch 10** | SSRS reports, SRS, analytical reporting, BI |
+| **Phase 7** | Reporting & Analytics (Months 7–9) | **Ch 10** | SSRS reports, legacy AX reports, analytical reporting, BI |
 | **Phase 8** | Testing & Debugging (Months 7–10) | **Ch 12** | Unit testing (SysTest), ATL, RSAT, debugging |
 | **Phase 9** | DevOps & CI/CD (Months 8–10) | **Ch 13** | Build automation, LCS, Azure DevOps, ALM |
 | **Phase 10** | Security & Compliance (Months 9–11) | **Ch 8** | Security model, roles/duties/privileges, XDS, SoD |

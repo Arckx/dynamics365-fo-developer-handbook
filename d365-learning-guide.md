@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: 369838ab-9513-4fe8-9b6d-09784c222811
-  modified: 2026-08-21T15:12:30.742Z
+  modified: 2026-08-29T16:48:29.471Z
 ---
 
 # D365 Finance & Operations — Technical Intern Learning Guide
@@ -27,16 +27,16 @@ metadata:
 
 ## 1.1 The Platform Architecture — What You Are Actually Working Inside
 
-Before you write a single line of X++, understand the platform you are operating inside. D365 Finance & Operations is a **cloud-native, multi-tier enterprise application** built on three core tiers, with supporting integration components:
+Before you write a single line of X++, understand the platform you are operating inside. D365 Finance & Operations is a **cloud-native, multi-tier enterprise application** built on four architectural pillars:
 
-### 1.1.1 The Three Tiers and Supporting Integration
+### 1.1.1 The Four Pillars
 
-| Tier | Technology | Role | What It Means to You as a Developer |
+| Pillar | Technology | Role | What It Means to You as a Developer |
 |---|---|---|---|
 | **Application Tier** | AOS (Application Object Server) — runs X++ IL code | Executes business logic, interprets X++, manages transactions, serves metadata | Your X++ code runs here — not in the browser, not in SQL Server |
 | **Database Tier** | Azure SQL Database / SQL Server | Stores all business data — tables, indexes, stored procedures (generated from AOT), temp tables | Your `insert()`, `update()`, `delete()` calls translate to SQL statements against this tier |
 | **Presentation Tier** | Single browser-based web client (HTML5/CSS/JS) running in Edge, Chrome, or Safari | Renders forms, menus, navigation — the user's view of the system | You design forms in this tier; the form definition lives in the AOT, and the AOS streams metadata to the browser which renders the UI |
-| **Integration (Supporting Component)** | Azure Services (Service Bus, Azure Functions, Logic Apps), OData/REST endpoints | Connects D365 F&O to external systems — Power Platform, third-party ERP, HR systems | When building data entities or integration patterns, you interact with these components — integration is a supporting layer, not a separate architectural tier |
+| **Integration Tier** | Azure Services (Service Bus, Azure Functions, Logic Apps), OData/REST endpoints | Connects D365 F&O to external systems — Power Platform, third-party ERP, HR systems | When building data entities or integration patterns, you interact with this tier |
 
 ### 1.1.2 How a Request Flows Through the System
 
@@ -79,7 +79,8 @@ D365 F&O runs in Azure. Understanding the Azure pieces:
 | **Azure App Service** | Hosts the AOS workers (Application Object Server) | Your X++ IL runs in these workers; scaling AOS workers affects throughput |
 | **Azure DevOps / GitHub** | Build and deployment CI/CD | Build pipelines compile X++, produce `.axmodel` artifacts, deploy to environments |
 | **Azure Active Directory (Azure AD)** | Authentication and authorization | Every user authenticates via Azure AD; role-based access flows through the D365 security model |
-| **Azure Storage** | Model store (AOT object storage) | The model store is a file share in Azure, not a SQL table — understanding this prevents common deployment errors |
+| **Azure Storage** | Model store (AOT object storage) | The model store is a file share (e.g., `C:\AOSService\PackagesLocalDirectory` or `K:\` in cloud environments), not a SQL database — understanding this prevents common deployment errors |
+**Source:** [Models and packages](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-tools/models) |
 | **Azure Key Vault / Managed Identity** | Credential and secret management | Configuration keys (`#ISO`, `USMF`, custom keys) are encrypted credentials your code references at runtime |
 | **Azure Service Bus** | Async messaging between services | Used by integration patterns — your code can send/receive messages via .NET interop (`System.ServiceModel` or `HttpClient`) |
 
@@ -89,7 +90,9 @@ D365 F&O runs in Azure. Understanding the Azure pieces:
 
 ### 1.2.1 What Is the AOT?
 
-The AOT is a **hierarchical, metadata-driven repository** that contains every object in the D365 F&O system — every table, class, form, view, menu, security role, report, and data entity. It is not a SQL database of these objects; it is a **file system** organized as a tree of XML-like metadata files, stored in the **model store** on the AOS server machine (or in Azure File Storage for fully cloud-hosted environments).
+The AOT is a **hierarchical, metadata-driven repository** that contains every object in the D365 F&O system — every table, class, form, view, menu, security role, report, and data entity. It is not a SQL database of these objects; it is a **file system** organized as a tree of XML-like metadata files, stored in the **model store** as a file share (e.g., `C:\AOSService\PackagesLocalDirectory` or `K:\` in cloud-hosted environments).
+
+**Source:** [Models and packages - Finance & Operations](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/dev-tools/models)
 
 The AOT serves as:
 - The **design-time** interface — developers browse, create, and modify objects here
@@ -202,7 +205,7 @@ Every AOT object has a **Properties** pane in Visual Studio. The following prope
 
 | Property | Values | What It Controls | Common Mistake |
 |---|---|---|---|
-| `CacheLookup` | `NotInTTS`, `FoundInTTS`, `Found`, `All` | How SQL Server caches lookups of this table's records. `Found` means the first lookup caches all matching rows. `All` caches all rows of the table. | Setting `CacheLookup = All` on a large transactional table (e.g., `SalesLine`) wastes server memory. Use `Found` or `NotInTTS` for large tables. |
+| `CacheLookup` | `None`, `NotInTTS`, `Found`, `FoundAndEmpty`, `EntireTable` | How SQL Server caches lookups of this table's records. `None`: no caching. `NotInTTS`: caches on lookup; transaction-scoped caches don't persist outside the transaction. `Found`: caches successful lookups across transaction boundaries. `FoundAndEmpty`: same as Found, but also caches lookups that found no record. `EntireTable`: loads the whole table into a server-side cache after first select. | Setting `CacheLookup = EntireTable` on a large transactional table (e.g., `SalesLine`) wastes server memory. Use `Found` or `NotInTTS` for large tables. |
 | `SaveDataPerCompany` | `Yes`, `No` | When `Yes`, each Legal Entity (company) has its own copy of the data. When `No`, data is shared across all companies. | Forgetting to set this — if you create a master data table (e.g., a chart of accounts), it should be `No`. A transaction table (e.g., invoice lines) should be `Yes`. |
 | `AllowDuplicates` | `Yes`, `No` | Whether the table allows rows where all alternate index key fields are identical | Forgetting to set `AllowDuplicates = No` on index keys means duplicates can exist in the database even though the business expects uniqueness |
 | `TableGroup` | `Transaction`, `Master`, `Parameter`, `Invoice`, etc. | Controls how the table appears in form lookups and navigation patterns | Using `Master` for a high-volume transaction table — use `Transaction` so the AOT treats it appropriately during find operations |
@@ -260,7 +263,7 @@ Every table in D365 F&O inherits from the `Common` class at runtime. This means 
 | `Partition` | `int` | Multi-tenant partitioning — used in cloud environments to separate data by partition |
 | `fieldNum(TableName, FieldName)` | Intrinsic function | Returns the integer field ID at runtime |
 | `fieldId2Name(TableId, FieldId)` | Intrinsic function | Converts a numeric field ID to its string name |
-| `field2Id(TableId, FieldName)` | Intrinsic function | Converts a field name string to its integer ID |
+| `fieldName2Id(tableId, fieldName)` | Intrinsic function | Converts a field name string to its integer ID |
 | `initValue()` | Method | Initializes default values (system fields like `CreatedDateTime`, `ModifiedDateTime`, `CreatedBy`, `ModifiedBy`) for a new record |
 | `insert()` | Method | Writes the buffer to the database as a new record |
 | `update()` | Method | Writes changes to an existing record |
@@ -294,7 +297,7 @@ A **model** is the fundamental unit of versioning and dependency in D365 F&O. A 
 - Has a **unique name** within the model store (e.g., `MyCustomModel`, `ApplicationSuite`, `ApplicationFoundation`)
 - Has a **version** string following semantic versioning (`1.0.0.0`)
 - Declares **dependencies** on other models — these are ordered at deployment time
-- Is assigned a **layer** (`BASE`, `CUS`, `ISV`, `VAR`, `CUM`, `SYS`)
+  - Is assigned a **layer** (`SYS`, `ISV`, `VAR`, `CUS`, `USR`)
 - Exports to a **`.axmodel` file** — a binary package containing the model's metadata as XML serialization blobs
 
 ### 1.3.2 Layers — The Upgrade Boundary
@@ -306,36 +309,33 @@ The **layer** is the concept that determines whether your code survives a Micros
 ```
 SYS (lowest — Microsoft system framework)
   ↓
-CUM (Cumulative Update layer — Microsoft release artifacts)
+ISV (Independent Software Vendor layer — partner/ISV solutions)
   ↓
 VAR (Variation layer — country/region/legal adaptations by Microsoft)
   ↓
-ISV (Independent Software Vendor layer — partner/ISV solutions)
-  ↓
 CUS (Customer customization layer — your customizations)
   ↓
-BASE (highest — for code that must persist across all layers)
+USR (User layer — highest, no key required to access)
 ```
 
-**How upgrading work with layers:**
-When Microsoft releases a CU (Cumulative Update), they deliver updates to the CUM layer. Your CUS-layer code is untouched because it's at a higher layer. The framework resolves object resolution by looking for an object at the highest available layer first, then falling back to lower layers.
+**How upgrading works with layers:**
+When Microsoft releases a CU (Cumulative Update), they deliver updates to the VAR layer. Your CUS-layer code is untouched because it's at a higher layer. The framework resolves object resolution by looking for an object at the highest available layer first, then falling back to lower layers.
 
 **The resolution algorithm:**
 1. The system searches for an object by its **name** (class name, table name, form name, etc.)
 2. When multiple objects with the same name exist across different layers, the **highest layer** wins
-3. Example: If `CustTable` exists in SYS, CUM, VAR, ISV, and CUS layers — the CUS-layer version is loaded
-4. If you delete your CUS-layer `CustTable` extension, the system falls back to the ISV or lower layer version
+3. Example: If `CustTable` exists in SYS, ISV, VAR, and CUS layers — the CUS-layer version is loaded
+4. If you delete your CUS-layer `CustTable` extension, the system falls back to the ISV, VAR, or SYS layer version
 
 #### What You Need to Know About Each Layer as a Developer
 
 | Layer | When It Exists in Practice | Do You Ever Modify It? |
 |---|---|---|
 | **SYS** | Always — it contains the D365 F&O platform framework (`Sys`, `Global`, `Kernel`, etc.) | **No.** Never modify SYS objects directly — ever. You can extend them via CoC or event handlers. |
-| **CUM** | Exists after CUs are applied — Microsoft-owned CU artifacts | **No.** Microsoft manages these. |
-| **VAR** | Exists in regional deployments — Microsoft-owned localization | **No.** Microsoft manages these. |
 | **ISV** | Used by Microsoft's ISV partners (Dynamics AX partners) for their solutions | **No** (unless you are an ISV partner developing a managed solution) |
+| **VAR** | Exists in regional deployments — Microsoft-owned localization | **No.** Microsoft manages these. |
 | **CUS** | Default layer for customer customizations | **Yes.** This is where you develop as a customer technical intern |
-| **BASE** | Used for code that must survive layer migrations | **Yes** — for code that is not layer-specific (rare for customer development) |
+| **USR** | User-specific layer, highest priority, no key required | Rarely used directly by developers — mainly for end-user personalizations, not standard development work |
 
 ### 1.3.3 Packages — The Deployable Unit
 
@@ -381,7 +381,7 @@ The `ModelManifest.xml` file lives at the root of every Visual Studio model proj
 |---|---|---|
 | `Name` | Yes | The model's unique name — must not collide with any existing model name |
 | `Version` | Yes | Semantic version (`major.minor.build.revision`) — incremented on each deployment |
-| `Layer` | Yes | The layer assignment (`CUS`, `ISV`, etc.) — determines upgrade behavior |
+| `Layer` | Yes | The layer assignment (`SYS`, `ISV`, `VAR`, `CUS`, `USR`) — determines upgrade behavior |
 | `References.ModelReference.Name` | Conditional | Each dependency reference — the name of a model that must be present for this model to deploy |
 | `References.ModelReference.MinVersion` | Optional | Minimum version of the referenced model required — catches version mismatch errors at deployment time |
 | `ConfigurationKey` | Optional | A configuration key that controls whether this model's features are active |
@@ -475,7 +475,7 @@ C:\Views\ (on-premises AOS)  OR  \\[AzureFileShare]\ModelStore (cloud)
 Open `ModelManifest.xml` in your project and verify:
 - **`Name`** — unique, follows your company's naming convention (e.g., `ContosoCustomAP`)
 - **`Version`** — starts at `1.0.0.0`, increment with each meaningful change
-- **`Layer`** — `CUS` for customer work, `ISV` for partner work
+- **`Layer`** — `CUS` for customer work, `ISV` for partner work, `USR` for user-specific customizations
 - **`References`** — every model your code depends on must be listed:
   - `ApplicationFoundation` — base system services, `Global` class
   - `ApplicationSuite` — core business modules (AP, AR, Inventory, etc.)
@@ -601,7 +601,7 @@ The release pipeline in LCS (accessible via the LCS web portal at `lcs.dynamics.
 When Microsoft releases a Critical Update (CU) or hotfix:
 1. The update arrives as a `.axupdate` file package in LCS
 2. **IT Operations** applies the `.axupdate` via the LCS environment page
-3. The update is applied to the appropriate layer (`VAR`, `CUM`) — **not** to `CUS` or `ISV`
+3. The update is applied to the `SYS` layer — **not** to `CUS`, `ISV`, or `VAR`
 4. The AOS is recycled to load the updated model store
 5. **Your custom code in `CUS`** is unaffected because it was applied after the standard code and takes precedence in the layer resolution order
 
@@ -726,15 +726,15 @@ Breakpoint debugging works from Visual Studio when connected to a Dev/Test envir
 ### Hints — Multiple Valid Approaches Exist
 
 - **Hint A for requirement #1 — Adding a vendor compliance field**: The choice is between modifying `VendTable` directly (adding a field to the base table) or using a **table extension**. 
-  - **Approach A1 (Table Extension — Recommended)**: `[ExtensionOf(tableStr(VendTable))] final class VendTable_Extension { ComplianceCode complianceCode; }`. This survives Microsoft hotfixes because the extension lives in the `CUS` layer (higher than `CUM`/`VAR`) and is never overwritten by Microsoft updates. The extension is also easier to maintain because Microsoft can change the base `VendTable` without affecting your extension. **This is the approach documented by Microsoft for customer customizations.**
-  - **Approach A2 (Direct Modification — NOT Recommended)**: Modifying the base `VendTable` in the AOT directly. This **will** be overwritten by the next Microsoft CU because Microsoft's CU applies changes to the `CUM`/`VAR` layer, which has higher update precedence than a naive base modification (the resolution algorithm prefers the highest-layer object, and if your modification is considered part of a lower layer, it gets overwritten). **Microsoft explicitly advises against this pattern.**
+  - **Approach A1 (Table Extension — Recommended)**: `[ExtensionOf(tableStr(VendTable))] final class VendTable_Extension { ComplianceCode complianceCode; }`. This survives Microsoft hotfixes because the extension lives in the `CUS` layer (higher than `SYS`) and is never overwritten by Microsoft updates. The extension is also easier to maintain because Microsoft can change the base `VendTable` without affecting your extension. **This is the approach documented by Microsoft for customer customizations.**
+  - **Approach A2 (Direct Modification — NOT Recommended)**: Modifying the base `VendTable` in the AOT directly. This **will** be overwritten by the next Microsoft CU because Microsoft's CU applies changes to the `SYS` layer, which has higher update precedence than a naive base modification (the resolution algorithm prefers the highest-layer object, and if your modification is considered part of a lower layer, it gets overwritten). **Microsoft explicitly advises against this pattern.**
 
 - **Hint B for requirement #3 — Modifying AP invoice validation**: The choice is between a **Chain of Command** override of `VendInvoiceJour.validateWrite()` and an **event handler** subscription.
   - **Approach B1 (CoC Override — Recommended for Table Method Overrides)**: Create a class that extends `VendInvoiceJour` (or override the method directly via CoC) and override `validateWrite()` to insert your compliance check. CoC is the most straightforward mechanism for overriding standard table methods — it is well-documented and has clear developer tooling support (the AOT shows the override method explicitly). **Use CoC when you need to change the behavior of a standard method called directly (not an event).**
   - **Approach B2 (Event Handler — Recommended When Multiple Extensions Need to React)**: Subscribe to the `VendInvoiceJour.validateWrite` event using `[SubscribesTo(tableStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite))]`. This is better when multiple independent solutions need to react to the same event — each subscribes independently without interfering with others. The trade-off is that event handler execution order is less predictable than CoC (which has an explicit chain), so **use event handlers for cross-cutting concerns** like integration triggers, audit logging, or notification dispatch rather than for core business rule enforcement.
 
 - **Hint C for requirement #5 — Security role design**: A compliance officer in this scenario needs access to specific data across multiple tables.
-  - **Approach C1 (Role with Privileges → Duties)**: Create a duty (e.g., `APComplianceViewer`) that contains privileges for reading `VendTable`, reading `VendInvoiceJour`, and writing to the new compliance form. Create a role and assign the duty. This follows the standard D365 F&O security model hierarchy (Role → Duties → Privileges → Permissions). **This is the documented Microsoft approach.**
+  - **Approach C1 (Role with Privileges → Duties)**: Create a duty (e.g., `APComplianceViewer`) that contains privileges for reading `VendTable`, reading `VendInvoiceJour`, and writing to the new compliance form. Create a role and assign the duty. This follows the standard D365 F&O security model hierarchy: Permission → Privilege (composed of permissions) → Duty (composed of privileges) → Role (composed of duties) → User (assigned one or more roles). **This is the documented Microsoft approach.**
   - **Approach C2 (Role with Field-Level Permissions)**: In addition to table-level access, create field-level permissions that restrict the compliance role to only see the compliance-related fields on `VendTable` and `VendInvoiceJour` — this follows the principle of least privilege and is important for compliance-sensitive data. This uses the `SecurityPermissionSet` property on each privilege to limit access to specific `FieldId` values.
 
 - **Hint D for requirement #6 — SSRS Report**: 
@@ -807,7 +807,7 @@ The ideal approach for this activity combines all recommended patterns and follo
 - **Duty**: `APComplianceDuty` → contains `APComplianceViewer` privilege (read on `VendTable`, `VendInvoiceJour`, `APComplianceLog`, write on `APComplianceLog` for submitting declarations)
 - **Field-level permissions**: Compliance officers can see the `ComplianceCode` field on `VendTable` and all fields on `APComplianceLog`; other users cannot
 - **PermissionSet**: The role is assigned to the security role assignment record in the user administration form
-- **Microsoft Docs Reference**: [Security roles](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/security-operations/) — confirms duty → privilege → permission hierarchy
+- **Microsoft Docs Reference**: [Security roles](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/security-operations/) — confirms the hierarchy: Permission → Privilege (composed of permissions) → Duty (composed of privileges) → Role (composed of duties) → User (assigned one or more roles)
 
 #### Requirement 6: Monthly Compliance Report (SSRS)
 - **Object Type**: SSRS Report + `SrsReportDataProvider` class
@@ -859,16 +859,15 @@ X++ has a set of primitive data types and a rich system of Extended Data Types (
 |---|---|---|
 | `int` | 32-bit signed integer | `int i = 42;` |
 | `int64` | 64-bit signed integer | `int64 recId = 5637144576;` |
-| `real` | Floating-point decimal | `real price = 19.99;` |
+| `real` | Fixed-point decimal-like precision (not IEEE-754) | `real price = 19.99;` |
 | `str` | Unicode string | `str name = "Customer";` |
 | `boolean` | true / false | `boolean isValid = true;` |
 | `date` | Date (no time component) | `date d = today();` |
 | `utcdatetime` | Date and time in UTC | `utcdatetime udt = DateTimeUtil::utcNow();` |
-| `container` | Typed ordered list (like an array) | `container c = [1, "two", 3.0];` |
-| `record` | A table buffer reference | `CustTable custTable;` |
-| `class` | A class reference | `CustValidationService service;` |
+| `timeOfDay` | Seconds since midnight | `timeOfDay t = 120000;` |
+| `guid` | Globally unique identifier | `guid g = Guid::newGuid();` |
 | `enum` | Named constant set | `Status::New` |
-| `void` | No return value | Used in method return types |
+| `AnyType` | Universal type | `AnyType val = 42;` |
 
 ### Type Casting
 
@@ -940,24 +939,23 @@ class MyClass
 }
 ```
 
-**Important**: X++ does **not** support block-level scoping for variables declared outside blocks. A variable declared at method level is visible throughout the entire method, regardless of where the `int` declaration appears. This is different from C# or Java.
+**Important**: X++ **does** support block-level scoping for variables. A variable declared inside a block (e.g., `if`, `for`, `while`) is only accessible within that block. This is similar to C# or Java.
 
 ```xpp
-// WRONG — this will not compile as expected in X++
-public void badExample()
+// CORRECT — X++ supports block-scoped variables
+public void goodExample()
 {
-    // In X++, this variable is visible for the ENTIRE method,
-    // not just this if block
     if (true)
     {
-        int x = 5;
+        int x = 5;  // x is only visible inside this block
+        info(strFmt("x = %1", x));
     }
-    // x is NOT accessible here in X++ — it's a compile error
+    // x is NOT accessible here — it's a compile error
     // because x was declared inside the if block
-    // Actually, in X++ variables CAN be declared inside blocks
-    // but their scope is limited to that block
 }
 ```
+
+**Source:** [X++ variables - Declare anywhere](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/dev-ref/xpp-variables-data-types#declare-anywhere)
 
 ## 2.3 Control Flow Statements
 
@@ -1604,7 +1602,7 @@ Every table in D365 F&O maps to a physical SQL table. Designing tables properly 
 | `TableGroup` | Logical grouping for form lookup display | `Customer`, `Vend`, `Master`, `Transaction` |
 | `SaveDataPerCompany` | Whether each company's data is stored separately (`No = shared across companies`) | `No` or `Yes` |
 | `AllowDuplicate` | Allow multiple records with the same key? | `No` (default) |
-| `CacheLookup` | How SQL Server caches lookups of this table | `NotInTTS`, `Found`, `FoundNotInTTS`, `All` |
+| `CacheLookup` | How SQL Server caches lookups of this table | `None`, `NotInTTS`, `Found`, `FoundAndEmpty`, `EntireTable` |
 | `Replication` | Whether table data is replicated (for Azure SQL geo-replication) | `Enabled` or `Disabled` |
 | `PrimaryIndex` | The primary index used for lookups | Typically `RecId`, or an alternate key |
 | `DeleteActions` | What happens when a parent record is deleted | `Cascade`, `Restricted`, `None` |
@@ -1627,7 +1625,7 @@ Indexes determine how fast `select`, `join`, and `exists` operations run. Every 
 1. **Leading field matters most** — in an index on `(FieldA, FieldB)`, SQL can use the index for `where FieldA = ...`, `where FieldA = ... AND FieldB = ...`, but NOT for `where FieldB = ...` alone
 2. **Never index low-selectivity fields** as leading fields — indexing a boolean field (`true/false`) provides almost no benefit because SQL must scan anyway
 3. **Use `AllowDuplicates = No`** on alternate uniqueness indexes — this enforces data integrity at the database level, not just at the application level
-4. **`CacheLookup` matters** — tables with `CacheLookup = Found` allow SQL Server to cache lookups and skip disk reads; use this for lookup tables (e.g., `ItemGroup`, `CustGroup`)
+4. **`CacheLookup` matters** — tables with `CacheLookup = Found` or `FoundAndEmpty` allow SQL Server to cache lookups and skip disk reads; use this for lookup tables (e.g., `ItemGroup`, `CustGroup`)
 
 ## 3.2 Extended Data Types (EDTs) — Never Use Base Types Directly
 
@@ -1683,9 +1681,11 @@ Field groups are **named sets of fields** defined at the table level. They provi
 
 When a form's data source references a table with field groups, you can drag the **entire field group** onto a form design node — all fields in the group appear automatically with their labels and EDT properties.
 
-## 3.4 Table Inheritance — The Extension Pattern
+## 3.4 Table Extensions — The Modern Extension Pattern
 
-Microsoft recommends **table extension** over subclassing tables. The extension pattern adds fields or methods to an existing table without modifying the base table definition.
+**Note:** *Table inheritance* (using `SupportInheritance`/`Extends` properties with a discriminator field like `InstanceRelationType`) and *table extension* (using `[ExtensionOf(tableStr(...))]`) are **two distinct mechanisms** in D365 F&O. This section covers **table extension**, which is the recommended approach for upgrade-safe customizations. For table inheritance (a separate feature for hierarchical table relationships), see [Table inheritance overview (AX 2012 legacy)](https://learn.microsoft.com/en-us/previous-versions/dynamicsax-2012/developer/table-inheritance-overview).
+
+Microsoft recommends **table extension** over overlayering or subclassing tables. The extension pattern adds fields or methods to an existing table without modifying the base table definition.
 
 ### Table Extension Syntax
 
@@ -1937,11 +1937,14 @@ public void executeQuery()
 
 | Event | When | Purpose |
 |---|---|---|
-| `modified()` | Control value changed by user | React to user input — update other controls, recalculate totals |
 | `validate()` | Before the new value is written to the data source | Field-level validation; return `false` to reject and show error |
+| `modified()` | Control value changed by user | React to user input — update other controls, recalculate totals |
 | `lookup()` | User clicks the lookup button or presses F3 | Custom lookup behavior; override to provide specialized lookup |
 | `enter()` | Control receives focus | Highlight related fields, initialize dependent lookups |
 | `close()` | Control/focus is lost | Cleanup, final validation |
+
+**Note:** `validate()` runs **first** — if validation fails (returns `false`), `modified()` will **not** fire. This sequence ensures invalid data never propagates.
+**Source:** [Event method sequences when a record is created (AX 2012 legacy)](https://learn.microsoft.com/en-us/previous-versions/dynamicsax-2012/developer/event-method-sequences-when-a-record-is-created)
 
 ### Setting Control Values Programmatically
 
@@ -1994,7 +1997,7 @@ When a form action (like clicking "New" or "Delete") needs to invoke another cla
 // From a form button or menu item action:
 MenuItemForm menuItem = new MenuItemForm();
 menuItem.name(formstr(MyCustomForm));
-menuItem.run();  // Opens the form using CoC
+menuItem.run();  // Opens the form directly
 ```
 
 ### `CommandMenu` and `CommandDisplayMenu`
@@ -2045,7 +2048,7 @@ final class CustTable_FormExtension
 > - Form A must use a dynamic filter that shows only vendors whose credit limit exceeds $100,000
 > - Form B's History tab grid must auto-refresh when Form C submits a new record
 > - The compliance status display on Form A must use a DisplayMethod that queries the `APComplianceLog` table
-> - The "New Declaration" button on Form B must use Chain of Command to open Form C
+> - The "New Declaration" button on Form B must use a MenuItemAction to open Form C
 > - All forms must follow D365 F&O form design conventions (labels, HelpText, proper sizing, keyboard navigation)
 >
 > **Hints** (Multiple Valid Approaches):
@@ -2071,7 +2074,7 @@ The ideal approach combines extensibility with proper architecture:
 
 1. **Form A** uses a `ListPage` frame type with `VendTable` as the primary data source. The dynamic filter is set in `executeQuery()` of the data source — not in `init()`, because `executeQuery()` re-runs when the user changes any control, making the filter truly dynamic. A `displayMethod` on the data source adds the compliance status column by calling a method on a service class.
 
-2. **Form B** uses a `Form` frame type (not ListPage) with `VendTable` as the primary data source and `APCustomsDeclaration` joined (or separately added) as a related data source. The History tab is a separate design node (`Group` or `TabPage`) containing a grid bound to the `APCustomsDeclaration` data source. The "New Declaration" button is an `ActionMenuItem` that uses Chain of Command to open Form C. Form B overrides the data source's `active()` method to set a class-level variable holding the current vendor's `RecId`, which Form C uses when creating a new declaration.
+2. **Form B** uses a `Form` frame type (not ListPage) with `VendTable` as the primary data source and `APCustomsDeclaration` joined (or separately added) as a related data source. The History tab is a separate design node (`Group` or `TabPage`) containing a grid bound to the `APCustomsDeclaration` data source. The "New Declaration" button is an `ActionMenuItem` that uses a MenuItemAction to open Form C. Form B overrides the data source's `active()` method to set a class-level variable holding the current vendor's `RecId`, which Form C uses when creating a new declaration.
 
 3. **Form C** is a `Dialog` frame type with OK/Cancel buttons. On OK, it validates input, creates the `APCustomsDeclaration` record, calls `element.datasource().refresh()` on Form B's data source (passed as a parameter — Form B instantiates Form C and passes itself as the caller), and then closes.
 
@@ -2098,9 +2101,12 @@ A view is a **named query** stored in the AOT. It acts like a table but doesn't 
 
 | Property | Description | Common Values |
 |---|---|---|
-| `Dynamic` | Whether the view's query is rebuilt at runtime | `Yes` (default) — uses current AOT table definitions; `No` — uses cached SQL |
 | `Label` | User-facing name | `'Vendor with Contact Details'` |
-| `LookupAutoDeclaration` | Auto-expose fields for lookup | `Yes` |
+| `IsLookup` | Marks the view as a lookup | `Yes` |
+| `CacheLookup` | Caches lookup results for performance | `Yes` |
+
+**Note:** The "dynamic" behavior (query rebuilt at runtime vs. cached SQL) is controlled by the **query framework**, not a named view property.
+**Source:** [View Properties (AX 2012 reference)](https://learn.microsoft.com/en-us/previous-versions/dynamics/ax-2012/reference/aa869223(v=ax.60))
 
 ### How a View is Defined in the AOT
 
@@ -2923,111 +2929,95 @@ class VendComplianceController extends SysOperationServiceController
 
 Event handlers are the **primary extension mechanism** in D365 F&O. They allow you to inject custom logic into standard code execution without modifying the original method.
 
-### The Event Subscription Model
+### Event Handler Attributes
 
-An event handler is a method that **subscribes** to a standard method's execution. When the standard method fires its event, all subscribed handlers run in sequence.
+D365 F&O provides **three distinct event handler attributes** for different purposes:
 
-### Event Types — Pre, Post, and Override
-
-| Event Type | Attribute | When It Runs | Use Case |
+| Attribute | Purpose | Parameter Type | Example |
 |---|---|---|---|
-| **Pre-event** | `[SubscribesTo(...)]` (default) | **Before** the standard method body executes | Validate input, set defaults, modify parameters before the standard logic runs |
-| **Post-event** | `[SubscribesTo(...)]` with `eventType(EventExecution::Post)` | **After** the standard method body executes | React to side effects, log changes, trigger downstream processes |
-| **Override-event** | `[SubscribesTo(...)]` with `eventType(EventExecution::Override)` | **Replaces** the standard method entirely | Completely change the behavior of a standard method (use sparingly) |
+| **`[PreHandlerFor(...)]`** | Runs **before** the standard method | `XppPrePostArgs` | `[PreHandlerFor(tableStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite))]` |
+| **`[PostHandlerFor(...)]`** | Runs **after** the standard method | `XppPrePostArgs` | `[PostHandlerFor(tableStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite))]` |
+| **`[SubscribesTo(...)]`** | Subscribes to **delegates** explicitly declared in the base class | Depends on delegate | `[SubscribesTo(classStr(MyClass), delegateStr(MyClass, myDelegate))]` |
+| **`[DataEventHandler(...)]`** | Subscribes to **data events** (insert/update/delete) | `XppDataEventArgs` | `[DataEventHandler(tableStr(VendTable), DataEventType::Inserted)]` |
+
+**Source:** [X++ Events](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/dev-ref/xpp-events)
 
 ### Pre-Event Handler Example
 
 ```xpp
-// Pre-event: runs BEFORE VendInvoiceJour.validateWrite()
-[SubscribesTo(tableStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite))]
-public static void VendInvoiceJour_onValidateWrite_Pre(VendInvoiceJour _this)
+// Runs BEFORE VendInvoiceJour.validateWrite()
+[PreHandlerFor(tableStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite))]
+public static void VendInvoiceJour_PreValidateWrite(XppPrePostArgs _args)
 {
+    VendInvoiceJour vendInvoiceJour = _args.getThis();
+
     // Check if the vendor has a compliance code
-    if (_this.CreditMax > 500000 && _this.ComplianceCode == '')
+    if (vendInvoiceJour.CreditMax > 500000 && vendInvoiceJour.ComplianceCode == '')
     {
-        // Prevent the standard validateWrite() from succeeding
-        // by setting the return value to false
-        // Note: In pre-events, you can't directly return false to the caller
-        // Instead, you add a checkFailed which will cause validateWrite() to return false
-        _this.validateWrite = checkFailed('Compliance code required for vendors exceeding $500,000 credit limit');
+        // Add validation error to prevent the write
+        _args.setReturnValue(checkFailed('Compliance code required for vendors exceeding $500,000 credit limit'));
     }
 }
 ```
-
-**Important:** In pre-event handlers, you cannot directly change the return value of the standard method. Instead, you use mechanisms like `checkFailed()` or modify the record state so that when the standard method runs, it naturally fails. For true return-value manipulation, use the **override-event** type.
 
 ### Post-Event Handler Example
 
 ```xpp
-// Post-event: runs AFTER VendInvoiceJour.validateWrite()
-[SubscribesTo(tableStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite), EventExecution::Post)]
-public static void VendInvoiceJour_onValidateWrite_Post(VendInvoiceJour _this)
+// Runs AFTER VendInvoiceJour.validateWrite()
+[PostHandlerFor(tableStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite))]
+public static void VendInvoiceJour_PostValidateWrite(XppPrePostArgs _args)
 {
+    VendInvoiceJour vendInvoiceJour = _args.getThis();
+
     // The standard validateWrite() has already run
-    // If it succeeded, we can now trigger downstream processes
-    if (_this.validateWrite)
+    // Check if it succeeded (return value is accessible via args)
+    if (_args.getReturnValue())
     {
         // Log the compliance check
-        APComplianceLog::logCheck(_this.RecId, ComplianceStatus::Validated);
+        APComplianceLog::logCheck(vendInvoiceJour.RecId, ComplianceStatus::Validated);
 
         // Trigger integration event
-        VendComplianceIntegration::onInvoiceValidated(_this);
+        VendComplianceIntegration::onInvoiceValidated(vendInvoiceJour);
     }
 }
 ```
 
-### Override-Event Handler Example
-
-```xpp
-// Override-event: REPLACES the standard validateWrite() entirely
-[SubscribesTo(tableStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite), EventExecution::Override)]
-public static boolean VendInvoiceJour_onValidateWrite_Override(VendInvoiceJour _this)
-{
-    // Custom validation logic — completely replaces the standard validateWrite()
-    boolean ret;
-
-    ret = _this.validateWrite();  // Call standard logic if desired
-
-    // Add custom compliance check
-    if (_this.CreditMax > 500000 && _this.ComplianceCode == '')
-    {
-        ret = checkFailed('Compliance code required for vendors exceeding $500,000 credit limit');
-    }
-
-    return ret;
-}
-```
-
-### Event Handler Placement — Table-Level vs Class-Level
+### Event Handler Placement
 
 | Placement | Syntax | When to Use |
 |---|---|---|
-| **Table-level** | `[SubscribesTo(tableStr(VendTable), methodStr(VendTable, validateWrite))]` | The handler is logically tied to the table's data integrity rules — e.g., validation, field change reactions |
-| **Class-level** | `[SubscribesTo(classStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite))]` | The handler is a cross-cutting concern — e.g., logging, notification dispatch, integration triggers |
-| **Form-level** | `[SubscribesTo(formStr(CustTable), methodStr(CustTable, executeQuery))]` | The handler modifies form-specific behavior — e.g., dynamic filtering, UI state changes |
+| **Table-level** | `[PreHandlerFor(tableStr(VendTable), methodStr(VendTable, validateWrite))]` | The handler is logically tied to the table's data integrity rules — e.g., validation, field change reactions |
+| **Class-level** | `[PreHandlerFor(classStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite))]` | The handler is a cross-cutting concern — e.g., logging, notification dispatch, integration triggers |
 
 **Best practice:** Place table-level event handlers in a class named after the table (e.g., `VendTable_EventHandlers`). Place class-level handlers in a dedicated event handler class (e.g., `VendInvoiceJour_EventHandler`).
 
-### The `Basic` Event vs. `Extension` Event
+### Event Types
 
-D365 F&O distinguishes two categories of events:
+D365 F&O supports the following event mechanisms:
 
-| Event Category | Description | Examples |
-|---|---|---|
-| **Basic events** | Fired by the framework for fundamental operations — record insert, update, delete, field modification | `inserted()`, `updated()`, `deleted()`, `modifiedField()` |
-| **Extension events** | Fired by the framework for method execution — before/after/override of any method | `validateWrite()`, `executeQuery()`, `run()`, any custom method |
+1. **Pre/Post Handlers** (`[PreHandlerFor]`/`[PostHandlerFor]`):
+   - Wrap **any standard method** (table or class).
+   - Use `XppPrePostArgs` to access the record (`args.getThis()`) and return value (`args.getReturnValue()`/`args.setReturnValue()`).
 
-**Basic events** are automatically fired by the framework when the corresponding operation occurs — you don't need to add event firing code. They are always **post-events** (they fire after the operation completes).
+2. **Delegate Subscribers** (`[SubscribesTo]`):
+   - Subscribe to **delegates** explicitly declared in the base class (e.g., `[EventHandlerResultAttribute]`).
+   - Use `delegateStr` (not `methodStr`).
 
-**Extension events** are fired explicitly by the method author using the `event` keyword or by the framework for standard methods. They can be pre, post, or override.
+3. **Data Event Handlers** (`[DataEventHandler]`):
+   - Subscribe to **data events** (`Inserted`, `Updated`, `Deleted`).
+   - Use `XppDataEventArgs` to access the record and event type.
+
+**Note:** For **method overrides** (replacing behavior), use **Chain of Command (CoC)** via `[ExtensionOf(classStr(...))]`, not event handlers.
 
 ### Event Handler Execution Order
 
 When multiple handlers subscribe to the same event:
-1. Handlers are executed in the order they are **registered** in the AOT (alphabetical by class name, generally)
-2. **Pre-events** run first, then the standard method, then **post-events**
-3. If a pre-event sets `validateWrite = false`, the standard method's write operations are skipped but the standard method body still executes (unless the override-event replaces it entirely)
-4. **Override-events** replace the standard method entirely — no other handlers for that event fire
+1. **Pre-handlers** run first (in **unspecified order** — not guaranteed alphabetical).
+2. The standard method executes.
+3. **Post-handlers** run last (in **unspecified order**).
+
+**Important:** Execution order among handlers is **not guaranteed** by the framework. Do not rely on alphabetical or registration order.
+**Source:** [X++ Events](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/dev-ref/xpp-events)
 
 ### Event Handler Best Practices
 
@@ -3063,10 +3053,11 @@ Business logic executes
 
 | MenuItem Type | Class Property | What Happens When Clicked |
 |---|---|---|
-| **MenuItemDisplay** | `Object = FormName` | Opens the specified form using CoC |
+| **MenuItemDisplay** | `Object = FormName` | Opens the specified form |
 | **MenuItemAction** | `Object = ClassName` | Calls `ClassName::main()` static method |
-| **MenuItemOutput** | `Object = ReportClassName` | Runs the specified report (SSRS or SRS) |
-| **MenuItemButton** | `Object = ClassName` | Same as MenuItemAction — runs a class method from a toolbar button |
+| **MenuItemOutput** | `Object = ReportClassName` | Runs the specified report (SSRS or legacy AX reports) |
+
+**Source:** [Build forms and optimize for Finance and Operations](https://learn.microsoft.com/en-au/training/modules/build-forms-optimize-finance-operations/5-menu-items)
 
 ### The `main()` Static Method — The Entry Point
 
@@ -3108,9 +3099,9 @@ class VendComplianceManager
 }
 ```
 
-### Chain of Command (CoC) for Navigation
+### MenuItemAction for Navigation
 
-When a form action needs to open another form, it uses the `CommandMenu` pattern:
+When a form action needs to open another form, it uses the `MenuFunction` pattern:
 
 ```xpp
 // From a button on Form A that opens Form B
@@ -3120,7 +3111,7 @@ public void clicked()
     args.name(formstr(ComplianceHistoryForm));
     args.record(element.args().record());  // Pass the current vendor record
 
-    // Use CoC to open the form — this respects the menu item's command chain
+    // Use MenuFunction to open the form via the menu item
     MenuFunction menuFunction = new MenuFunction(menuItemDisplayStr(ComplianceHistory), MenuItemType::Display);
     menuFunction.run(args);
 }
@@ -3138,7 +3129,7 @@ public void clicked()
 >    - A **pre-event** on `VendInvoiceJour.validateWrite()` that checks the compliance code for high-credit vendors
 >    - A **post-event** on `VendInvoiceJour.inserted()` that logs the compliance status to `APComplianceLog`
 > 5. A `VendComplianceBatchJob` class (extends `RunBaseBatch`, with dialog, pack/unpack, run, and createJob)
-> 6. Proper **Chain of Command** navigation from a form button to the compliance dashboard form
+> 6. Proper **MenuItemAction** navigation from a form button to the compliance dashboard form
 > 7. A `MenuItemAction` menu item that triggers the `VendComplianceController::main()` method
 >
 > **Activity Hints** (Multiple Valid Approaches):
@@ -3433,13 +3424,13 @@ class VendComplianceBatchJob extends RunBaseBatch
 }
 ```
 
-#### Component 6: MenuItemAction and CoC Navigation
+#### Component 6: MenuItemAction Navigation
 
 ```xpp
 // MenuItemAction: Object = VendComplianceController, Method = main
 // This menu item triggers the SysOperationServiceController
 
-// From a form button, CoC navigation to the compliance dashboard:
+// From a form button, navigation to the compliance dashboard:
 public void clicked()
 {
     Args args = new Args();
@@ -3718,12 +3709,13 @@ final class VendInvoiceJour_OverrideExtension
 
 1. **The method signature must match exactly** — same name, same parameter types, same return type
 2. **You cannot reduce visibility** — if the base method is `public`, your override must be `public`
-3. **You cannot override `static` methods** — CoC only works on instance methods
-4. **You cannot override `final` methods** — some standard methods are marked `final` and cannot be overridden via CoC
+3. **Static methods CAN be overridden via CoC** — but your extension method must also be declared `static`, matching the base method's accessibility and staticness exactly. *Exception:* Static methods on **forms** cannot be wrapped (forms are not true classes).
+4. **You cannot override `final` methods** — unless the method is explicitly marked with `[Wrappable(true)]`, which allows wrapping even if `final` is present.
+**Source:** [Method wrapping and Chain of Command](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/extensibility/method-wrapping-coc)
 
 ### When You Can't Override
 
-Some standard methods are marked `final` in the D365 F&O codebase, meaning they cannot be overridden via CoC. For these methods, you must use **event handlers** instead.
+Some standard methods are marked `final` in the D365 F&O codebase, meaning they cannot be overridden via CoC **unless** the method is explicitly marked with `[Wrappable(true)]`. For these methods, you must use **event handlers** instead.
 
 | Method Pattern | Overrideable via CoC? | Alternative |
 |---|---|---|
@@ -3732,9 +3724,14 @@ Some standard methods are marked `final` in the D365 F&O codebase, meaning they 
 | `modifiedField()` | ✅ Yes | — |
 | `run()` | ✅ Yes | — |
 | `init()` | ✅ Yes | — |
-| Some `final` methods | ❌ No | Event Handler |
+| `static` methods (non-form) | ✅ Yes | — |
+| `static` methods on forms | ❌ No | Event Handler |
+| `final` methods without `[Wrappable(true)]` | ❌ No | Event Handler |
 
-**How to check if a method is `final`:** Look at the method declaration in the AOT. If it has the `final` keyword, you cannot override it via CoC — use an event handler instead.
+**How to check if a method is overrideable:**
+- If it has the `final` keyword **and no `[Wrappable(true)]` attribute**, it cannot be overridden via CoC.
+- Static methods on **forms** cannot be wrapped (forms are not true classes).
+- Static methods on **classes/tables** can be wrapped if the extension method is also `static`.
 
 ---
 
@@ -3849,7 +3846,7 @@ final class VendInvoiceJour_StaticExtension
 Extension classes are loaded **when the AOS starts** (or when the model is deployed). They are not loaded on-demand. This has important implications:
 
 1. **Model dependency matters** — if your extension model depends on a base model, the base model must be deployed first. If the base model is missing, your extension will fail to load.
-2. **Layer resolution applies** — if two models define extensions for the same class, the highest-layer extension wins. This means your CUS-layer extension will take precedence over an ISV-layer extension.
+2. **Layer resolution applies** — if two models define extensions for the same class, the highest-layer extension wins. This means your CUS-layer extension will take precedence over an ISV-layer extension, and USR-layer extensions take precedence over CUS.
 3. **Restart required** — after deploying a new extension, the AOS must be recycled for the extension to take effect. Simply deploying the model is not enough.
 
 ### Pitfall 6: Modifying Extension Class Behavior After Deployment
@@ -3872,7 +3869,7 @@ Once an extension class is loaded into the AOS, modifying it requires:
     │
 [2] For each class, the framework resolves the CoC chain:
     │   • Finds the highest-layer extension for the class
-    │   • Links extensions in layer order (CUS → ISV → VAR → CUM → SYS)
+    │   • Links extensions in layer order (USR → CUS → VAR → ISV → SYS)
     │   • Builds an internal chain of method calls
     │
 [3] When a standard method is called:
@@ -3915,10 +3912,9 @@ Your extension model **must** declare a dependency on the model that contains th
 Extensions are loaded in **layer order** — higher layers are resolved first:
 
 1. `CUS` (customer extensions — highest priority for customer code)
-2. `ISV` (ISV partner extensions)
-3. `VAR` (Microsoft variation extensions)
-4. `CUM` (Microsoft cumulative update extensions)
-5. `SYS` (Microsoft system framework — lowest priority)
+2. `VAR` (Microsoft variation extensions)
+3. `ISV` (ISV partner extensions)
+4. `SYS` (Microsoft system framework — lowest priority)
 
 When multiple extensions target the same method, the **highest-layer extension's `super()` call** determines which extension runs next in the chain.
 
@@ -4087,7 +4083,7 @@ For this specific scenario (enforcing a business rule at validation time), **App
 
 # Chapter 8 — Security Architecture
 
-## 8.1 The Security Hierarchy — Duties → Privileges → Permissions
+## 8.1 The Security Hierarchy — Permission → Privilege → Duty → Role → User
 
 D365 F&O uses a **four-tier security hierarchy** that controls every action a user can perform. Understanding this hierarchy is essential for designing secure customizations.
 
@@ -4401,27 +4397,40 @@ An XDS policy consists of three parts:
 
 ---
 
-## 8.6 Privilege Assertions — `assert()` and `capsize()`
+## 8.6 Privilege Assertions — `CodeAccessPermission::assert()` and `CodeAccessPermission::revertAssert()`
 
 Privilege assertions are a powerful but dangerous mechanism that allows code to **temporarily elevate** the current user's permissions to perform an action they wouldn't normally be allowed to do.
 
-### `assert()` — Elevate Privileges
+### `CodeAccessPermission::assert()` — Elevate Privileges
 
-`assert()` tells the framework to check permissions as if the current user had **admin-level** access for the duration of the assertion block.
+`CodeAccessPermission::assert()` tells the framework to check permissions as if the current user had **elevated access** for the duration of the assertion block. This is done using specific permission classes like `SqlStatementExecutePermission` or `InteropPermission`. In D365 F&O, `SqlStatementExecutePermission` takes a SQL statement string (not a table name and `AccessLevel`) and is used to assert permission for raw SQL execution via the `Connection`/`Statement`/`ResultSet` APIs. There is no `TableAccessPermission` class or equivalent — `SqlStatementExecutePermission` is the standard permission class for this scenario.
 
 ```xpp
 // Example: A service class that needs to read a table the current user doesn't have access to
 public VendTable getVendorData(AccountNum _accountNum)
 {
     VendTable vendTable;
+    str sql;
+    Connection connection;
+    Statement statement;
+    ResultSet resultSet;
 
-    // Elevate privileges to read VendTable
-    // The framework will check permissions as if the user has Admin access
-    new InteropPermission(InteropKind::Clr).assert();
-    // OR: Security::assert();  // X++ built-in assertion
+    // Build the SQL query for the table we need to read
+    sql = strFmt("SELECT * FROM %1 WHERE AccountNum = '%2'",
+        tableStr(VendTable), _accountNum);
 
-    select firstonly vendTable
-        where vendTable.AccountNum == _accountNum;
+    // Elevate privileges to execute SQL against VendTable
+    new SqlStatementExecutePermission(sql).assert();
+
+    connection = new Connection();
+    statement = connection.createStatement();
+    resultSet = statement.executeQuery(sql);
+
+    if (resultSet.next())
+    {
+        vendTable.AccountNum = resultSet.toString(1);
+        // ... map additional fields as needed ...
+    }
 
     // Revert to normal permission checking
     CodeAccessPermission::revertAssert();
@@ -4430,25 +4439,39 @@ public VendTable getVendorData(AccountNum _accountNum)
 }
 ```
 
-### `capsize()` — Reduce Privileges
+### Reducing Privileges
 
-`capsize()` is the opposite — it **reduces** the effective permission level for a specific operation. This is used when you want to ensure that even if the user has elevated permissions, a specific operation runs with restricted access.
+In D365 F&O, `SqlStatementExecutePermission` is an **all-or-nothing** assertion — it either grants permission to execute SQL against the database or it does not. Unlike AX 2012's `SqlStatementPermission`, there is no `AccessLevel` parameter to specify read-only vs. read-write access. To **reduce risk**, only assert permission when the operation truly requires it, and keep the assertion scoped to the shortest possible code block: assert immediately before the protected API call, then revert immediately after.
 
 ```xpp
-// Example: Ensure a delete operation runs with restricted permissions
+// Example: Only assert SQL execution permission for the specific operation that needs it
 public void safeDelete(VendInvoiceJour _invoice)
 {
-    // Cap the permission level to See-only for this operation
-    // This prevents accidental deletion even if the user has Delete permissions
-    new SqlStatementPermission(
-        tableStr(VendInvoiceJour), 
-        AccessLevel::See).assert();
+    str sql;
+    Connection connection;
+    Statement statement;
 
-    // The delete will fail because we only asserted See permission
-    // This is a safety mechanism — the delete should not proceed
-    _invoice.delete();
+    // Build the SQL DELETE statement for the specific invoice
+    sql = strFmt("DELETE FROM %1 WHERE RecId = %2",
+        tableStr(VendInvoiceJour), _invoice.RecId);
 
-    CodeAccessPermission::revertAssert();
+    try
+    {
+        // Assert permission only for the duration of the SQL execution
+        new SqlStatementExecutePermission(sql).assert();
+
+        connection = new Connection();
+        statement = connection.createStatement();
+        statement.executeUpdate(sql);
+
+        // Revert immediately after the protected API call
+        CodeAccessPermission::revertAssert();
+    }
+    catch (Exception::Error)
+    {
+        CodeAccessPermission::revertAssert();
+        error("Failed to delete invoice. Contact your administrator.");
+    }
 }
 ```
 
@@ -4496,19 +4519,35 @@ When using privilege assertions in extension code, follow these additional harde
 public VendTable getVendorDataSecure(AccountNum _accountNum)
 {
     VendTable vendTable;
+    str sql;
+    Connection connection;
+    Statement statement;
+    ResultSet resultSet;
 
     try
     {
         // Log the assertion for audit purposes
         this.logAssertion('getVendorDataSecure', _accountNum);
 
-        // Elevate privileges with the minimum level needed
-        new SqlStatementPermission(tableStr(VendTable), AccessLevel::See).assert();
+        // Build the SQL query for the table we need to read
+        sql = strFmt("SELECT * FROM %1 WHERE AccountNum = '%2'",
+            tableStr(VendTable), _accountNum);
 
-        select firstonly vendTable
-            where vendTable.AccountNum == _accountNum;
+        // Elevate privileges to execute SQL against VendTable
+        new SqlStatementExecutePermission(sql).assert();
 
+        connection = new Connection();
+        statement = connection.createStatement();
+        resultSet = statement.executeQuery(sql);
+
+        // Revert immediately after the protected API call
         CodeAccessPermission::revertAssert();
+
+        if (resultSet.next())
+        {
+            vendTable.AccountNum = resultSet.toString(1);
+            // ... map additional fields as needed ...
+        }
     }
     catch (Exception::Error)
     {
@@ -5261,7 +5300,7 @@ In Visual Studio, the Data Entity designer provides a **Mappings** node where yo
 ### Best Practices for Entity Mapping
 
 1. **Use consistent naming** — entity field names should match table field names whenever possible to enable auto-mapping
-2. **Use the staging table for intermediate fields** — staging fields should never be exposed via the public OData endpoint
+2. **Use staging tables for staging fields** — staging fields should never be exposed in OData; store them in the auto-generated staging table
 3. **Document manual mappings** — add comments explaining why auto-mapping wasn't possible
 4. **Test mappings with sample data** — always verify that data flows correctly from entity to table
 
@@ -5354,16 +5393,14 @@ The `DictClass` and `DictMethod` classes provide runtime reflection over X++ obj
 DictClass dictClass = new DictClass(classNum(VendAPComplianceEntity));
 Array    attributes  = dictClass.getAllAttributes();
 
-// Inspect a specific method.
-// name() and returnType() are inherited from MethodInfo (SpecialClass).
-// Source: https://learn.microsoft.com/en-us/dotnet/api/microsoft.dynamics.ax.xpp.dictmethod
+// Inspect a specific method's .NET return type via reflection.
+// Source: https://learn.microsoft.com/en-us/previous-versions/dynamicsax-2012/developer/reflect-on-net-elements-of-x-methods
 DictMethod dictMethod = new DictMethod(
     classNum(VendAPComplianceEntity),
     methodStr(VendAPComplianceEntity, process));
-info(strFmt("Method %1 returns %2 (EDT id %3)",
-    dictMethod.name(),
-    dictMethod.returnType(),
-    dictMethod.returnId()));
+info(strFmt("Method %1 returns %2",
+    methodStr(VendAPComplianceEntity, process),
+    dictMethod.clrReturnType()));
 ```
 
 ### Publishing an Entity via `IsPublic`
@@ -5785,7 +5822,7 @@ public void postProcess()
 
 ### Remaining Chapters — Detailed Outlines
 
-# Chapter 10 — Reporting (SSRS, SRS, Analytical)
+# Chapter 10 — Reporting (SSRS, Legacy AX Reports, Analytical)
 
 ## 10.1 SSRS Report Design in Visual Studio
 
@@ -5849,40 +5886,49 @@ Every SSRS report in D365 F&O requires a data provider class that extends `SrsRe
 |---|---|---|
 | `parmQuery()` | Gets/sets the query object that defines the data source | Yes |
 | `parmPrintJobSettings()` | Gets/sets the print job settings (routing, format) | Yes |
-| `get()` | The main method that returns the report data | Yes |
+| `processReport()` | Called by the reporting framework at runtime; populates a temp table member with the report data | Yes |
+| `getVendorComplianceReportTmp()` (tagged with `[SRSReportDataSetAttribute]`) | Returns the populated temp table; the report dataset binds to this method | Yes |
 | `parmReportName()` | Gets/sets the report name | Yes |
 | `parmParameters()` | Gets/sets the report parameters | Optional |
 
 ### Complete `SrsReportDataProvider` Example
 
 ```xpp
+[SRSReportQueryAttribute('VendComplianceReport'), SRSReportParameterAttribute(classstr(VendComplianceReportContract))]
 class VendComplianceReportDP extends SrsReportDataProvider
 {
+    VendComplianceReportTmp tmpTable;
     VendTable vendTable;
     FromDate fromDate;
     ToDate toDate;
     ComplianceStatus complianceStatus;
 
     /// <summary>
-    /// The main method that returns report data.
     /// Called by the SSRS framework when the report is rendered.
+    /// Populates the temp table with report data.
     /// </summary>
-    public VendComplianceReportContract get()
+    public void processReport()
     {
         VendComplianceReportContract contract;
-        VendComplianceReportTmp tmpTable;
 
         // Get the contract (parameters) from the controller
-        contract = this.parmContract();
+        contract = this.parmDataContract() as VendComplianceReportContract;
 
         // Build the query to retrieve compliance data
         this.buildQuery(contract);
 
-        // Execute the query and populate a temporary table
+        // Execute the query and populate the temp table
         this.fetchData(contract, tmpTable);
+    }
 
-        // Return the temporary table as the report data source
-        return contract;
+    /// <summary>
+    /// Returns the populated temp table to the report dataset.
+    /// The SRSReportDataSetAttribute binds this method to the report.
+    /// </summary>
+    [SRSReportDataSetAttribute(tableStr(VendComplianceReportTmp))]
+    public VendComplianceReportTmp getVendorComplianceReportTmp()
+    {
+        return tmpTable;
     }
 
     private void buildQuery(VendComplianceReportContract _contract)
@@ -6199,60 +6245,40 @@ public void run()
 
 ---
 
-## 10.6 SRS — The Legacy Reporting Engine
+## 10.6 Legacy AX Reports (Pre-SSRS)
 
-SRS (SQL Server Reporting Services) is the older reporting engine that preceded the modern SSRS integration in D365 F&O. While SSRS is the recommended approach for new development, SRS is still encountered in older codebases and on-premises deployments.
+Legacy AX Reports (from AX 2012 or earlier) used `.rpt` files and are sometimes still encountered in older codebases and on-premises deployments. While SSRS is the recommended approach for new development, these legacy reports may still exist in some environments.
 
-### SRS vs. SSRS — Key Differences
+### Legacy AX Reports vs. SSRS — Key Differences
 
-| Feature | SRS (Legacy) | SSRS (Modern) |
+| Feature | Legacy AX Reports (`.rpt`) | SSRS (Modern) |
 |---|---|---|
 | **Report designer** | Report Builder in AX client | Visual Studio SSRS Designer |
+| **File format** | `.rpt` | `.rdl` |
 | **Data access** | Direct SQL queries | `SrsReportDataProvider` with AOT queries |
-| **Deployment** | Manual RDL upload | Model project deployment via VS |
+| **Deployment** | Manual upload to AOT | Model project deployment via VS |
 | **Security** | AOS-level security | Azure AD + D365 F&O security roles |
 | **Performance** | No pre-processing optimization | TempDB pre-processing support |
 | **OData exposure** | Not supported | Automatic via Data Entities |
 | **Maintenance** | Harder to maintain | Model-based, version-controlled |
 
-### When SRS Is Still Relevant
+### When Legacy AX Reports Are Still Relevant
 
 - **On-premises deployments** that haven't been upgraded to the modern SSRS pattern
-- **Existing SRS reports** that are still in production and haven't been migrated
+- **Existing `.rpt` reports** that are still in production and haven't been migrated
 - **Custom RDL files** that were designed outside of Visual Studio and need to be integrated
 
-### Migrating from SRS to SSRS
+### Migrating from Legacy AX Reports to SSRS
 
-1. **Identify the SRS report** — locate the `.rpt` file in the AOT under `Reports`
+1. **Identify the legacy report** — locate the `.rpt` file in the AOT under `Reports`
 2. **Create a new SSRS report** in Visual Studio with the same data source
 3. **Recreate the layout** in the SSRS Report Designer — import the old RDL as a starting point
-4. **Create a `SrsReportDataProvider`** class to replace the SRS data provider
+4. **Create a `SrsReportDataProvider`** class to replace the legacy data provider
 5. **Test the new report** against the same data set
 6. **Update menu items** to point to the new report controller
-7. **Deprecate the old SRS report** — mark it as obsolete in the AOT
+7. **Deprecate the old report** — mark it as obsolete in the AOT
 
-### SRS Data Provider Pattern (Legacy)
-
-```xpp
-// Legacy SRS data provider — still found in older codebases
-class VendComplianceSrsDP extends SrsReportDataProvider
-{
-    VendTable vendTable;
-
-    public VendComplianceSrsContract get()
-    {
-        // SRS uses direct SQL queries instead of AOT Query objects
-        // This is less maintainable but was the standard before SSRS
-        VendComplianceSrsContract contract;
-
-        // Direct SQL query (not recommended for new development)
-        // Use SrsReportDataProvider with AOT Query objects instead
-        return contract;
-    }
-}
-```
-
-**Key takeaway:** If you encounter SRS reports in an existing codebase, plan to migrate them to SSRS. The modern SSRS pattern with `SrsReportDataProvider` and AOT Query objects is more maintainable, upgrade-safe, and integrates with the D365 F&O security model.
+**Key takeaway:** If you encounter legacy `.rpt` reports in an existing codebase, plan to migrate them to SSRS. The modern SSRS pattern with `SrsReportDataProvider` and AOT Query objects is more maintainable, upgrade-safe, and integrates with the D365 F&O security model.
 
 ---
 
@@ -6277,7 +6303,7 @@ class VendComplianceReportDP extends SrsReportDataProvider
 {
     VendComplianceReportTmp tmpTable;  // InMemory — slow for large data
 
-    public VendComplianceReportContract get()
+    public void processReport()
     {
         // Data is held in memory — causes timeout for large datasets
     }
@@ -6288,10 +6314,17 @@ class VendComplianceReportDP extends SrsReportDataProviderPreProcessTempDB
 {
     VendComplianceReportTmp tmpTable;  // TempDB — fast for large data
 
-    public VendComplianceReportContract get()
+    public void processReport()
+    {
+        // Pre-process: retrieve and store data in TempDB before report renders
+    }
+
+    [SRSReportDataSetAttribute(tableStr(VendComplianceReportTmp))]
+    public VendComplianceReportTmp getReportDataTmp()
     {
         // Data is pre-processed into TempDB before report rendering
         // The report reads from TempDB — no timeout issues
+        return tmpTable;
     }
 }
 ```
@@ -6303,6 +6336,7 @@ The pre-processing pattern separates data retrieval (which can be slow) from rep
 ```xpp
 class VendComplianceReportDP extends SrsReportDataProviderPreProcessTempDB
 {
+    VendComplianceReportTmp tmpTable;  // Class member — persists in TempDB across calls
     VendTable vendTable;
     FromDate fromDate;
     ToDate toDate;
@@ -6313,8 +6347,6 @@ class VendComplianceReportDP extends SrsReportDataProviderPreProcessTempDB
     /// </summary>
     public void processReport()
     {
-        VendComplianceReportTmp tmpTable;
-
         // Retrieve data and store in TempDB
         while select vendTable
             where vendTable.CreatedDate >= fromDate
@@ -6329,17 +6361,14 @@ class VendComplianceReportDP extends SrsReportDataProviderPreProcessTempDB
     }
 
     /// <summary>
-    /// Get the pre-processed data for the report.
+    /// Return the pre-processed data from TempDB to the report dataset.
+    /// The SRSReportDataSetAttribute binds this method to the report.
     /// Called by the SSRS framework during rendering.
     /// </summary>
-    public VendComplianceReportContract get()
+    [SRSReportDataSetAttribute(tableStr(VendComplianceReportTmp))]
+    public VendComplianceReportTmp getReportDataTmp()
     {
-        VendComplianceReportContract contract;
-
-        // The data is already in TempDB from processReport()
-        // The report reads from TempDB directly — fast!
-        contract = this.parmContract();
-        return contract;
+        return tmpTable;
     }
 }
 ```
@@ -6529,7 +6558,7 @@ D365 F&O's Analytical Workspace integrates with Power BI for advanced analytics:
 >
 > - **Hint B — Report layout strategy**: Option B1 — use `AutoDesign` for initial development, then manually refine the RDL for production (recommended — fastest path to a working report). Option B2 — design the entire RDL manually from scratch in Report Builder (most control but slowest). Option A3 — use a hybrid approach — AutoDesign for the initial layout, then manually edit the RDL XML to add grouping, subtotals, and formatting.
 >
-> - **Hint C — Empty-data handling**: Option C1 — add a `NoRowsMessage` property on the Tablix control (recommended — simplest approach). Option C2 — add a separate text box that is visible when the dataset returns no records, using an expression like `=IIF(CountRows("Dataset1") = 0, "No compliance data found for the selected criteria.", "")` (more flexible, allows custom formatting). Option C3 — handle empty data in the `get()` method of the data provider by returning a dummy record with a "No data" message (not recommended — pollutes the data layer).
+> - **Hint C — Empty-data handling**: Option C1 — add a `NoRowsMessage` property on the Tablix control (recommended — simplest approach). Option C2 — add a separate text box that is visible when the dataset returns no records, using an expression like `=IIF(CountRows("Dataset1") = 0, "No compliance data found for the selected criteria.", "")` (more flexible, allows custom formatting). Option C3 — handle empty data in the `processReport()` method of the data provider by inserting a dummy record into the temp table with a "No data" message (not recommended — pollutes the data layer).
 >
 > - **Hint D — Subtotals and grouping**: Option D1 — use the SSRS grouping feature in the Report Designer — right-click a column group → "Add Group" → "Parent Group" (recommended — visual and intuitive). Option D2 — handle subtotals in the data provider by pre-calculating group totals in the `get()` method (more control but more complex). Option D3 — use a matrix/tablix with row and column groups for a pivot-style layout (good for analytical reports but overkill for this scenario).
 >
@@ -6848,52 +6877,63 @@ static void Job_QuickVendorUpdate(Args _args)
 
 ---
 
-## 11.2 `SysBatchRun` and `JobQueueStage` Lifecycle
+## 11.2 BatchJob and BatchHistory Tables
 
-The batch framework in D365 F&O manages the lifecycle of batch jobs through the `SysBatchRun` table and the `JobQueueStage` process.
+The batch framework in D365 F&O manages the lifecycle of batch jobs through the **BatchJob** (current state) and **BatchHistory** (execution history) tables.
 
 ### Batch Job Lifecycle Stages
 
 ```
-[1] Job Created → BatchHeader.Status = Created
+[1] Job Created → BatchJob.STATUS = Waiting
     │
-[2] Job Queued → BatchHeader.Status = Queued
+[2] Job Queued → BatchJob.STATUS = Waiting (queued for execution)
     │
-[3] Batch Server picks up job → BatchHeader.Status = Running
+[3] Batch Server picks up job → BatchJob.STATUS = Executing
     │
-[4] Job executes → doBatch() called, run() method executes
+[4] Job executes → run() method executes on the server
     │
-[5] Job completes → BatchHeader.Status = Completed (or Failed)
+[5] Job completes → BatchJob.STATUS = Finished (or Error/Canceled)
     │
-[6] User notified via Infolog and/or email
+[6] History recorded → BatchHistory captures STARTDATETIME, ENDDATETIME, STATUS
+    │
+[7] User notified via Infolog and/or email
 ```
 
-### `SysBatchRun` Table
+**Source:** [Batch OData API](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/sysadmin/batch-odata-api) | [BatchStatus enum (.NET API)](https://learn.microsoft.com/en-us/dotnet/api/microsoft.dynamics.ax.xpp.batchstatus)
 
-The `SysBatchRun` table tracks the state of each batch job:
+### BatchJob and BatchHistory Tables
 
-| Field | Description |
-|---|---|
-| `BatchId` | Unique identifier for the batch job |
-| `Status` | Current status (Created, Queued, Running, Completed, Failed) |
-| `BatchGroupId` | The batch group that processes this job |
-| `ExecutionStyle` | OnDemand, Scheduled, or Recurring |
-| `StartTime` | When the job started executing |
-| `EndTime` | When the job finished executing |
-| `Description` | User-readable description of the job |
-| `UserId` | The user who submitted the job |
+The **BatchJob** and **BatchHistory** tables track the state and history of batch jobs:
 
-### `JobQueueStage` Lifecycle
+| Table | Field | Description |
+|---|---|---|
+| **BatchJob** | `BATCHJOBID` | Unique identifier for the batch job |
+| **BatchJob** | `CAPTION` | User-readable description of the job |
+| **BatchJob** | `STATUS` | Current status (Waiting, Executing, Finished, Error, Canceled) |
+| **BatchJob** | `SERVERID` | The batch server processing the job |
+| **BatchHistory** | `BATCHJOBID` | Links to the BatchJob record |
+| **BatchHistory** | `STARTDATETIME` | When the job started executing |
+| **BatchHistory** | `ENDDATETIME` | When the job finished executing |
+| **BatchHistory** | `STATUS` | Final status (Finished, Error, Canceled) |
 
-The `JobQueueStage` class manages the batch processing pipeline:
+### BatchStatus Enum Reference
 
-| Stage | Description |
-|---|---|
-| **Queue** | Jobs are placed in the queue and wait for a batch server to pick them up |
-| **Acquire** | A batch server acquires a job from the queue |
-| **Execute** | The job runs — `doBatch()` is called, which wraps `run()` |
-| **Complete** | The job finishes — status is updated to Completed or Failed |
-| **Notify** | The user is notified of the job result |
+The `BatchStatus` X++ enum defines all possible batch job states. The lifecycle progression follows Waiting → Executing → Finished/Error/Canceled:
+
+| Enum Member | Value | Category | Description |
+|---|---|---|---|
+| `Hold` | 0 | Pre-execution | Job is on hold (stopped by user) |
+| `Waiting` | 1 | Active | Job is queued and waiting to be picked up |
+| `Executing` | 2 | Active | Job is currently running on a batch server |
+| `Error` | 3 | Terminal | Job encountered an error during execution |
+| `Finished` | 4 | Terminal | Job completed successfully |
+| `Ready` | 5 | Active | Job is ready to be scheduled |
+| `NotRun` | 6 | Post-execution | Job has not run (e.g., dependencies failed) |
+| `Cancelling` | 7 | Transition | Job is in the process of being canceled |
+| `Canceled` | 8 | Terminal | Job was canceled by the user |
+| `Scheduled` | 9 | Active | Job is scheduled for a future run time |
+
+> **Note:** The UI label "Ended" for a successfully completed job corresponds to the X++ enum member `Finished` (value 4). See [BatchStatus enum (.NET API)](https://learn.microsoft.com/en-us/dotnet/api/microsoft.dynamics.ax.xpp.batchstatus) for the complete, authoritative list.
 
 ### Batch Groups
 
@@ -7675,12 +7715,10 @@ The `SysTest` framework is D365 F&O's built-in unit testing framework. It enable
 Every test class in D365 F&O follows this structure:
 
 ```xpp
-[TestClassAttribute]
-class VendComplianceTest
+class VendComplianceTest extends SysTestCase
 {
     // Shared test data — created once for all test methods in this class
-    [SysTestSetupAttribute]
-    public static void setup()
+    public void setUp()
     {
         // Create test data that all test methods need
         // This runs once before any test method in the class
@@ -7696,8 +7734,7 @@ class VendComplianceTest
     }
 
     // Cleanup — runs after each test method
-    [SysTestCleanupAttribute]
-    public static void cleanup()
+    public void tearDown()
     {
         // Clean up test data
     }
@@ -7708,11 +7745,10 @@ class VendComplianceTest
 
 | Attribute | Purpose | When to Use |
 |---|---|---|
-| `[TestClassAttribute]` | Marks a class as a test class | On every test class |
-| `[SysTestSetupAttribute]` | Marks a method that sets up shared test data | On a static method that creates test records |
+
 | `[SysTestMethodAttribute]` | Marks a method as a test method | On every test method |
-| `[SysTestCleanupAttribute]` | Marks a method that cleans up test data | On a static method that deletes test records |
-| `[TestMethodAttribute]` | Alternative to `SysTestMethodAttribute` | Same purpose, different naming |
+
+**Note:** Setup and cleanup are implemented by overriding the `setUp()` and `tearDown()` methods in a class extending `SysTestCase`, not via attributes. Alternatively, test methods can be prefixed with `test` instead of using the `[SysTestMethodAttribute]` attribute.
 
 ---
 
@@ -7892,12 +7928,10 @@ public static void testWithNewTest()
 When multiple test methods need the same base data, use `SysTestSetup` to create it once for the entire test class.
 
 ```xpp
-[TestClassAttribute]
-class VendComplianceTest
+class VendComplianceTest extends SysTestCase
 {
     // Shared test data — created once for all test methods
-    [SysTestSetupAttribute]
-    public static void setup()
+    public void setUp()
     {
         VendTable vendTable;
 
@@ -7930,8 +7964,7 @@ class VendComplianceTest
         assertTrue(VendComplianceValidator::validate(vendTable, ''), 'Low credit vendor does not need compliance code');
     }
 
-    [SysTestCleanupAttribute]
-    public static void cleanup()
+    public void tearDown()
     {
         // Delete test vendors
         VendTable vendTable;
@@ -8129,12 +8162,10 @@ When tests run in the CI/CD pipeline:
 #### Test Data Setup with Shared `SysTestSetup`
 
 ```xpp
-[TestClassAttribute]
-class SalesOrderDiscountTest
+class SalesOrderDiscountTest extends SysTestCase
 {
     // Shared test data — created once for all test methods
-    [SysTestSetupAttribute]
-    public static void setup()
+    public void setUp()
     {
         CustTable custTable;
 
@@ -8485,8 +8516,7 @@ class SalesOrderDiscountTest
         salesTable.delete();
     }
 
-    [SysTestCleanupAttribute]
-    public static void cleanup()
+    public void tearDown()
     {
         // Clean up all test data
         SalesLine salesLine;

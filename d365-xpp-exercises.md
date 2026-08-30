@@ -661,7 +661,7 @@ Describe the steps to create a simple data entity that exposes a custom table `V
 
 ### Hints
 - A data entity consists of a `DataEntity` node, a `Query` node, and optionally a staging table
-- The entity needs a `PublicCollection` (fields exposed externally) and optionally a `PrivateCollection` (staging fields)
+- The entity exposes fields via `IsPublic`, `Public Entity Name`, and `Public Collection Name` properties, with staging fields stored in a separate auto-generated staging table
 - The entity must be registered in the `Data Entity` node
 
 ### Solution
@@ -676,11 +676,11 @@ Describe the steps to create a simple data entity that exposes a custom table `V
    - Add all fields to the query
 
 3. **Create the Data Entity** `VendAPCustomsDeclEntity`:
-   - **AOT Node**: `Data Entities\VendAPCustomsDeclEntity`
-   - Set the `Name` property to `VendAPCustomsDeclEntity`
-   - Set the `PublicCollection` to include `DeclId`, `DeclDate`, `CustomsRef`
-   - Set the `Query` property to point to `VendAPCustomsDeclQuery`
-   - Set the `StagingTable` property if you need intermediate storage
+    - **AOT Node**: `Data Entities\VendAPCustomsDeclEntity`
+    - Set the `Name` property to `VendAPCustomsDeclEntity`
+    - Set `IsPublic = Yes` and define `Public Entity Name` and `Public Collection Name` for OData exposure
+    - Set the `Query` property to point to `VendAPCustomsDeclQuery`
+    - Set the `StagingTable` property if you need intermediate storage
 
 4. **Add a Data Entity Field** for each field you want to expose:
    - `VendAPCustomsDeclEntity\Fields\DeclId`

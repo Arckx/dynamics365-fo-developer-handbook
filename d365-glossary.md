@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: 369838ab-9513-4fe8-9b6d-09784c222811
-  modified: 2026-08-17T19:57:18.865Z
+  modified: 2026-08-10T17:48:07.602Z
 ---
 
 # D365 Finance & Operations — Glossary
@@ -35,9 +35,9 @@ metadata:
 | **Batch Processing** | Running long-running or scheduled jobs in the background using the `RunBaseBatch` framework, which queues work for the Batch server. |
 | **Batch Header** | The `BatchHeader` class that manages batch job metadata — job name, recurrence schedule, execution priority, and target server. |
 | **BI (Business Intelligence)** | The analytics and reporting capabilities in D365 F&O — includes SSRS paginated reports, analytical reporting (Power BI), and the Financial Reporting module. |
-| **CacheLookup** | A table property that controls how SQL Server caches lookups of that table — values include `NotInTTS`, `Found`, `FoundNotInTTS`, and `All`. |
+| **CacheLookup** | A table property that controls how SQL Server caches lookups of that table — values: `None`, `NotInTTS`, `Found`, `FoundAndEmpty`, `EntireTable`. |
 | **Chain of Command (CoC)** | A pattern for resolving method conflicts between a base class and its extensions — the `next` keyword calls the next handler in the execution chain. |
-| **Configuration Key** | An encrypted credential that controls feature visibility in D365 F&O — used to enable or disable modules and functionality at runtime. |
+| **Configuration Key** | A boolean property set on AOT objects that a system administrator enables/disables via the License Configuration form to control which features/modules are visible. |
 | **Container** | A typed ordered list in X++ (similar to an array) that can hold elements of different types — accessed with `conPeek()` and `conLen()`. |
 | **Cross-Reference DB** | A SQL Server Express LocalDB installed with Visual Studio that tracks object dependencies — enables "Find References" and "Depends on" queries. |
 
@@ -61,7 +61,7 @@ metadata:
 | **EDT Extension** | A mechanism to add new allowed values to an existing EDT (e.g., adding a new country code to `AddressCountryRegionId`). |
 | **E-Signature** | The electronic signature framework in D365 F&O that enables digitally signed approvals and document workflows. |
 | **Element** | A single object in the AOT — a table, class, form, view, EDT, enum, report, data entity, or any other metadata item. |
-| **Event Handler** | A method that automatically executes in response to a specific system event (e.g., `inserted`, `updated`, `deleted` on a table) — registered via the `[SubscribesTo]` attribute. |
+| **Event Handler** | A method that automatically executes in response to a specific system event. Table data events (e.g., `inserted`, `updated`, `deleted`) use `[DataEventHandler]`; custom delegate-based events use `[SubscribesTo]`. |
 | **Exception Types** | The categories of errors in X++: `Error`, `Warning`, `Info`, `Broken`, `Deadlock`, and `DuplicateKey` — each handled in a separate `catch` block. |
 | **Extension** | A customization approach that adds fields, methods, or event handlers to a base table or class without modifying the original — the preferred method over overlayering. |
 | **Extensible EDT** | An EDT that allows consumers to add new values to base enums, enabling customization without modifying the base EDT definition. |
@@ -97,7 +97,7 @@ metadata:
 |---|---|
 | **IL (Intermediate Language)** | The compiled output of X++ — X++ compiles to .NET CIL (Common Intermediate Language), the same IL used by C# and VB.NET. |
 | **Infolog** | The message window in the D365 F&O client that displays informational messages (`info`), warnings (`warning`), and errors (`error`). |
-| **Integration Components** | Supporting components (not a separate tier) that connect D365 F&O to external systems — includes Azure Service Bus, Azure Functions, Logic Apps, and OData/REST endpoints. See **Three-Tier Architecture**. |
+| **Integration Components** | Supporting components that connect D365 F&O to external systems — includes Azure Service Bus, Azure Functions, Logic Apps, and OData/REST endpoints. |
 | **Inner Join** | A form data source link type where child records only show when a matching parent record exists — the default link type. |
 | **Instance Variable** | A variable declared within a class (not `static`) — each object instance has its own copy. |
 
@@ -131,7 +131,7 @@ metadata:
 | Term | Definition |
 |---|---|
 | **Number Sequence (`NumberSeq`)** | A framework for generating sequential, unique identifiers safely under concurrent access — handles deduplication and gap-free numbering. |
-| **NuGet Packages** | The 5 NuGet packages required for a full D365 F&O build in Visual Studio — include X++ compiler targets, reference assemblies, and deployment tools. |
+| **NuGet Packages** | The NuGet packages required for a D365 F&O build, which vary by version — typically include X++ compiler targets, reference assemblies, and deployment tooling, restored automatically by the Dynamics365Build DevOps task. |
 
 ## O
 
@@ -149,8 +149,8 @@ metadata:
 | **Paginated Report** | An SSRS report format that renders as a fixed-layout document (PDF, Excel, Word) — the standard report type in D365 F&O. |
 | **Presentation Tier** | The web-based UI layer of D365 F&O — a single browser-based client (HTML5/CSS/JS) that runs in Edge, Chrome, and Safari; the AOS serves the web assets and the browser renders forms, menus, and navigation. |
 | **Primary Index** | The clustered index on `RecId` that is auto-created for every table — should not be modified. |
-| **PrivateCollection** | The staging fields in a data entity that hold intermediate state before data is pushed to the target system. |
-| **PublicCollection** | The output fields in a data entity that are exposed to external systems via OData. |
+| **Staging Table** | An auto-generated table (e.g., `EntityNameStaging`) that holds intermediate state for data entities before data is pushed to the target system. |
+| **Public Entity Name / Public Collection Name** | Properties on a data entity that control its OData exposure and endpoint names. |
 
 ## Q
 
@@ -173,14 +173,14 @@ metadata:
 
 | Term | Definition |
 |---|---|
-| **Security Role** | A collection of duties that defines what a user can do in D365 F&O — the hierarchy is: Privilege → Duty → Role → User. |
+| **Security Role** | A collection of duties that defines what a user can do in D365 F&O — the hierarchy is: Permission → Privilege (composed of permissions) → Duty (composed of privileges) → Role (composed of duties) → User (assigned one or more roles). |
 | **SSRS (SQL Server Reporting Services)** | The reporting engine used in D365 F&O for paginated reports — uses `SrsReportDataProvider` classes to supply data to report layouts. |
-| **SrsReportDataProvider** | The base class for SSRS report data providers — contains the `processReport()` method where query logic populates temporary tables for the report layout. |
+| **SrsReportDataProvider** | The base class for SSRS report data providers — contains the `get()` method for standard providers and `processReport()` for `SrsReportDataProviderPreProcessTempDB` (TempDB pre-processing). |
 | **Static Variable** | A variable declared with the `static` keyword — shared across all instances of the class, persists for the lifetime of the application. |
 | **Staging Table** | An intermediate table used in data entities and integration patterns to accumulate, validate, and stage records before pushing them to the target system. |
 | **SysOperation** | The modern framework for service operations with parameter classes — replaces the older RunBase pattern for service-based integrations. |
 | **SoD (Segregation of Duties)** | A security principle that prevents a single user from having conflicting permissions — D365 F&O supports SoD validation through the security model and XDS policies. |
-| **SysTest** | The built-in unit testing framework in D365 F&O — tests are classes that extend `SysTestTestCase` and are executed through the Test Runner. |
+| **SysTest** | The built-in unit testing framework in D365 F&O — tests are classes that extend `SysTestCase` and are executed through the Test Runner. |
 | **System Class** | A class in the `Sys**` namespace (e.g., `SysTableLookup`, `SrsReportDataProvider`) — provides framework-level functionality that developers use directly. |
 
 ## T
@@ -227,7 +227,7 @@ metadata:
 ## Quick Reference: Security Hierarchy
 
 ```
-User → Role → Duty → Privilege → Permission
+Permission → Privilege (composed of permissions) → Duty (composed of privileges) → Role (composed of duties) → User (assigned one or more roles)
 ```
 
 | Level | What It Controls | Example |
