@@ -6,3 +6,6 @@ converter.py
 
 # Exclude PDF files
 *.pdf
+
+# Exclude MEMORY.md
+MEMORY.md
