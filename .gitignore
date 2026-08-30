@@ -9,3 +9,6 @@ converter.py
 
 # Exclude MEMORY.md
 MEMORY.md
+
+# Exclude D365_Combined_Guide.md
+D365_Combined_Guide.md
