@@ -89,34 +89,14 @@ The handbook covers the complete technical stack of D365 F&O, including X++ prog
 - **Deliverable:** Certification study guide with annotated code samples and mock exam self-assessment
 - **Checkpoint:** Demonstrate mastery of all previous concepts; walk through complete end-to-end solutions
 
-## Progress Tracking
-
-| Month | Milestone | Status |
-|---|---|---|
-| 1 | First X++ job — read/write data | ⬜ |
-| 2 | Custom table design with EDTs and indexes | ⬜ |
-| 3 | Form with parent-child data sources + business logic class | ⬜ |
-| 4 | CoC + Event Handler + Delegate extension | ⬜ |
-| 5 | Security role + data entity integration | ⬜ |
-| 6 | SSRS report + RunBaseBatch job | ⬜ |
-| 7 | 5 SysTest unit tests | ⬜ |
-| 8 | Azure DevOps CI pipeline | ⬜ |
-| 9 | Performance audit with 3+ fixes | ⬜ |
-| 10 | Capstone: end-to-end solution deployed | ⬜ |
-| 11 | Module specialization deep dive | ⬜ |
-| 12 | Advanced patterns & certification prep | ⬜ |
-
 ## Key Files in This Repository
 
-- **D365_Combined_Guide.md** — Master technical reference covering all 12 phases with deep code examples
 - **d365-learning-guide.md** — Condensed learning guide with key concepts and quick references
 - **d365-fao-learning-journey.md** — Detailed month-by-month study plan and milestones
 - **d365-xpp-quick-reference.md** — Quick reference for X++ syntax and common patterns
 - **d365-xpp-exercises.md** — Hands-on coding exercises for each phase
 - **d365-glossary.md** — Comprehensive glossary of D365 F&O terminology
 - **d365-guide-cross-reference.md** — Index linking all guides and resources
-- **converter.py** — Utility script for converting and processing documentation
-- **.gitignore** — Excludes private files (converter.py, .claude/, *.pdf, MEMORY.md)
 
 ## How to Use This Handbook
 
@@ -155,8 +135,7 @@ Upon completion of this 12-month journey, you will be able to:
 
 - Microsoft Learn: [Dynamics 365 Finance & Operations](https://learn.microsoft.com/en-us/dynamics365/finance-operations/)
 - Microsoft Docs: [X++ Language Reference](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/dev-ref/xpp-language-reference)
-- Community: [D365.Live](https://d365.live/), [MSDynCommunity](https://msdyncommunity.org/)
-- Certifications: [Microsoft Learn Certification Path](https://learn.microsoft.com/en-us/certifications/browse/?resource_type=certification&products=dynamics-365)
+- **Certifications:** [Microsoft Learn Certification Path](https://learn.microsoft.com/en-us/credentials/browse/?roles=developer&products=dynamics-365)
 
 ## About This Project
 
