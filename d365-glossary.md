@@ -61,7 +61,7 @@ metadata:
 | **EDT Extension** | A mechanism to add new allowed values to an existing EDT (e.g., adding a new country code to `AddressCountryRegionId`). |
 | **E-Signature** | The electronic signature framework in D365 F&O that enables digitally signed approvals and document workflows. |
 | **Element** | A single object in the AOT — a table, class, form, view, EDT, enum, report, data entity, or any other metadata item. |
-| **Event Handler** | A method that automatically executes in response to a specific system event. Table data events (e.g., `inserted`, `updated`, `deleted`) use `[DataEventHandler]`; custom delegate-based events use `[SubscribesTo]`. |
+| **Event Handler** | A method that automatically executes in response to a specific system event. Table data events (e.g., `inserted`, `updated`, `deleted`) use `[DataEventHandler]`; custom delegate-based events use `[SubscribesTo]`. Microsoft recommends against creating new delegates — use Chain of Command (CoC) instead. |
 | **Exception Types** | The categories of errors in X++: `Error`, `Warning`, `Info`, `Broken`, `Deadlock`, and `DuplicateKey` — each handled in a separate `catch` block. |
 | **Extension** | A customization approach that adds fields, methods, or event handlers to a base table or class without modifying the original — the preferred method over overlayering. |
 | **Extensible EDT** | An EDT that allows consumers to add new values to base enums, enabling customization without modifying the base EDT definition. |

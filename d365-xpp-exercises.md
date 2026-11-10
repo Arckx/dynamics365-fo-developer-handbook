@@ -511,79 +511,85 @@ class CustCreationEventHandler
 
 ---
 
-## Exercise 10 — Delegate
+## Exercise 10 — Chain of Command (CoC) Extensibility
 
 ### Problem
 
-Create a delegate on a class called `PriceCalculator` that allows consumers to customize the discount percentage. The delegate should be called during discount calculation, and consumers should be able to subscribe their own logic.
+Create a class called `PriceCalculator` with a `calculateDiscountedPrice()` method that can be extended by consumers using Chain of Command (CoC). Consumers should be able to add their own discount logic without modifying the base class.
+
+> **Microsoft guidance:** Do not create new delegates — use Chain of Command (CoC) instead. CoC provides a richer, more robust extension mechanism that supersedes delegates.
 
 ### Hints
-- Declare a delegate using the `delegate` keyword
-- Use `delegate` on a static method that accepts a `PriceCalculator` instance and the original price
-- Consumers subscribe using the `+=` operator
-- The publisher calls the delegate with `this.priceDelegate(this, originalPrice)`
+- Create a `PriceCalculator` class with a `calculateDiscountedPrice()` method
+- Consumers extend the class using `[ExtensionOf(classStr(PriceCalculator))]`
+- The extension wraps `calculateDiscountedPrice()` using the `next` keyword
+- Use `next calculateDiscountedPrice(_originalPrice)` to chain to the base implementation
 
 ### Solution
 
 ```xpp
-// Publisher class
+// Publisher class — base implementation
 class PriceCalculator
 {
-    // Delegate declaration — accepts a PriceCalculator and an Amount, returns a modified Amount
-    public delegate Amount discountDelegate(PriceCalculator _calculator, Amount _originalPrice);
-
-    // The delegate instance — consumers subscribe to this
-    public discountDelegate priceDelegate;
-
     // Base discount percentage
     private Amount _baseDiscountPct = 0;
 
     public Amount calculateDiscountedPrice(Amount _originalPrice)
     {
-        Amount discountedPrice;
         Amount discountAmount;
 
         // Calculate base discount
         discountAmount = _originalPrice * (_baseDiscountPct / 100);
 
-        // Allow consumers to modify the discount via the delegate
-        if (this.priceDelegate)
-        {
-            discountAmount = this.priceDelegate(this, _originalPrice);
-        }
-
-        discountedPrice = _originalPrice - discountAmount;
-        return discountedPrice;
+        return _originalPrice - discountAmount;
     }
 }
 
-// Consumer — subscribes to the delegate
-class CustomDiscountSubscriber
+// Consumer extension — adds VIP discount logic via CoC
+[ExtensionOf(classStr(PriceCalculator))]
+final class PriceCalculator_VipDiscountExtension
 {
-    public static Amount customDiscount(PriceCalculator _calculator, Amount _originalPrice)
+    public Amount calculateDiscountedPrice(Amount _originalPrice)
     {
-        // Apply a 15% discount for VIP customers
-        return _originalPrice * 0.15;
+        Amount basePrice;
+        Amount vipDiscount;
+
+        // Call next to run the base implementation first
+        basePrice = next calculateDiscountedPrice(_originalPrice);
+
+        // Apply additional 15% VIP discount on top of base price
+        vipDiscount = basePrice * 0.15;
+
+        return basePrice - vipDiscount;
     }
 }
 
-// Job to test the delegate
-static void exercise10_delegate(Args _args)
+// Job to test the CoC extension
+static void exercise10_coc(Args _args)
 {
     PriceCalculator calculator = new PriceCalculator();
     Amount originalPrice = 1000;
     Amount discountedPrice;
 
-    // Subscribe the custom discount logic
-    calculator.priceDelegate += delegate(Amount _price)
-    {
-        return _price * 0.15;  // 15% discount
-    };
-
     discountedPrice = calculator.calculateDiscountedPrice(originalPrice);
-    info(strFmt("Original: %1 — Discounted: %2", originalPrice, discountedPrice));
+    info(strFmt("Original: %1 — Discounted (with CoC VIP extension): %2", originalPrice, discountedPrice));
 }
 ```
+
+**Expected Infolog output:**
+```
+Original: 1000.00 — Discounted (with CoC VIP extension): 850.00
+```
+
+**How CoC replaces delegates:**
+| Delegate pattern (deprecated) | CoC pattern (recommended) |
+|---|---|
+| `delegate` keyword + `+=` subscription | `[ExtensionOf(classStr(...))]` + `next` keyword |
+| Publisher must declare delegate instance | No delegate declaration needed |
+| Consumer subscribes at runtime | Consumer extends at compile time via extension class |
+| Runtime subscription can be forgotten | Compile-time enforcement — extension always applies |
+| Microsoft recommends against creating new | Microsoft-recommended extensibility mechanism |
+
 
 **Expected Infolog output:**
 ```
@@ -1128,7 +1134,7 @@ static void exercise17_sysOperation(Args _args)
 | 7 | Class Design | Constructor, private helpers, static methods |
 | 8 | Inheritance & Polymorphism | `extends`, method overriding |
 | 9 | Event Handlers | `[SubscribesTo]` attribute |
-| 10 | Delegates | `delegate` keyword, `+=` subscription |
+| 10 | Chain of Command (CoC) | `next` keyword, `[ExtensionOf]`, replaces delegate pattern |
 | 11 | Chain of Command | `next` keyword, multiple extensions |
 | 12 | Data Entities | `DataEntity`, `Query`, OData exposure |
 | 13 | SSRS Data Provider | `SrsReportDataProvider`, `processReport()` |
@@ -1148,7 +1154,7 @@ static void exercise17_sysOperation(Args _args)
 | 7 | Class Design | Constructor, private helpers, static methods |
 | 8 | Inheritance & Polymorphism | `extends`, method overriding |
 | 9 | Event Handlers | `[SubscribesTo]` attribute |
-| 10 | Delegates | `delegate` keyword, `+=` subscription |
+| 10 | Chain of Command (CoC) | `next` keyword, `[ExtensionOf]`, replaces delegate pattern |
 | 11 | Chain of Command | `next` keyword, multiple extensions |
 | 12 | Data Entities | `DataEntity`, `Query`, OData exposure |
 | 13 | SSRS Data Provider | `SrsReportDataProvider`, `processReport()` |

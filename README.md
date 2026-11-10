@@ -10,7 +10,7 @@ The handbook covers the complete technical stack of D365 F&O, including X++ prog
 
 - **Master Core Concepts:** Learn the four pillars of D365 F&O architecture, data layer design, and the X++ programming language
 - **Build Real Solutions:** Create custom tables, forms, business logic classes, and extensions following Microsoft best practices
-- **Understand Extensibility:** Master Chain of Custody (CoC), Event Handlers, and Delegates for non-invasive customizations
+- **Understand Extensibility:** Master Chain of Command (CoC) and Event Handlers for non-invasive customizations (delegates deprecated by Microsoft — use CoC instead)
 - **Implement Enterprise Patterns:** Learn RunBase, SysOperation, batch processing, SSRS reporting, and integration patterns
 - **Deploy with Confidence:** Understand security, testing, DevOps pipelines, and performance optimization
 - **Achieve Certification:** Prepare for Microsoft MB-310 or MB-330 certifications
@@ -36,10 +36,10 @@ The handbook covers the complete technical stack of D365 F&O, including X++ prog
 - **Checkpoint:** Explain `Inner Join`, `Outer Join`, `Exists Join` differences; describe the RunBase pattern
 
 ### Phase 4: Extensibility Patterns (Month 4)
-- **Theme:** Master CoC, Event Handlers, and Delegates
-- **Topics:** Chain of Custody, event subscription, delegate patterns, non-invasive customization
-- **Deliverable:** Extension using CoC, Event Handler, and Delegate with proper execution order
-- **Checkpoint:** Determine when to use CoC vs. Event Handlers vs. Delegates; explain execution order
+- **Theme:** Master CoC and Event Handlers
+- **Topics:** Chain of Command, event subscription patterns, non-invasive customization
+- **Deliverable:** Extension using CoC and Event Handler with proper execution order
+- **Checkpoint:** Determine when to use CoC vs. Event Handlers; explain execution order
 
 ### Phase 5: Security & Integration (Month 5)
 - **Theme:** Understand D365 F&O security and build integrations

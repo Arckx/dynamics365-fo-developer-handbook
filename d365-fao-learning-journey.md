@@ -8,17 +8,19 @@ metadata:
   modified: 2026-08-04T20:34:16.736Z
 ---
 
-User is a Technical Microsoft Dynamics 365 Finance & Operations intern working on a 4–12 month learning journey. They completed Months 1–2 and Phase 3 (Architecture). Phase 4 (Extensibility Patterns) — Chapters 6–7 in the Desktop guide are fully expanded. Chapters 8–15 in the Desktop guide have now been fully expanded with deep content and code examples.
+User is a Technical Microsoft Dynamics 365 Finance & Operations intern working on a 4–12 month learning journey. They completed Months 1–2 and Phase 3 (Architecture). Phase 4 (Extensibility Patterns) — Chapters 6–7 in the Desktop guide are fully expanded. Chapters 8–30 in the Desktop guide have now been fully expanded with deep content, code examples, tables, and activities including advanced topics for experienced interns (Chapters 16–30 added Nov 2026).
 
 **Progress:**
 - Month 1: CoC, Forms, Lookups ✅
 - Month 2: Tables, EDTs, Classes, AOT, Architecture, Cloud, Metadata Subsystem, Identity/Authentication ✅
 - Phase 3 (Architecture) ✅ Complete in main guide
 - Phase 4 — Chapters 6–7 fully expanded in Desktop guide with deep code examples ✅
-- Chapters 8–15 in Desktop guide now fully expanded with deep content, code examples, tables, and activities ✅
+- Chapters 8–30 in Desktop guide now fully expanded with deep content, code examples, tables, and activities ✅
 - Chapter 2 (X++ Language Fundamentals and Class Design) — newly written and inserted between Chapter 1 and Chapter 3 ✅
 - Main guide (d365_fao_technical_concepts_guide.md) has all 12 phases complete ✅
 - Exercises expanded from 15 to 17 (added NumberSeq and SysOperation) ✅
+- Advanced chapters 16–30 added: SysDa, extension methods, orig(), prmIsDefault(), local functions, var keyword, SQL timeouts, CacheLookup, deadlock handling, indexing, Power Platform, Copilot, mobile, Process Automation, Finance/SCM/HR module deep dives, DevOps, validate package, database movement, GDPR, ISV, financial tags, date effectivity, security hardening, Workflow Framework, Number Sequences, Data Management Framework, Advanced Forms, Notifications, Labels & AppChecker, Custom Services & JSON/CLR ✅
+- Accuracy fixes applied: CoC event handler pattern corrected (_args.setReturnValue(checkFailed())), validateWrite() uses checkFailed() not error(), AX 2012 legacy references updated to current Microsoft Learn docs ✅
 
 ---
 
@@ -56,11 +58,11 @@ User is a Technical Microsoft Dynamics 365 Finance & Operations intern working o
 ### Month 4 — Extensibility Patterns
 | Item | Detail |
 |---|---|
-| **Theme** | Master CoC, Event Handlers, and Delegates |
+| **Theme** | Master CoC and Event Handlers |
 | **Target Chapters** | Desktop Guide Ch 7 |
 | **Main Guide Phases** | Phase 4 (all sections) |
-| **Deliverable** | An extension that uses CoC to modify a base class method, an Event Handler for a table's `insert()` event, and a Delegate that lets consumers customize a business rule |
-| **Checkpoint** | Can you explain when to use CoC vs. Event Handlers vs. Delegates? What is the execution order when multiple extensions target the same method? |
+| **Deliverable** | An extension that uses CoC to modify a base class method, an Event Handler for a table's `insert()` event, and a pattern that lets consumers customize a business rule |
+| **Checkpoint** | Can you explain when to use CoC vs. Event Handlers? What is the execution order when multiple extensions target the same method? |
 
 ### Month 5 — Security & Integration
 | Item | Detail |
@@ -119,10 +121,10 @@ User is a Technical Microsoft Dynamics 365 Finance & Operations intern working o
 ### Month 11 — Module Specialization
 | Item | Detail |
 |---|---|
-| **Theme** | Go deep in your chosen module (Finance, SCM, or HR) |
-| **Target Chapters** | Desktop Guide Ch 1–15 (module-specific sections) |
+| **Theme** | Go deep in your chosen module (Finance, SCM, HR, Retail, or Project Operations) |
+| **Target Chapters** | Desktop Guide Ch 1–15 (module-specific sections), Ch 15.5 Capstones A–E |
 | **Main Guide Phases** | Phase 10 (Security), Phase 11 (Performance), Phase 12 (Solution Crafting) |
-| **Deliverable** | A module-specific deep-dive document with code samples: e.g., a custom AP invoice workflow in Finance, a purchase order automation in SCM, or a leave management extension in HR |
+| **Deliverable** | A module-specific deep-dive document with code samples: e.g., a custom AP invoice workflow in Finance (Capstone A), a purchase order automation in SCM (Capstone B), a leave management extension in HR (Capstone C), an omnichannel fulfillment solution in Retail (Capstone D), or a project billing compliance solution in Project Operations (Capstone E) |
 | **Checkpoint** | Can you explain the end-to-end data flow for your module's primary business process? Can you identify the key tables, EDTs, and business logic classes involved? |
 
 ### Month 12 — Advanced Patterns & Certification Prep
@@ -133,7 +135,7 @@ User is a Technical Microsoft Dynamics 365 Finance & Operations intern working o
 | **Main Guide Phases** | All phases — review and deepen |
 | **Target Areas** | Workflow extensibility, E-Signature, BI/Power BI integration, Microsoft MB-310/MB-330 certification prep |
 | **Deliverable** | A certification study guide with annotated code samples and a mock exam self-assessment |
-| **Checkpoint** | Can you explain the difference between CoC, Event Handlers, and Delegates and when to use each? Can you walk through a complete end-to-end solution from table design through deployment? |
+| **Checkpoint** | Can you explain the difference between CoC and Event Handlers and when to use each? Can you walk through a complete end-to-end solution from table design through deployment? |
 
 ---
 
@@ -156,7 +158,7 @@ User is a Technical Microsoft Dynamics 365 Finance & Operations intern working o
 
 **Why:** User explicitly requested a comprehensive PDF document of all D365 F&O technical concepts from official Microsoft documentation to support their learning journey.
 
-**How to apply:** When the user asks about D365 F&O concepts, reference the comprehensive guide at `C:\Users\Ahmed\d365_fao_technical_concepts_guide.md`. This document covers 12 learning phases from foundations through capstone projects, now expanded with deep code examples for X++, EDTs, classes, CoC, Event Handlers, Delegates, RunBase, SysOperation, REST APIs, and more. The user is a developer/technical intern — they understand coding concepts and want to deepen both development and architectural knowledge. Be prepared to discuss specific modules, help with development tasks, and provide code examples within the D365 F&O context.
+**How to apply:** When the user asks about D365 F&O concepts, reference the comprehensive guide at `D:\memory\dynamics365-fo-developer-handbook\d365-learning-guide.md`. This document covers 30 chapters from foundations through advanced production topics for a 5-month-experienced intern, including X++, EDTs, classes, CoC, Event Handlers, Delegates, RunBase, SysOperation, REST APIs, SysDa, extension methods, orig(), prmIsDefault(), SQL timeouts, CacheLookup, deadlock handling, Power Platform, Copilot, module deep dives (Finance/SCM/HR), DevOps, GDPR, Workflow Framework, Number Sequences, Data Management Framework, Advanced Forms, Notifications, Labels & AppChecker, Custom Services & JSON/CLR. The user is a developer/technical intern — they understand coding concepts and want to deepen both development and architectural knowledge. Be prepared to discuss specific modules, help with development tasks, and provide code examples within the D365 F&O context.
 
 Related memories:
 - [d365-fao-interest](d365-fao-interest.md) — user's initial interest in d365 F&O technical details

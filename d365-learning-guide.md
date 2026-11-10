@@ -781,14 +781,16 @@ The ideal approach for this activity combines all recommended patterns and follo
       // ... CoC implementation that validates compliance code for high-credit vendors
   }
   ```
-  *Alternative using Event Handler:*
+  *Alternative using Pre-Event Handler:*
   ```xpp
-  [SubscribesTo(tableStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite))]
-  public static void VendInvoiceJour_onValidateWrite(VendInvoiceJour _this)
+  [PreHandlerFor(tableStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite))]
+  public static void VendInvoiceJour_onValidateWrite(XppPrePostArgs _args)
   {
-      if (_this.creditMax > 500000 && _this.ComplianceCode == '')
+      VendInvoiceJour vendInvoiceJour = _args.getThis();
+
+      if (vendInvoiceJour.creditMax > 500000 && vendInvoiceJour.ComplianceCode == '')
       {
-          _this.validateWrite = checkFailed('Compliance code required for vendors exceeding $500,000 credit limit');
+          _args.setReturnValue(checkFailed('Compliance code required for vendors exceeding $500,000 credit limit'));
       }
   }
   ```
@@ -1202,8 +1204,7 @@ public boolean validateWrite()
     // Custom validation — runs AFTER the base validation
     if (this.AccountNum == "")
     {
-        ret = false;
-        error("Account number cannot be empty.");
+        ret = checkFailed("Account number cannot be empty.");
     }
 
     return ret;
@@ -1683,7 +1684,7 @@ When a form's data source references a table with field groups, you can drag the
 
 ## 3.4 Table Extensions — The Modern Extension Pattern
 
-**Note:** *Table inheritance* (using `SupportInheritance`/`Extends` properties with a discriminator field like `InstanceRelationType`) and *table extension* (using `[ExtensionOf(tableStr(...))]`) are **two distinct mechanisms** in D365 F&O. This section covers **table extension**, which is the recommended approach for upgrade-safe customizations. For table inheritance (a separate feature for hierarchical table relationships), see [Table inheritance overview (AX 2012 legacy)](https://learn.microsoft.com/en-us/previous-versions/dynamicsax-2012/developer/table-inheritance-overview).
+**Note:** *Table inheritance* (using `SupportInheritance`/`Extends` properties with a discriminator field like `InstanceRelationType`) and *table extension* (using `[ExtensionOf(tableStr(...))]`) are **two distinct mechanisms** in D365 F&O. This section covers **table extension**, which is the recommended approach for upgrade-safe customizations. For table inheritance (a separate feature for hierarchical table relationships), see [Table inheritance overview](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/table-inheritance).
 
 Microsoft recommends **table extension** over overlayering or subclassing tables. The extension pattern adds fields or methods to an existing table without modifying the base table definition.
 
@@ -1728,7 +1729,7 @@ Called whenever a record is about to be written (insert or update). This is wher
 public boolean validateWrite()
 {
     boolean ret;
-    ret = super();  // Always call super() first — standard validations run here
+    ret = next validateWrite();  // Always call next first — standard validations run here
 
     // Add custom validation
     if (this.ComplianceCode == '' && this.creditMax > 500000)
@@ -1741,7 +1742,7 @@ public boolean validateWrite()
 ```
 
 **Key rules:**
-- Always call `super()` first — standard D365 validations run in `super()` and set the `ret` flag
+- Always call `next` first — standard D365 validations run in `next` and set the `ret` flag
 - Use `checkFailed()` to display an error message in the Infolog — this returns `false` from `validateWrite()` but does NOT throw an exception
 - `checkFailed()` automatically includes the field label and the message — the user sees the field name and the error text
 - Never use `error()` inside `validateWrite()` — use `checkFailed()` instead
@@ -1944,7 +1945,7 @@ public void executeQuery()
 | `close()` | Control/focus is lost | Cleanup, final validation |
 
 **Note:** `validate()` runs **first** — if validation fails (returns `false`), `modified()` will **not** fire. This sequence ensures invalid data never propagates.
-**Source:** [Event method sequences when a record is created (AX 2012 legacy)](https://learn.microsoft.com/en-us/previous-versions/dynamicsax-2012/developer/event-method-sequences-when-a-record-is-created)
+**Source:** [Form control events - Finance & Operations](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/user-interface/form-control-events)
 
 ### Setting Control Values Programmatically
 
@@ -2106,7 +2107,7 @@ A view is a **named query** stored in the AOT. It acts like a table but doesn't 
 | `CacheLookup` | Caches lookup results for performance | `Yes` |
 
 **Note:** The "dynamic" behavior (query rebuilt at runtime vs. cached SQL) is controlled by the **query framework**, not a named view property.
-**Source:** [View Properties (AX 2012 reference)](https://learn.microsoft.com/en-us/previous-versions/dynamics/ax-2012/reference/aa869223(v=ax.60))
+**Source:** [Views - Finance & Operations](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/views)
 
 ### How a View is Defined in the AOT
 
@@ -2942,6 +2943,8 @@ D365 F&O provides **three distinct event handler attributes** for different purp
 
 **Source:** [X++ Events](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/dev-ref/xpp-events)
 
+> **Microsoft guidance on delegates:** Although you can subscribe to existing delegates, **do not create new delegates**. The Chain of Command (CoC) provides a richer, more robust, and more concise extension mechanism that supersedes delegates. Use CoC for method interception and pre/post event handlers for event-based reactions instead of creating custom delegates.
+
 ### Pre-Event Handler Example
 
 ```xpp
@@ -3002,6 +3005,7 @@ D365 F&O supports the following event mechanisms:
 2. **Delegate Subscribers** (`[SubscribesTo]`):
    - Subscribe to **delegates** explicitly declared in the base class (e.g., `[EventHandlerResultAttribute]`).
    - Use `delegateStr` (not `methodStr`).
+   - **Deprecated:** Do not create new delegates — use Chain of Command (CoC) instead.
 
 3. **Data Event Handlers** (`[DataEventHandler]`):
    - Subscribe to **data events** (`Inserted`, `Updated`, `Deleted`).
@@ -3287,15 +3291,17 @@ class VendComplianceController extends SysOperationServiceController
 class VendComplianceEventHandler
 {
     // Pre-event: validate compliance code before standard validateWrite runs
-    [SubscribesTo(tableStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite))]
-    public static void VendInvoiceJour_onValidateWrite_Pre(VendInvoiceJour _this)
+    [PreHandlerFor(tableStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite))]
+    public static void VendInvoiceJour_onValidateWrite_Pre(XppPrePostArgs _args)
     {
+        VendInvoiceJour _this = _args.getThis();
+
         if (_this.CreditMax > 500000 && _this.ComplianceCode == '')
         {
-            // The standard validateWrite() will still run, but checkFailed
-            // will cause it to return false
-            _this.validateWrite = checkFailed(
-                'Compliance code is required for vendors exceeding $500,000 credit limit.');
+            // Pre-handler runs before standard validateWrite; checkFailed sets the return value to false
+            // preventing the write from completing
+            _args.setReturnValue(
+                checkFailed('Compliance code is required for vendors exceeding $500,000 credit limit.'));
         }
     }
 
@@ -3472,7 +3478,7 @@ D365 F&O provides three distinct mechanisms for extending standard code. Underst
 
 | Mechanism | How It Works | Upgrade Safety | Complexity | Best For |
 |---|---|---|---|---|
-| **Chain of Command (CoC)** | Override a standard method via `[ExtensionOf(...)]`; call `super()` to chain to the next implementation | ✅ High — standard method still runs; your code is additive | Low | Modifying the behavior of a standard method where the base logic should still execute |
+| **Chain of Command (CoC)** | Override a standard method via `[ExtensionOf(...)]`; call `next` to chain to the next implementation | ✅ High — standard method still runs; your code is additive | Low | Modifying the behavior of a standard method where the base logic should still execute |
 | **Event Handler** | Subscribe to a method's pre/post/override event using `[SubscribesTo(...)]` | ✅ High — completely decoupled from the base method | Medium | Cross-cutting concerns (logging, notifications, integration triggers) where multiple subscribers may need to react independently |
 | **Direct Override** | Replace the standard method entirely by modifying the base class | ❌ Low — overwritten by Microsoft CUs | Low (but dangerous) | **Never** for customer code |
 
@@ -3492,13 +3498,13 @@ D365 F&O provides three distinct mechanisms for extending standard code. Underst
 
 ---
 
-## 7.2 `super()` in CoC — Automatic vs. Explicit Behavior
+## 7.2 `next` in CoC — Automatic vs. Explicit Behavior
 
-The `super()` call is the mechanism that connects your extension to the standard code chain. Understanding how it works is critical to avoiding bugs.
+The `next` keyword is the mechanism that connects your extension to the standard code chain. Understanding how it works is critical to avoiding bugs.
 
-### How `super()` Works in CoC
+### How `next` Works in CoC
 
-When you override a method using CoC, calling `super()` invokes the **next class in the chain**. The chain is resolved at runtime based on the model layer and dependency order.
+When you override a method using CoC, calling `next` invokes the **next class in the chain**. The chain is resolved at runtime based on the model layer and dependency order.
 
 ```xpp
 [ExtensionOf(classStr(VendInvoiceJour))]
@@ -3509,8 +3515,8 @@ final class VendInvoiceJour_ComplianceExtension
     {
         boolean ret;
 
-        // Call super() FIRST — standard validations run
-        ret = super();
+        // Call next FIRST — standard validations run
+        ret = next validateWrite();
 
         // Add custom validation AFTER standard validations pass
         if (ret && this.CreditMax > 500000 && this.ComplianceCode == '')
@@ -3523,21 +3529,21 @@ final class VendInvoiceJour_ComplianceExtension
 }
 ```
 
-### `super()` Position Rules
+### `next` Position Rules
 
-| Method Type | `super()` Position | Why |
+| Method Type | `next` Position | Why |
 |---|---|---|
-| `validateWrite()` | **FIRST** — call `super()` before custom logic | Standard validations must run first; if they fail, your custom logic is irrelevant |
-| `modifiedField()` | **LAST** — call `super()` after custom logic | Your field change logic should run before the standard framework processes the change |
-| `executeQuery()` | **LAST** — call `super()` after adding ranges | `super()` executes the query; filters added after it are ignored |
-| `active()` | **LAST** — call `super()` after custom logic | Standard active logic should run after your setup |
-| `run()` | **FIRST or LAST** — depends on whether you need to wrap the standard behavior | Wrapping pattern: `super()` first, then post-processing; or `super()` last, then pre-processing |
+| `validateWrite()` | **FIRST** — call `next` before custom logic | Standard validations must run first; if they fail, your custom logic is irrelevant |
+| `modifiedField()` | **LAST** — call `next` after custom logic | Your field change logic should run before the standard framework processes the change |
+| `executeQuery()` | **LAST** — call `next` after adding ranges | `next` executes the query; filters added after it are ignored |
+| `active()` | **LAST** — call `next` after custom logic | Standard active logic should run after your setup |
+| `run()` | **FIRST or LAST** — depends on whether you need to wrap the standard behavior | Wrapping pattern: `next` first, then post-processing; or `next` last, then pre-processing |
 
-### Automatic vs. Explicit `super()`
+### Automatic vs. Explicit `next`
 
-In X++, `super()` is **always explicit** — you must write it yourself. There is no automatic chaining. This is different from some languages where the base class method is called automatically.
+In X++, `next` is **always explicit** — you must write it yourself. There is no automatic chaining. This is different from some languages where the base class method is called automatically.
 
-**Common mistake — forgetting `super()`:**
+**Common mistake — forgetting `next`:**
 ```xpp
 // ❌ WRONG — forgetting super() breaks the chain
 public boolean validateWrite()
@@ -3553,11 +3559,11 @@ public boolean validateWrite()
 
 **Correct version:**
 ```xpp
-// ✅ CORRECT — super() is called, standard validations still run
+// ✅ CORRECT — next is called, standard validations still run
 public boolean validateWrite()
 {
     boolean ret;
-    ret = super();  // Standard validations execute here
+    ret = next validateWrite();  // Standard validations execute here
 
     if (ret && this.CreditMax > 500000 && this.ComplianceCode == '')
     {
@@ -3569,17 +3575,17 @@ public boolean validateWrite()
 
 ### Infinite Loop Pitfall
 
-If you accidentally call `super()` in a way that creates a circular chain, you get an infinite loop and eventually a stack overflow.
+If you accidentally call `next` in a way that creates a circular chain, you get an infinite loop and eventually a stack overflow.
 
 **How infinite loops happen:**
-1. **Forgetting `super()` in a CoC override** — the standard method is never called, but your override is called again on the next invocation (in some scenarios)
-2. **Calling the wrong `super()`** — calling `super()` on a method that doesn't exist in the base class, causing the compiler to resolve to an unexpected method
+1. **Forgetting `next` in a CoC override** — the standard method is never called, but your override is called again on the next invocation (in some scenarios)
+2. **Calling the wrong `next`** — calling `next` on a method that doesn't exist in the base class, causing the compiler to resolve to an unexpected method
 3. **Event handler calling the standard method directly** — if an event handler calls the standard method, and the standard method triggers the event again, you get a loop
 
 **How to avoid infinite loops:**
-- Always verify the method you're overriding actually has a `super()` call in the standard code
+- Always verify the method you're overriding actually has a `next` call in the standard code
 - Use the **pre-event/post-event** pattern instead of override-event when you just need to react to a method execution
-- Test with a simple case first — set a breakpoint on `super()` to verify the chain executes correctly
+- Test with a simple case first — set a breakpoint on `next` to verify the chain executes correctly
 
 ---
 
@@ -3598,7 +3604,7 @@ final class VendInvoiceJour_ComplianceExtension
     public boolean validateWrite()
     {
         boolean ret;
-        ret = super();
+        ret = next validateWrite();
         if (ret && this.CreditMax > 500000 && this.ComplianceCode == '')
         {
             ret = checkFailed('Compliance code required');
@@ -3699,8 +3705,8 @@ final class VendInvoiceJour_OverrideExtension
         // Your custom logic
         // ...
 
-        // Call super() to chain to the next implementation
-        return super();
+        // Call next to chain to the next implementation
+        return next validateWrite();
     }
 }
 ```
@@ -3737,13 +3743,13 @@ Some standard methods are marked `final` in the D365 F&O codebase, meaning they 
 
 ## 7.5 CoC Pitfalls — Common Mistakes and How to Avoid Them
 
-### Pitfall 1: Infinite Loops from Forgetting `super()`
+### Pitfall 1: Infinite Loops from Forgetting `next`
 
-**The problem:** If your CoC override doesn't call `super()`, the standard method's logic is skipped. In some cases, this can cause the framework to call your override again, creating an infinite loop.
+**The problem:** If your CoC override doesn't call `next`, the standard method's logic is skipped. In some cases, this can cause the framework to call your override again, creating an infinite loop.
 
 **Example:**
 ```xpp
-// ❌ DANGEROUS — no super() call, potential infinite loop
+// ❌ DANGEROUS — no next call, potential infinite loop
 [ExtensionOf(classStr(VendInvoiceJour))]
 final class VendInvoiceJour_BadExtension
 {
@@ -3760,18 +3766,18 @@ final class VendInvoiceJour_BadExtension
 }
 ```
 
-**Fix:** Always call `super()` unless you have an explicit reason not to (and even then, document why).
+**Fix:** Always call `next` unless you have an explicit reason not to (and even then, document why).
 
-### Pitfall 2: Wrong `super()` Position
+### Pitfall 2: Wrong `next` Position
 
-**The problem:** Calling `super()` at the wrong point in the method changes the behavior of your code.
+**The problem:** Calling `next` at the wrong point in the method changes the behavior of your code.
 
 **Example — wrong position in `executeQuery()`:**
 ```xpp
-// ❌ WRONG — super() called first, so your filter is ignored
+// ❌ WRONG — next called first, so your filter is ignored
 public void executeQuery()
 {
-    super();  // Query executes HERE — your filter below is never applied
+    next executeQuery();  // Query executes HERE — your filter below is never applied
 
     // This code runs AFTER the query has already executed
     QueryBuildDataSource qbd = element.query().dataSourceTable(tableNum(VendTable));
@@ -3782,14 +3788,14 @@ public void executeQuery()
 
 **Fix:**
 ```xpp
-// ✅ CORRECT — super() called LAST, after all filters are added
+// ✅ CORRECT — next called LAST, after all filters are added
 public void executeQuery()
 {
     QueryBuildDataSource qbd = element.query().dataSourceTable(tableNum(VendTable));
     QueryBuildRange qbr = qbd.addRange(fieldNum(VendTable, AccountNum));
     qbr.value(queryValue('C0001'));
 
-    super();  // Query executes HERE — with your filter applied
+    next executeQuery();  // Query executes HERE — with your filter applied
 }
 ```
 
@@ -3874,7 +3880,7 @@ Once an extension class is loaded into the AOS, modifying it requires:
     │
 [3] When a standard method is called:
     │   • The framework starts at the highest-layer extension
-    │   • That extension calls super() → next extension in chain
+    │   • That extension calls next → next extension in chain
     │   • The chain continues until the base class method is reached
     │
 [4] When a new model is deployed:
@@ -3916,7 +3922,7 @@ Extensions are loaded in **layer order** — higher layers are resolved first:
 3. `ISV` (ISV partner extensions)
 4. `SYS` (Microsoft system framework — lowest priority)
 
-When multiple extensions target the same method, the **highest-layer extension's `super()` call** determines which extension runs next in the chain.
+When multiple extensions target the same method, the **highest-layer extension's `next` call** determines which extension runs next in the chain.
 
 ---
 
@@ -3938,7 +3944,7 @@ When multiple extensions target the same method, the **highest-layer extension's
 >
 > **Activity Hints** (Multiple Valid Approaches):
 >
-> - **Hint A — CoC Override approach**: Option A1 — override `validateWrite()` directly in an `[ExtensionOf(classStr(VendInvoiceJour))]` class, calling `super()` first then adding your check (recommended for this scenario — straightforward, debuggable). Option A2 — use a `construct()` pattern to create a validator class from within the CoC override (more testable but more complex).
+> - **Hint A — CoC Override approach**: Option A1 — override `validateWrite()` directly in an `[ExtensionOf(classStr(VendInvoiceJour))]` class, calling `next` first then adding your check (recommended for this scenario — straightforward, debuggable). Option A2 — use a `construct()` pattern to create a validator class from within the CoC override (more testable but more complex).
 >
 > - **Hint B — Event Handler approach**: Option B1 — use a pre-event `[SubscribesTo(tableStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite))]` that adds the compliance check (recommended — decoupled, multiple subscribers possible). Option B2 — use a post-event to log the compliance status after validation completes (different concern — logging, not validation). Option B3 — use both pre-event (for validation) and post-event (for logging) to demonstrate the pattern.
 >
@@ -3956,14 +3962,14 @@ final class VendInvoiceJour_ComplianceCocExtension
 {
     /// <summary>
     /// Override validateWrite() to enforce compliance code for high-credit vendors.
-    /// Uses CoC chain — standard validations still run via super().
+    /// Uses CoC chain — standard validations still run via next.
     /// </summary>
     public boolean validateWrite()
     {
         boolean ret;
 
-        // Call super() FIRST — standard D365 validations run
-        ret = super();
+        // Call next FIRST — standard D365 validations run
+        ret = next validateWrite();
 
         // Add custom compliance validation
         if (ret && this.CreditMax > 500000 && this.ComplianceCode == '')
@@ -3993,15 +3999,17 @@ class VendInvoiceJour_EventHandler
     /// Pre-event handler for VendInvoiceJour.validateWrite().
     /// Checks compliance code for high-credit vendors before standard validation runs.
     /// </summary>
-    [SubscribesTo(tableStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite))]
-    public static void VendInvoiceJour_onValidateWrite_Pre(VendInvoiceJour _this)
+    [PreHandlerFor(tableStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite))]
+    public static void VendInvoiceJour_onValidateWrite_Pre(XppPrePostArgs _args)
     {
+        VendInvoiceJour _this = _args.getThis();
+
         if (_this.CreditMax > 500000 && _this.ComplianceCode == '')
         {
-            // Note: In pre-events, we can't directly return false.
-            // We use checkFailed() which causes validateWrite() to return false.
-            _this.validateWrite = checkFailed(
-                'Compliance code is required for vendors exceeding $500,000 credit limit.');
+            // Pre-handler runs before standard validateWrite; setReturnValue(checkFailed())
+            // causes validateWrite() to return false, preventing the write.
+            _args.setReturnValue(
+                checkFailed('Compliance code is required for vendors exceeding $500,000 credit limit.'));
         }
     }
 
@@ -4009,8 +4017,8 @@ class VendInvoiceJour_EventHandler
     /// Post-event handler for VendInvoiceJour.validateWrite().
     /// Logs compliance status after validation completes.
     /// </summary>
-    [SubscribesTo(tableStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite), EventExecution::Post)]
-    public static void VendInvoiceJour_onValidateWrite_Post(VendInvoiceJour _this)
+    [PostHandlerFor(tableStr(VendInvoiceJour), methodStr(VendInvoiceJour, validateWrite))]
+    public static void VendInvoiceJour_onValidateWrite_Post(XppPrePostArgs _args)
     {
         if (_this.validateWrite)
         {
@@ -4063,7 +4071,7 @@ final class VendInvoiceJour_ComplianceClassExtension
 
 For this specific scenario (enforcing a business rule at validation time), **Approach 1 (CoC Override)** is the recommended approach because:
 1. It's the most straightforward and debuggable
-2. The standard `validateWrite()` chain is preserved via `super()`
+2. The standard `validateWrite()` chain is preserved via `next`
 3. The validation runs automatically for every invoice — no risk of developers forgetting to call it
 4. It follows the Microsoft-documented pattern for modifying standard table method behavior
 
@@ -4077,7 +4085,83 @@ For this specific scenario (enforcing a business rule at validation time), **App
 - You want to expose the check as a reusable method callable from multiple places
 - You're building a framework or utility class that other developers will use
 
+## 7.8 Extensibility Attributes — Hookable, Wrappable, Replaceable
+
+Microsoft provides three attributes that control how methods can be extended:
+
+| Attribute | Controls | Default for public/protected | Opt-out |
+|---|---|---|---|
+| `[Hookable]` | Pre/post event handler subscription | Hookable | `[Hookable(false)]` |
+| `[Wrappable]` | Chain of Command (CoC) wrapping | Wrappable | `[Wrappable(false)]` |
+| `[Replaceable]` | CoC without mandatory `next` call | Not replaceable | N/A (opt-in only) |
+
+### Hookable
+
+If a method is **hookable**, extenders can subscribe to pre-events (`[PreHandlerFor]`) and post-events (`[PostHandlerFor]`).
+
+- For **public** methods, you can opt out by adding `[Hookable(false)]`
+- You can opt in for **private** and **protected** methods by adding `[Hookable(true)]`
+- If a method is `[Hookable(false)]`, it is also **not wrappable**
+
+```xpp
+class AnyClass1
+{
+    [Hookable(false)]
+    public void anyMethod() { ... }  // Cannot be wrapped or hooked
+}
+```
+
+### Wrappable
+
+If a method is **wrappable**, extenders can wrap it by using Chain of Command (CoC). Extenders must call `next`.
+
+- For **protected** and **public** methods, you can opt out by adding `[Wrappable(false)]`
+- You cannot opt in for **private** methods
+- Final methods are not wrappable unless marked `[Wrappable(true)]`
+
+```xpp
+class AnyClass2
+{
+    [Wrappable(false)]
+    public void doSomething(str message) { ... }  // Cannot be wrapped by CoC
+
+    [Wrappable(true)]
+    final public void doSomethingElse(str message) { ... }  // Final method made wrappable
+}
+```
+
+### Replaceable
+
+If a method is **replaceable**, extenders can wrap it by using CoC, but they don't have to unconditionally call `next`. Although extenders can break the chain, the expectation is that they only conditionally break it. The compiler does not enforce calls to `next` for replaceable methods.
+
+To be replaceable, a method must also be **wrappable**. Opt in by adding `[Replaceable]`.
+
+```xpp
+class AnyClass3
+{
+    [Replaceable]
+    public str convertEnumToStr(MyEnum _enumValue)
+    {
+        switch (_enumValue)
+        {
+            case MyEnum::OptionA: return "Option A";
+            case MyEnum::OptionB: return "Option B";
+            default: throw error("Unknown enum value");
+        }
+    }
+}
+```
+
+**Best practices for `[Replaceable]`:**
+- ✅ Do make sure methods with `[Replaceable]` have XML documentation describing the responsibility of the method
+- ❌ Don't use `[Replaceable]` to let consumers skip the replaced logic and do nothing
+- ❌ Don't use `[Replaceable]` for factory methods when `SysExtension` can be used instead
+- ❌ Avoid using `[Replaceable]` when the method changes database or class state
+- ❌ Avoid using `[Replaceable]` if the method performs multiple operations — refactor into separate methods instead
+
 ---
+
+### Remaining Chapters — Detailed Outlines
 
 ### Remaining Chapters — Detailed Outlines
 
@@ -4703,7 +4787,7 @@ final class VendTable_ComplianceCocExtension
         boolean ret;
 
         // The base validateWrite() runs with the user's existing permissions
-        ret = super();
+        ret = next validateWrite();
 
         // Your custom validation also runs with the user's existing permissions
         // You cannot bypass security here
@@ -5028,7 +5112,18 @@ A `Derived View` is a low-level pattern that creates a view in the AOT with cust
 | **Upgrade safety** | ✅ High | ✅ High | ⚠️ Medium |
 | **Ease of use** | ✅ Easy | ⚠️ Moderate | ❌ Complex |
 
+### Important Considerations
+
+| Consideration | Guidance |
+|---|---|
+| **Data entities are SQL views** | Entities are created as views in Microsoft SQL Server. Understand the SQL implications — indexed views, indexed columns, and view performance characteristics affect query performance. |
+| **Data entities don't support XDS** | Data entities don't support the Extensible Data Security (XDS) concepts. XDS policies apply to tables, not data entities. If you need row-level security on entity data, apply XDS to the underlying tables instead. |
+| **Composite entities — no X++ interface** | Composite entities are only supported from a data management platform. No programmatic interface for composite entities exists in X++. You cannot programmatically create, modify, or query composite entities from X++ code. |
+| **XDS on backing entities** | XDS policies on backing entities (such as Customers, Vendors, or Operating units) can affect the visibility of entity-backed dimension values. If a user's role is restricted by an XDS policy on the backing entity, the corresponding dimension values may appear blank or missing. |
+
 ---
+
+## 9.2 Entity Design — IsPublic, Public Entity Name, Public Collection Name, and Staging Tables
 
 ## 9.2 Entity Design — IsPublic, Public Entity Name, Public Collection Name, and Staging Tables
 
@@ -5394,7 +5489,7 @@ DictClass dictClass = new DictClass(classNum(VendAPComplianceEntity));
 Array    attributes  = dictClass.getAllAttributes();
 
 // Inspect a specific method's .NET return type via reflection.
-// Source: https://learn.microsoft.com/en-us/previous-versions/dynamicsax-2012/developer/reflect-on-net-elements-of-x-methods
+// Source: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/dev-ref/xpp-reflection-dictmethod
 DictMethod dictMethod = new DictMethod(
     classNum(VendAPComplianceEntity),
     methodStr(VendAPComplianceEntity, process));
@@ -7690,6 +7785,136 @@ class VendReconciliationBatchJob extends RunBaseBatch
 </ModelManifest>
 ```
 
+## 11.9 Batch Production Guidance
+
+### Idempotent Batch Jobs — `BatchInfo.Idempotent`
+
+Design batch jobs to be **idempotent** — running the same job multiple times produces the same result without duplicate work or data corruption. Use the `BatchInfo.Idempotent` attribute:
+
+```xpp
+[BatchInfo(Idempotent = true)]
+class VendReconciliationBatchJob extends RunBaseBatch
+{
+    public void run()
+    {
+        // Check if this work was already processed
+        // Use batch ID or checkpoint to track progress
+        // Skip already-processed records
+    }
+}
+```
+
+**Idempotency patterns:**
+- Check for existing records before inserting (`exists join` or `select firstOnly`)
+- Use checkpoints to resume from where a previous run left off
+- Use `BatchHeader.parmBatchGroup()` to organize related jobs
+- Track processed record IDs in a staging or log table
+
+### `BatchRetryable` Interface
+
+Implement `BatchRetryable` to allow the batch framework to automatically retry failed tasks:
+
+```xpp
+class VendReconciliationBatchJob extends RunBaseBatch implements BatchRetryable
+{
+    public int retryCount()
+    {
+        return 3;  // Number of retry attempts
+    }
+
+    public int retryDelay()
+    {
+        return 60;  // Delay in seconds between retries
+    }
+}
+```
+
+### Process Automation Framework — Use `SysOperationServiceController`
+
+The **Process Automation Framework** integrates with batch jobs through `SysOperationServiceController`, **not** `RunBaseBatch`:
+- `RunBaseBatch` jobs cannot be returned through the process automation list
+- Use `SysOperationServiceController` with `runOn() = RunOn::Batch` for process automation integration
+- Wrap `RunBaseBatch` with `SysOperation` to get both dialog input and scheduled execution
+
+```xpp
+[SysOperationServiceController]
+class VendReconciliationService extends SysOperationServiceController
+{
+    public static void main(Args _args)
+    {
+        new VendReconciliationService().runOperation();
+    }
+}
+```
+
+### Batch Task Limits
+
+| Task Count | Guidance |
+|---|---|
+| **< 1,000** | Efficient — normal batch processing |
+| **1,000 – 4,000** | Becomes inefficient — consider chunking |
+| **> 4,000** | Excessive — redesign with smaller batches or multiple jobs |
+
+**Best practices:**
+- Keep transactions short — long transactions cause blocking and deadlocks
+- Process records in chunks of 1,000 or fewer
+- Use `while select` with `next` and a counter for chunked processing
+- Design for idempotency — jobs should be safely re-runnable
+- Use checkpoints for resumption after failure
+
+### Batch Parameter Versioning
+
+When you change batch parameters, use versioning to maintain backward compatibility:
+
+```xpp
+#define.Version1(1)
+#define.Version2(2)
+#define.CurrentVersion(3)
+
+#localmacro.Version1List
+    param1
+#endmacro
+
+#localmacro.Version2List
+    #Version1List
+    ,param2
+#endmacro
+
+#localmacro.CurrentVersionList
+    #Version2List
+    ,param3
+#endmacro
+
+boolean unpack(container _packedClass)
+{
+    Integer version = conPeek(_packedClass, 1);
+
+    switch (version)
+    {
+        case #CurrentVersion:
+            [version, #CurrentVersionList] = _packedClass;
+            break;
+        case #Version2:
+            [version, #Version2List] = _packedClass;
+            break;
+        case #Version1:
+            [version, #Version1List] = _packedClass;
+            break;
+        default:
+            return false;
+    }
+
+    return true;
+}
+```
+
+**Best practices:**
+- Maintain versioned parameter lists — keep old and new versions
+- Adapt the unpacking process to handle both old and new versions
+- Design functional logic to accommodate old parameter versions (revert to previous behavior)
+
+---
+
 ---
 
 ### Remaining Chapters — Detailed Outlines
@@ -8015,7 +8240,88 @@ public static void testIsolatedSetup()
 
 **Best practice:** Use shared setup for read-only test data. Use per-method setup for tests that modify or delete data.
 
+## 12.3 Test Isolation and Data-Driven Testing
+
+### `SysTestTransaction` — Test Isolation
+
+For a test to be valuable, it must be reliable — passing or failing consistently independent of other tests. Use the `SysTestTransaction` attribute to control transaction behavior:
+
+| TestTransactionMode | Description |
+|---|---|
+| `AutoRollback` | **Default.** All transactions roll back using SQL save points. No data persists. Best isolation. |
+| `LegacyRollback` | All insert statements are tracked and deleted during cleanup. Inserts downgrade to row-by-row. Use for concurrency testing. |
+| `LegacyRollbackWithUpdateTracking` | All update, delete, and insert statements are tracked and reverted. Slowest isolation level. |
+| `None` | No isolation. Only for debugging — allows UI navigation of test-created data. |
+
+```xpp
+class VendComplianceTest extends SysTestCase
+{
+    [SysTestMethodAttribute]
+    [SysTestTransaction(SysTestTransactionMode::AutoRollback)]
+    public static void testComplianceValidation()
+    {
+        // All database changes in this test are automatically rolled back
+        // No cleanup code needed
+    }
+}
+```
+
+### `SysTestRow` — Data-Driven Testing
+
+Use `SysTestRow` (available in version 10.0.25+) to test multiple input values without creating multiple test methods:
+
+```xpp
+public class MathTests extends SysTestCase
+{
+    [SysTestMethod,
+    SysTestRow(0, 0),
+    SysTestRow(1, 1),
+    SysTestRow(-1, 1),
+    SysTestRow(4, 16),
+    SysTestRow(-4, 16)]
+    public static void squareTests(int _value, int _result)
+    {
+        int testResult = MyMath::square(_value);
+        this.assertEquals(_result, testResult);
+    }
+}
+```
+
+Each row appears as a separate numbered test result (e.g., `squareTests#1`, `squareTests#2`). Use `SysTestRowInactive` to disable individual rows.
+
+### Test Filtering Attributes
+
+Use these attributes to filter and organize tests in builds and Visual Studio Test Explorer:
+
+| Attribute | Purpose | Filterable in Test Console |
+|---|---|---|
+| `SysTestCategory` | Categorize tests (e.g., Nightly, CheckIn) | Yes |
+| `SysTestPriority` | Assign priority (integer, method > class) | Yes |
+| `SysTestOwner` | Assign test owner | No (Test Toolbox only) |
+| `SysTestProperty` | Key-value property pairs | No (Test Toolbox only) |
+
+```xpp
+class VendComplianceTest extends SysTestCase
+{
+    [SysTestCategory('Nightly')]
+    [SysTestPriority(1)]
+    [SysTestOwner('dev-team')]
+    [SysTestProperty('area', 'compliance')]
+    [SysTestMethodAttribute]
+    public static void testHighCreditCompliance()
+    {
+        // Test logic
+    }
+}
+```
+
+**Build pipeline filtering example:**
+- Run only Nightly tests: `TestCategory=Nightly`
+- Run only Priority 1 tests: `Priority=1`
+
 ---
+
+## 12.4 Test Coverage Metrics in LCS
 
 ## 12.4 Test Coverage Metrics in LCS
 
@@ -9602,7 +9908,7 @@ static void processLargeDataset()
 > **Proposal 2: Simplify the `active()` lookup**
 > - Replace the `SysTableLookup` in `active()` with a simple field assignment
 > - Cache the compliance status in a member variable
-> - Use a delegate to update the status when the record changes
+> - Use an event handler to update the status when the record changes
 > - **Expected improvement**: 45s → 8s (82% faster)
 > - **Trade-off**: The compliance status lookup is less flexible but much faster
 >
@@ -10042,7 +10348,7 @@ class POComplianceAuditBatch extends RunBaseBatch
 > - [ ] All custom forms have appropriate security roles assigned
 > - [ ] All batch jobs have error handling with try/catch
 > - [ ] All data entities have staging tables with validation
-> - [ ] All CoC overrides call `super()` appropriately
+> - [ ] All CoC overrides call `next` appropriately
 > - [ ] All event handlers return `EventHandlerResult::NoAction` when appropriate
 > - [ ] All custom code has been tested with "Run as" feature
 > - [ ] All custom code has SysTest unit tests
@@ -10050,9 +10356,3080 @@ class POComplianceAuditBatch extends RunBaseBatch
 > - [ ] The deployment pipeline includes automated testing
 
 ---
+---
 
-> **Next Step**: All 15 chapters are now complete. The learning guide covers the full D365 F&O technical curriculum from foundations through capstone projects. Review the guide for consistency, then update the memory files to reflect completion.
+## 15.5 Additional Module-Specific Capstones
+
+The following capstone scenarios extend the core Procurement-to-Pay Compliance capstone (Ch 15.1–15.4) with module-specific implementations. Each capstone builds on the same architectural patterns (CoC, Event Handlers, SysOperation batch, Data Entities, SSRS reports, security model) but applies them to domain-specific business processes.
 
 ---
 
-> **Next Step**: All 15 chapters are now complete. The learning guide covers the full D365 F&O technical curriculum from foundations through capstone projects. Review the guide for consistency, then update the memory files to reflect completion.
+### Capstone A — Finance: AP Invoice Workflow with Tax Compliance
+
+**Business Scenario:** A multinational manufacturer needs an automated AP invoice validation workflow that checks tax compliance (VAT/GST), vendor withholding tax, and intercompany settlement rules before posting. Non-compliant invoices are routed to a tax analyst for review.
+
+**Domain-Specific Tables & EDTs (Finance Module):**
+| Table/EDT | Purpose |
+|---|---|
+| `TaxTable`, `TaxTrans` | Tax codes and posted tax transactions |
+| `TaxWithholdTable`, `TaxWithholdGroup` | Vendor withholding tax configuration |
+| `VendInvoiceJour`, `VendInvoiceTrans` | AP invoice header and lines |
+| `LedgerJournalTrans_AP` | AP ledger journal for posting |
+| `TaxExemptTable`, `TaxExemptNumber` | Tax exemption certificates |
+| `CompanyInfo` | Legal entity configuration for intercompany |
+
+**Decision Points (Finance-Specific):**
+
+| Decision | Recommendation | Finance Rationale |
+|---|---|---|
+| **Table Design** | Staging table (`APTaxComplianceStaging`) with `TaxTransRecId` | Audit trail required for tax authority audits; tax calculations can be re-validated |
+| **Form Pattern** | ListPage + Detail with FactBox for `TaxTrans` | Tax analysts need to see tax lines side-by-side with invoice header |
+| **Report Design** | SSRS paginated report (`APTaxComplianceReport`) with grouping by Tax Authority | Tax filings require printable, page-perfect audit reports |
+| **Batch Job** | SysOperation (`APTaxComplianceBatch`) with `RunOn::Batch` | Scheduled nightly; must integrate with Process Automation for tax period close |
+| **Data Entity** | Staging pattern with `mapEntityToDataSource` for tax code validation | External tax engines (e.g., Vertex, Avalara) consume via OData; tax codes must be validated |
+| **Security Model** | Four duties: TaxAnalyst (Processor), APSupervisor (Approver), TaxAdmin (Config), Viewer | SOX segregation: tax configuration (TaxAdmin) must be separate from invoice processing (TaxAnalyst) |
+| **Extension Pattern** | CoC on `VendInvoiceJournalCheckPost::checkPost` + Event Handler on `VendInvoiceJour::inserted` | CoC wraps the standard posting validation; Event Handler captures new invoices for async tax check |
+
+**Key Implementation Artifacts:**
+
+```xpp
+// 1. Custom table for tax compliance tracking
+table 50200 APTaxComplianceHeader
+{
+    fields
+    {
+        field(1; RecId; int64) { }
+        field(2; InvoiceId; VendInvoiceId) { }
+        field(3; VendInvoiceJourRecId; int64) { }
+        field(4; TaxAuthority; TaxAuthorityId) { }
+        field(5; ComplianceStatus; Enum APTaxComplianceStatus) { } // Compliant, NonCompliant, Exempt, UnderReview
+        field(6; WithholdingTaxApplied; AmountMST) { }
+        field(7; TaxExemptNumber; TaxExemptNumber) { }
+        field(8; ReviewedBy; UserId) { }
+        field(9; ReviewedDate; UtcDateTime) { }
+    }
+    keys { key(PK; RecId) { Clustered = true; } key(IX_Invoice; InvoiceId) { } }
+}
+
+// 2. CoC on standard AP posting validation
+[ExtensionOf(classStr(VendInvoiceJournalCheckPost))]
+final class VendInvoiceJournalCheckPost_TaxComplianceCoc
+{
+    public boolean checkPost(boolean _throwErrors = true)
+    {
+        boolean ret = next checkPost(_throwErrors);
+        
+        // BEFORE: If standard validation passes, run tax compliance check
+        if (ret)
+        {
+            VendInvoiceJour vendInvoiceJour = this.vendInvoiceJour();
+            ret = APTaxComplianceService::validateInvoiceForPosting(vendInvoiceJour, _throwErrors);
+        }
+        
+        return ret;
+    }
+}
+
+// 3. SysOperation batch for nightly tax compliance sweep
+[DataContractAttribute]
+class APTaxComplianceBatchContract
+{
+    FromDate fromDate;
+    ToDate toDate;
+    TaxAuthorityId taxAuthorityId;
+    
+    [DataMemberAttribute('FromDate')]
+    public FromDate parmFromDate(FromDate _fromDate = fromDate) { fromDate = _fromDate; return fromDate; }
+    // ... other parm methods
+}
+
+class APTaxComplianceBatchService extends SysOperationServiceBase
+{
+    public void process(APTaxComplianceBatchContract _contract)
+    {
+        // Query all posted invoices in date range
+        // Re-validate tax compliance for each
+        // Generate compliance exceptions report
+        // Push exceptions to external tax filing system via Data Entity
+    }
+}
+
+// 4. Data Entity with tax code validation on import
+public void mapEntityToDataSource(
+    DataEntityRuntimeContext           _entityCtx,
+    DataEntityDataSourceRuntimeContext _dataSourceCtx)
+{
+    super(_entityCtx, _dataSourceCtx);
+    
+    if (_dataSourceCtx.name() == dataEntityDataSourceStr(APTaxComplianceEntity, APTaxComplianceHeader))
+    {
+        APTaxComplianceHeader header = _dataSourceCtx.getBuffer();
+        
+        switch (_entityCtx.getDatabaseOperation())
+        {
+            case DataEntityDatabaseOperation::Insert:
+                // Validate tax authority exists and is active for the legal entity
+                if (!TaxAuthority::exist(header.TaxAuthority))
+                {
+                    throw error(strFmt("Tax authority %1 not found or inactive.", header.TaxAuthority));
+                }
+                break;
+            case DataEntityDatabaseOperation::Update:
+                // Preserve reviewed status — cannot be changed via import
+                header.ReviewedBy = header.orig().ReviewedBy;
+                header.ReviewedDate = header.orig().ReviewedDate;
+                break;
+        }
+    }
+}
+```
+
+**Finance-Specific Production Hardening:**
+- [ ] Tax authority configuration keyed by legal entity (`CompanyInfo`)
+- [ ] Withholding tax calculations use `TaxWithholdBase` and `TaxWithholdRate` EDTs
+- [ ] Intercompany invoices validated against `CompanyInfo::find()` intercompany setup
+- [ ] SSRS report includes tax authority registration numbers for audit trail
+- [ ] Batch job logs to `BatchErrorLog` with `TaxAuthorityId` dimension for filtering
+
+---
+
+### Capstone B — SCM: Purchase Order Automation with Vendor Scorecard
+
+**Business Scenario:** A distributor needs automated PO creation from requisition demands, with vendor selection based on a dynamic scorecard (on-time delivery %, quality defect rate, price competitiveness, ESG rating). The system must support blanket purchase orders, release orders, and vendor-managed inventory (VMI).
+
+**Domain-Specific Tables & EDTs (SCM Module):**
+| Table/EDT | Purpose |
+|---|---|
+| `PurchTable`, `PurchLine` | Purchase order header and lines |
+| `PurchReqTable`, `PurchReqLine` | Purchase requisition header and lines |
+| `VendTable`, `VendGroup` | Vendor master and grouping |
+| `InventTable`, `InventDim` | Items and inventory dimensions (site, warehouse, location, license plate) |
+| `PurchAgreementHeader`, `PurchAgreementLine` | Blanket purchase agreements |
+| `VMIReplenishment` | Vendor-managed inventory configuration |
+| `InventTrans` | Inventory transactions for receipt tracking |
+
+**Decision Points (SCM-Specific):**
+
+| Decision | Recommendation | SCM Rationale |
+|---|---|---|
+| **Table Design** | `POAutomationVendorScorecard` + `POAutomationVendorScoreHistory` | Scorecard values change over time; history required for trend analysis |
+| **Form Pattern** | ListPage (`POAutomationListPage`) + Detail with FactBox for `VMIReplenishment` | Buyers need to see VMI status and scorecard trends on the same form |
+| **Report Design** | SSRS for PO exception report + Power BI for Vendor Scorecard Dashboard | Operational exceptions need printable reports; scorecard trends need interactive visualization |
+| **Batch Job** | SysOperation runtime tasks (`POAutomationBatchTaskController`) | Large vendor bases (10,000+) require parallel task dispatching for PO creation |
+| **Data Entity** | `POAutomationVendorScorecardEntity` with staging for score recalculation | External procurement platforms (Coupa, Ariba) push vendor data; scores must recalc on import |
+| **Security Model** | Three duties: Buyer (Processor), CategoryManager (Approver), VendorAdmin (Config) | Category managers approve vendor selection; buyers execute PO creation |
+| **Extension Pattern** | CoC on `PurchReqReleaseOrder::release` + Event Handler on `PurchTable::created` | CoC wraps release logic to inject vendor selection; Event Handler triggers VMI check |
+
+**Key Implementation Artifacts:**
+
+```xpp
+// 1. Vendor scorecard table with time-phased scores
+table 50300 POAutomationVendorScorecard
+{
+    fields
+    {
+        field(1; RecId; int64) { }
+        field(2; VendorAccount; VendAccount) { }
+        field(3; ItemId; ItemId) { }
+        field(4; OnTimeDeliveryPct; Real) { }       // 0-100
+        field(5; QualityDefectRate; Real) { }       // PPM
+        field(6; PriceCompetitivenessIndex; Real) { } // 0-100
+        field(7; ESGRating; Enum VendorESGRating) { } // Platinum, Gold, Silver, Bronze
+        field(8; WeightedScore; Real) { }           // Computed: 40% OTD + 30% Quality + 20% Price + 10% ESG
+        field(9; ValidFrom; Date) { }
+        field(10; ValidTo; Date) { }
+    }
+    keys { key(PK; RecId) { } key(IX_VendorItemDate; VendorAccount, ItemId, ValidFrom) { } }
+}
+
+// 2. Vendor selection service using scorecard
+class POAutomationVendorSelectionService
+{
+    public static VendAccount selectBestVendor(ItemId _itemId, InventSiteId _siteId, Qty _qty)
+    {
+        POAutomationVendorScorecard scorecard;
+        VendTable vendTable;
+        
+        // Find active scorecards for this item/site
+        while select scorecard
+            where scorecard.ItemId == _itemId
+            && scorecard.ValidFrom <= today()
+            && scorecard.ValidTo >= today()
+            exists join vendTable
+                where vendTable.AccountNum == scorecard.VendorAccount
+                && vendTable.Blocked == NoYes::No
+            order by scorecard.WeightedScore desc
+        {
+            // Check vendor capacity for this site
+            if (POAutomationVendorSelectionService::hasCapacity(scorecard.VendorAccount, _siteId, _qty))
+            {
+                return scorecard.VendorAccount;
+            }
+        }
+        return '';
+    }
+    
+    private static boolean hasCapacity(VendAccount _vendor, InventSiteId _siteId, Qty _qty)
+    {
+        // Check vendor agreement, VMI setup, or lead time constraints
+        return true; // Simplified
+    }
+}
+
+// 3. CoC on requisition release to inject automated vendor selection
+[ExtensionOf(classStr(PurchReqReleaseOrder))]
+final class PurchReqReleaseOrder_VendorSelectionCoc
+{
+    public void release(PurchReqTable _purchReqTable)
+    {
+        // BEFORE: Auto-select vendor for lines without vendor
+        PurchReqLine purchReqLine;
+        while select purchReqLine
+            where purchReqLine.PurchReqTable == _purchReqTable.RecId
+            && purchReqLine.VendAccount == ''
+        {
+            VendAccount bestVendor = POAutomationVendorSelectionService::selectBestVendor(
+                purchReqLine.ItemId, 
+                purchReqLine.InventSiteId, 
+                purchReqLine.PurchQty);
+            
+            if (bestVendor)
+            {
+                purchReqLine.VendAccount = bestVendor;
+                purchReqLine.update();
+            }
+        }
+        
+        next release(_purchReqTable);
+    }
+}
+
+// 4. SysOperation batch with runtime tasks for parallel PO creation
+class POAutomationBatchService extends SysOperationServiceBase
+{
+    public void process(POAutomationBatchContract _contract)
+    {
+        BatchHeader batchHeader = this.getCurrentBatchHeader();
+        PurchReqTable purchReqTable;
+        List recIdList = new List(Types::Int64);
+        int bundleSize = VSIBatchConstants::DefaultBundleSize; // 200
+        int taskCount = 0;
+        
+        // Collect all approved requisitions
+        while select RecId from purchReqTable
+            where purchReqTable.PurchReqStatus == PurchReqStatus::Approved
+            && purchReqTable.VendorSelectionAutomated == NoYes::Yes
+        {
+            recIdList.addEnd(purchReqTable.RecId);
+        }
+        
+        // Split into bundles and create runtime tasks
+        ListEnumerator enum = recIdList.getEnumerator();
+        List currentBundle = new List(Types::Int64);
+        
+        while (enum.moveNext())
+        {
+            currentBundle.addEnd(enum.current());
+            if (currentBundle.elements() >= bundleSize)
+            {
+                this.createTaskForBundle(batchHeader, currentBundle);
+                taskCount++;
+                currentBundle = new List(Types::Int64);
+            }
+        }
+        if (currentBundle.elements() > 0)
+        {
+            this.createTaskForBundle(batchHeader, currentBundle);
+            taskCount++;
+        }
+        
+        batchHeader.save();
+        info(strFmt("Created %1 batch tasks for PO automation.", taskCount));
+    }
+    
+    private void createTaskForBundle(BatchHeader _batchHeader, List _recIdBundle)
+    {
+        POAutomationBatchTaskController taskController = POAutomationBatchTaskController::construct();
+        taskController.parmRecIdBundle(_recIdBundle.pack());
+        _batchHeader.addRuntimeTask(taskController, this.getCurrentBatchTask().RecId);
+    }
+    
+    public void processTask(POAutomationBatchTaskContract _contract)
+    {
+        List recIdList = _contract.parmRecIdList().unpack();
+        ListEnumerator enum = recIdList.getEnumerator();
+        
+        while (enum.moveNext())
+        {
+            PurchReqTable reqTable = PurchReqTable::find(enum.current());
+            POAutomationService::createPOFromRequisition(reqTable);
+        }
+    }
+}
+```
+
+**SCM-Specific Production Hardening:**
+- [ ] Inventory dimensions (`InventDim`) validated against site/warehouse setup
+- [ ] VMI replenishment logic checks `InventTrans` for actual consumption vs forecast
+- [ ] Blanket agreement release orders validated against `PurchAgreementLine` remaining quantity
+- [ ] Batch task bundle size configurable per vendor volume (high-volume vendors → smaller bundles)
+- [ ] Power BI dashboard uses `VendorScorecardEntity` OData feed with incremental refresh
+
+---
+
+### Capstone C — HR: Leave Management with Compliance and Accrual Engine
+
+**Business Scenario:** A global enterprise needs a leave management system supporting multiple leave types (annual, sick, parental, bereavement, jury duty), country-specific accrual rules, carry-over limits, and integration with payroll for salary deduction. Must comply with FMLA (US), Working Time Directive (EU), and local labor laws.
+
+**Domain-Specific Tables & EDTs (HR Module):**
+| Table/EDT | Purpose |
+|---|---|
+| `HcmWorker`, `HcmEmployment`, `HcmPosition` | Worker, employment, and position hierarchy |
+| `HcmLeaveType`, `HcmLeaveTypeLimit` | Leave type definitions and limits |
+| `HcmLeave`, `HcmLeaveBalance` | Leave transactions and balance tracking |
+| `HcmLeaveAccrual`, `HcmLeaveAccrualSchedule` | Accrual engine configuration |
+| `HcmLeaveRequest`, `HcmLeaveRequestWorkflow` | Leave request and workflow |
+| `PayrollEarningCode`, `PayrollBenefitCalculationRate` | Payroll integration for salary deduction |
+| `HcmLeaveRegistration` | Daily leave registration for time & attendance |
+
+**Decision Points (HR-Specific):**
+
+| Decision | Recommendation | HR Rationale |
+|---|---|---|
+| **Table Design** | `HcmLeaveAccrualEngine` + `HcmLeaveBalance` with date effectivity | Accrual rules change by legal entity and year; date effectivity preserves historical accuracy |
+| **Form Pattern** | Task Page (`HcmLeaveRequestWizard`) for requests + ListPage for balance view | Employees need guided wizard; HR needs balance overview with drill-through |
+| **Report Design** | SSRS for leave balance statements + Power BI for workforce absence analytics | Balance statements are legal documents; analytics need trend visualization |
+| **Batch Job** | SysOperation (`HcmLeaveAccrualBatch`) with `RunOn::Batch` + recurrence | Monthly/annual accrual runs must align with payroll periods; cannot be manual |
+| **Data Entity** | `HcmLeaveBalanceEntity` with staging for payroll integration | Payroll systems consume leave balances; accrual adjustments must be auditable |
+| **Security Model** | Four duties: Employee (SelfService), Manager (Approver), HRSpecialist (Processor), PayrollAdmin (Config) | Managers approve team leave; HR configures accrual rules; Payroll reads balances only |
+| **Extension Pattern** | CoC on `HcmLeaveRequestWorkflow::submit` + Event Handler on `HcmEmployment::updated` | CoC validates balance before submission; Event Handler recalculates accrual on employment change |
+
+**Key Implementation Artifacts:**
+
+```xpp
+// 1. Date-effective accrual rule table
+table 50400 HcmLeaveAccrualEngine
+{
+    DataClassification = CustomerContent;
+    // Date effectivity: different rules apply to different date ranges
+    fields
+    {
+        field(1; RecId; int64) { }
+        field(2; LeaveType; HcmLeaveTypeId) { }
+        field(3; LegalEntity; DataAreaId) { }
+        field(4; ValidFrom; Date) { }
+        field(5; ValidTo; Date) { }
+        field(6; AccrualFrequency; Enum HcmAccrualFrequency) { } // Monthly, SemiMonthly, BiWeekly, Annual
+        field(7; AccrualRate; Real) { }           // Hours per period
+        field(8; MaxAccrualPerYear; Real) { }     // Cap
+        field(9; CarryOverLimit; Real) { }        // Max hours carried to next year
+        field(10; CarryOverExpiryMonths; int) { } // Months before carry-over expires
+        field(11; ProrateOnHire; NoYes) { }       // Prorate first year
+        field(12; ProrateOnTermination; NoYes) { } // Prorate final year
+        field(13; FMLAEligible; NoYes) { }        // US FMLA flag
+        field(14; EUWTDCompliant; NoYes) { }      // EU Working Time Directive
+    }
+    keys { key(PK; RecId) { } key(IX_LeaveTypeEntityDate; LeaveType, LegalEntity, ValidFrom) { } }
+}
+
+// 2. Accrual engine service — runs monthly via batch
+class HcmLeaveAccrualService
+{
+    public static void processAccruals(Date _accrualDate)
+    {
+        HcmLeaveAccrualEngine engine;
+        HcmWorker worker;
+        HcmEmployment employment;
+        HcmLeaveBalance balance;
+        Real hoursToAccrue;
+        
+        // Find active accrual rules for the accrual date
+        while select engine
+            where engine.ValidFrom <= _accrualDate
+            && engine.ValidTo >= _accrualDate
+        {
+            // Find eligible workers in this legal entity
+            while select worker
+                join employment
+                    where employment.Worker == worker.RecId
+                    && employment.LegalEntity == engine.LegalEntity
+                    && employment.EmploymentStartDate <= _accrualDate
+                    && (employment.EmploymentEndDate == dateNull() || employment.EmploymentEndDate >= _accrualDate)
+            {
+                // Calculate accrual for this worker/leave type
+                hoursToAccrue = HcmLeaveAccrualService::calculateAccrual(engine, worker, employment, _accrualDate);
+                
+                if (hoursToAccrue > 0)
+                {
+                    // Update or create balance
+                    balance = HcmLeaveBalance::findByWorkerLeaveType(worker.RecId, engine.LeaveType, true);
+                    balance.AccruedHours += hoursToAccrue;
+                    balance.AvailableHours += hoursToAccrue;
+                    balance.LastAccrualDate = _accrualDate;
+                    balance.write();
+                    
+                    // Log accrual transaction
+                    HcmLeaveAccrual::createAccrualTransaction(worker.RecId, engine.LeaveType, hoursToAccrue, _accrualDate);
+                }
+            }
+        }
+    }
+    
+    private static Real calculateAccrual(HcmLeaveAccrualEngine _engine, HcmWorker _worker, HcmEmployment _employment, Date _date)
+    {
+        Real baseAccrual = _engine.AccrualRate;
+        
+        // Prorate for new hires
+        if (_engine.ProrateOnHire && _employment.EmploymentStartDate > _date)
+        {
+            int daysInPeriod = dayOfMth(endMth(_date));
+            int daysWorked = _date - _employment.EmploymentStartDate + 1;
+            baseAccrual = baseAccrual * (daysWorked / daysInPeriod);
+        }
+        
+        // Check annual cap
+        HcmLeaveBalance balance = HcmLeaveBalance::findByWorkerLeaveType(_worker.RecId, _engine.LeaveType, false);
+        if (balance && (balance.AccruedHoursYTD + baseAccrual > _engine.MaxAccrualPerYear))
+        {
+            baseAccrual = _engine.MaxAccrualPerYear - balance.AccruedHoursYTD;
+        }
+        
+        return max(baseAccrual, 0);
+    }
+}
+
+// 3. CoC on leave request submit — validate balance before workflow
+[ExtensionOf(classStr(HcmLeaveRequestWorkflow))]
+final class HcmLeaveRequestWorkflow_BalanceValidationCoc
+{
+    public void submit(HcmLeaveRequest _leaveRequest)
+    {
+        // BEFORE: Validate available balance
+        HcmLeaveBalance balance = HcmLeaveBalance::findByWorkerLeaveType(
+            _leaveRequest.Worker, 
+            _leaveRequest.LeaveType, 
+            false);
+        
+        if (!balance || balance.AvailableHours < _leaveRequest.RequestedHours)
+        {
+            Real available = balance ? balance.AvailableHours : 0;
+            checkFailed(strFmt(
+                "Insufficient leave balance. Available: %1 hours, Requested: %2 hours.",
+                available, _leaveRequest.RequestedHours));
+            return;
+        }
+        
+        next submit(_leaveRequest);
+        
+        // AFTER: Reserve balance (move from available to pending)
+        if (balance)
+        {
+            balance.AvailableHours -= _leaveRequest.RequestedHours;
+            balance.PendingHours += _leaveRequest.RequestedHours;
+            balance.write();
+        }
+    }
+}
+
+// 4. Event Handler on employment change — recalculate accrual eligibility
+[EventHandler(eventStr(HcmEmployment::updated))]
+public static void onEmploymentUpdated(Common _sender, DataEventArgs _e)
+{
+    HcmEmployment employment = _sender as HcmEmployment;
+    
+    // If legal entity or position changed, trigger accrual recalculation
+    if (_e.changed(fieldNum(HcmEmployment, LegalEntity)) ||
+        _e.changed(fieldNum(HcmEmployment, Position)) ||
+        _e.changed(fieldNum(HcmEmployment, EmploymentEndDate)))
+    {
+        // Schedule async recalculation via batch
+        HcmLeaveAccrualBatchController::construct().parmWorkerRecId(employment.Worker).startOperation();
+    }
+}
+```
+
+**HR-Specific Production Hardening:**
+- [ ] Date-effective accrual rules (`ValidFrom`/`ValidTo`) enforced in all queries
+- [ ] FMLA tracking fields on `HcmLeaveBalance` for US compliance reporting
+- [ ] EU Working Time Directive minimum 4 weeks annual leave validated in accrual engine
+- [ ] Carry-over expiry processed by annual batch job (`HcmLeaveCarryOverExpiryBatch`)
+- [ ] Payroll integration via `HcmLeaveBalanceEntity` OData with `changecompany()` for multi-entity
+- [ ] Leave balance statements (SSRS) include legal disclaimer per country
+- [ ] Configuration key `HcmLeaveManagementAdvanced` gates advanced features
+
+---
+
+### Capstone D — Retail/Commerce: Omnichannel Order Management with Store Fulfillment
+
+**Business Scenario:** A retailer with 500+ stores needs unified commerce: online orders fulfilled from store inventory (ship-from-store, BOPIS, curbside), real-time available-to-promise (ATP) across channels, and store associate mobile app for picking/packing.
+
+**Domain-Specific Tables & EDTs (Retail/Commerce Module):**
+| Table/EDT | Purpose |
+|---|---|
+| `RetailTransactionTable`, `RetailTransactionPaymentTrans` | POS transactions |
+| `EcoResProduct`, `EcoResProductVariant` | Products and variants |
+| `RetailStoreTable`, `RetailStoreInventory` | Store master and inventory |
+| `RetailOrderTable`, `RetailOrderLine` | Omnichannel orders |
+| `RetailFulfillmentOrder`, `RetailFulfillmentLine` | Store fulfillment work |
+| `RetailATPBuffer` | Available-to-promise calculation buffer |
+| `RetailChannelTable`, `RetailChannelProfile` | Channel configuration |
+
+**Decision Points (Retail-Specific):**
+
+| Decision | Recommendation | Retail Rationale |
+|---|---|---|
+| **Table Design** | `RetailFulfillmentOrder` with `RetailStoreInventory` staging | Real-time inventory sync requires staging; fulfillment SLA tracking |
+| **Form Pattern** | Mobile-optimized ListPage (`RetailFulfillmentMobile`) + Task Page for picking | Store associates use mobile devices; task-oriented UI for pick/pack/stage |
+| **Report Design** | Power BI real-time fulfillment dashboard + SSRS for daily reconciliation | Operations needs real-time SLA visibility; finance needs daily reconciliation |
+| **Batch Job** | SysOperation with real-time triggers via Process Automation | Fulfillment waves triggered by order intake; not scheduled |
+| **Data Entity** | `RetailInventoryEntity` (read-only, high-frequency) + `RetailFulfillmentEntity` (write) | E-commerce platforms poll ATP every 30s; fulfillment updates pushed via webhook |
+| **Security Model** | Three duties: StoreAssociate (Processor), StoreManager (Approver), OpsAnalyst (Viewer) | Associates execute; managers handle exceptions; analysts monitor SLA |
+| **Extension Pattern** | Event Handler on `RetailOrderTable::inserted` + CoC on `RetailATPBuffer::calculateATP` | Event Handler kicks off fulfillment; CoC extends ATP logic for store inventory |
+
+**Key Implementation Artifacts:**
+
+```xpp
+// 1. Fulfillment order with SLA tracking
+table 50500 RetailFulfillmentOrder
+{
+    fields
+    {
+        field(1; RecId; int64) { }
+        field(2; FulfillmentId; RetailFulfillmentId) { }
+        field(3; SalesId; SalesId) { }
+        field(4; StoreId; RetailStoreId) { }
+        field(5; FulfillmentType; Enum RetailFulfillmentType) { } // ShipFromStore, BOPIS, Curbside
+        field(6; Status; Enum RetailFulfillmentStatus) { }       // New, Picking, Packed, Staged, Shipped, Cancelled
+        field(7; SLADeadline; UtcDateTime) { }                   // SLA based on fulfillment type
+        field(8; AssignedToWorker; HcmWorkerId) { }
+        field(9; PickedDateTime; UtcDateTime) { }
+        field(10; PackedDateTime; UtcDateTime) { }
+        field(11; ShippedDateTime; UtcDateTime) { }
+    }
+    keys { key(PK; RecId) { } key(IX_StoreStatus; StoreId, Status) { } key(IX_SalesId; SalesId) { } }
+}
+
+// 2. Event Handler — trigger fulfillment on new order
+[EventHandler(eventStr(RetailOrderTable::inserted))]
+public static void onOrderInserted(Common _sender, DataEventArgs _e)
+{
+    RetailOrderTable order = _sender as RetailOrderTable;
+    
+    // Only process omnichannel orders (not POS)
+    if (order.ChannelOrigin == RetailChannelOrigin::ECommerce)
+    {
+        // Determine best fulfillment store (ATP + distance + capacity)
+        RetailStoreId bestStore = RetailFulfillmentService::determineFulfillmentStore(order);
+        
+        if (bestStore)
+        {
+            RetailFulfillmentService::createFulfillmentOrder(order, bestStore);
+        }
+        else
+        {
+            // No store can fulfill — route to DC
+            RetailFulfillmentService::routeToDistributionCenter(order);
+        }
+    }
+}
+
+// 3. CoC on ATP calculation — include store inventory
+[ExtensionOf(classStr(RetailATPBuffer))]
+final class RetailATPBuffer_StoreInventoryCoc
+{
+    public Qty calculateATP(ItemId _itemId, InventSiteId _siteId, InventLocationId _locationId, Date _date)
+    {
+        // BASE: Standard ATP (warehouse inventory)
+        Qty atp = next calculateATP(_itemId, _siteId, _locationId, _date);
+        
+        // EXTENSION: Add store inventory for omnichannel
+        if (RetailParameters::find().OmnichannelFulfillmentEnabled)
+        {
+            // Sum available inventory across stores in the same fulfillment group
+            Qty storeATP = RetailFulfillmentService::calculateStoreATP(_itemId, _siteId);
+            atp += storeATP;
+        }
+        
+        return atp;
+    }
+}
+
+// 4. Mobile-optimized picking task (called from store associate app)
+class RetailFulfillmentPickingService
+{
+    public static RetailFulfillmentLine pickNextItem(RetailStoreId _storeId, HcmWorkerId _workerId)
+    {
+        RetailFulfillmentLine line;
+        RetailFulfillmentOrder header;
+        
+        // Find oldest un-picked line for this store/worker
+        select firstonly line
+            join header
+                where header.RecId == line.RetailFulfillmentOrder
+                && header.StoreId == _storeId
+                && header.Status == RetailFulfillmentStatus::Picking
+                && (header.AssignedToWorker == _workerId || header.AssignedToWorker == '')
+            order by header.CreatedDateTime asc
+        {
+            // Update assignment
+            if (header.AssignedToWorker == '')
+            {
+                header.AssignedToWorker = _workerId;
+                header.update();
+            }
+            
+            // Mark line as being picked
+            line.PickingStartedDateTime = DateTimeUtil::utcNow();
+            line.PickedByWorker = _workerId;
+            line.update();
+            
+            return line;
+        }
+        
+        return null;
+    }
+    
+    public static void confirmPick(RetailFulfillmentLine _line, Qty _pickedQty, InventDimId _inventDimId)
+    {
+        ttsbegin;
+        
+        // Update line
+        _line.PickedQty = _pickedQty;
+        _line.InventDimId = _inventDimId;
+        _line.PickedDateTime = DateTimeUtil::utcNow();
+        _line.update();
+        
+        // Update inventory (physical reservation)
+        InventTrans inventTrans = InventTrans::find(_line.InventTransId);
+        inventTrans.Qty = _pickedQty;
+        inventTrans.InventDimId = _inventDimId;
+        inventTrans.StatusIssue = StatusIssue::Sold;
+        inventTrans.update();
+        
+        // Check if all lines picked → move header to Packed
+        RetailFulfillmentOrder header = RetailFulfillmentOrder::find(_line.RetailFulfillmentOrder);
+        if (RetailFulfillmentService::areAllLinesPicked(header.RecId))
+        {
+            header.Status = RetailFulfillmentStatus::Packed;
+            header.update();
+        }
+        
+        ttscommit;
+    }
+}
+```
+
+**Retail-Specific Production Hardening:**
+- [ ] Real-time ATP calculation uses `RetailATPBuffer` with Redis caching (sub-100ms response)
+- [ ] Store fulfillment SLA: BOPIS 2 hours, Curbside 30 min, Ship-from-Store 4 hours
+- [ ] Inventory reservation uses `InventTrans` physical reservation (not financial)
+- [ ] Mobile app offline capability: picks cached locally, synced when online
+- [ ] Power BI streaming dataset for real-time fulfillment SLA dashboard
+- [ ] Configuration key `RetailOmnichannelFulfillment` gates store fulfillment features
+
+---
+
+### Capstone E — Project Operations: Project Billing Compliance with Revenue Recognition
+
+**Business Scenario:** A professional services firm running Project Operations needs automated project billing compliance that validates time entries against project contracts, enforces billing rules (fixed price, time & material, milestone), manages revenue recognition per IFRS 15/ASC 606, and generates compliant invoices with audit trails for client audits.
+
+**Domain-Specific Tables & EDTs (Project Operations Module):**
+| Table/EDT | Purpose |
+|---|---|
+| `ProjTable`, `ProjInvoiceTable` | Project header and invoice header |
+| `ProjInvoiceLine`, `ProjTransInvoice` | Invoice lines and transaction lines |
+| `ProjEmplTrans`, `ProjCategory` | Time/expense transactions and categories |
+| `ProjRevenueRecognition` | Revenue recognition schedules |
+| `ProjContract`, `ProjContractLine` | Project contracts and billing rules |
+| `ProjMilestone`, `ProjMilestoneInvoice` | Milestone definitions and invoice triggers |
+| `ProjWIP` | Work-in-progress tracking for revenue recognition |
+
+**Decision Points (Project Operations-Specific):**
+
+| Decision | Recommendation | Project Operations Rationale |
+|---|---|---|
+| **Table Design** | `ProjBillingComplianceHeader` + `ProjBillingComplianceLine` with contract linkage | Each billing event must trace to a contract line; audit trail requires header/line structure |
+| **Form Pattern** | ListPage (`ProjBillingComplianceListPage`) + Detail with FactBox for `ProjWIP` | Project managers need to see WIP balances alongside compliance status |
+| **Report Design** | SSRS for client audit reports (`ProjBillingComplianceAuditReport`) + Power BI for revenue recognition dashboard | Client audits require printable, page-perfect reports; finance needs real-time revenue recognition visibility |
+| **Batch Job** | SysOperation (`ProjBillingComplianceBatch`) with `RunOn::Batch` + recurrence | Monthly revenue recognition runs must align with period close; fixed-price milestones triggered by date |
+| **Data Entity** | `ProjBillingComplianceEntity` with staging for contract validation | External PSA tools push time entries; contract validation must happen on import |
+| **Security Model** | Four duties: ProjectManager (Processor), BillingAnalyst (Approver), RevenueAccountant (Config), Viewer | SOX segregation: revenue recognition config (RevenueAccountant) separate from billing execution (ProjectManager) |
+| **Extension Pattern** | CoC on `ProjInvoiceJournalCheckPost::checkPost` + Event Handler on `ProjTransInvoice::inserted` | CoC wraps invoice posting validation; Event Handler captures posted transactions for revenue recognition |
+
+**Key Implementation Artifacts:**
+
+```xpp
+// 1. Custom table for project billing compliance tracking
+table 50600 ProjBillingComplianceHeader
+{
+    fields
+    {
+        field(1; RecId; int64) { }
+        field(2; ProjId; ProjId) { }
+        field(3; ContractId; ProjContractId) { }
+        field(4; ContractLineRecId; int64) { }
+        field(5; BillingType; Enum ProjBillingType) { } // FixedPrice, TimeAndMaterial, Milestone, CostPlus
+        field(6; ComplianceStatus; Enum ProjBillingComplianceStatus) { } // Compliant, NonCompliant, PendingReview, Exempt
+        field(7; RevenueRecognitionStatus; Enum ProjRevenueRecStatus) { } // NotStarted, InProgress, Completed, Reversed
+        field(8; ValidatedBy; UserId) { }
+        field(9; ValidatedDate; UtcDateTime) { }
+        field(10; PeriodCode; ProjPeriodCode) { } // Revenue recognition period
+    }
+    keys { key(PK; RecId) { Clustered = true; } key(IX_Project; ProjId) { } key(IX_Contract; ContractId) { } }
+}
+
+// 2. Custom table for compliance line details
+table 50601 ProjBillingComplianceLine
+{
+    fields
+    {
+        field(1; RecId; int64) { }
+        field(2; ComplianceHeader; int64) { }
+        field(3; ProjTransInvoiceRecId; int64) { }
+        field(4; CategoryId; ProjCategoryId) { }
+        field(5; BilledQty; Qty) { }
+        field(6; BilledAmount; AmountMST) { }
+        field(7; RevenueRecognizedAmount; AmountMST) { }
+        field(8; ComplianceRule; Enum ProjComplianceRule) { } // RateValidation, BudgetCheck, MilestoneMatch, WIPLimit
+        field(9; RuleResult; Enum ProjComplianceRuleResult) { } // Pass, Fail, Warning
+        field(10; RuleMessage; str) { }
+    }
+    keys { key(PK; RecId) { } key(IX_Header; ComplianceHeader) { } key(IX_Trans; ProjTransInvoiceRecId) { } }
+}
+
+// 3. CoC on project invoice posting validation
+[ExtensionOf(classStr(ProjInvoiceJournalCheckPost))]
+final class ProjInvoiceJournalCheckPost_BillingComplianceCoc
+{
+    public boolean checkPost(boolean _throwErrors = true)
+    {
+        boolean ret = next checkPost(_throwErrors);
+        
+        // BEFORE: If standard validation passes, run billing compliance check
+        if (ret)
+        {
+            ProjInvoiceJour projInvoiceJour = this.projInvoiceJour();
+            ret = ProjBillingComplianceService::validateInvoiceForPosting(projInvoiceJour, _throwErrors);
+        }
+        
+        return ret;
+    }
+}
+
+// 4. SysOperation batch for monthly revenue recognition processing
+[DataContractAttribute]
+class ProjBillingComplianceBatchContract
+{
+    FromDate fromDate;
+    ToDate toDate;
+    ProjPeriodCode periodCode;
+    
+    [DataMemberAttribute('FromDate')]
+    public FromDate parmFromDate(FromDate _fromDate = fromDate) { fromDate = _fromDate; return fromDate; }
+    // ... other parm methods
+}
+
+class ProjBillingComplianceBatchService extends SysOperationServiceBase
+{
+    public void process(ProjBillingComplianceBatchContract _contract)
+    {
+        // 1. Process revenue recognition for the period
+        ProjRevenueRecognitionService::processPeriod(_contract.parmPeriodCode());
+        
+        // 2. Validate all posted invoices in date range for compliance
+        ProjBillingComplianceService::validatePeriodInvoices(_contract.parmFromDate(), _contract.parmToDate());
+        
+        // 3. Generate compliance exceptions report
+        ProjBillingComplianceReportController::generateExceptionsReport(_contract.parmPeriodCode());
+        
+        // 4. Push revenue recognition entries to General Ledger via Data Entity
+        ProjRevenueRecognitionEntity::pushToGL(_contract.parmPeriodCode());
+    }
+}
+
+// 5. Data Entity with contract validation on import
+public void mapEntityToDataSource(
+    DataEntityRuntimeContext           _entityCtx,
+    DataEntityDataSourceRuntimeContext _dataSourceCtx)
+{
+    super(_entityCtx, _dataSourceCtx);
+    
+    if (_dataSourceCtx.name() == dataEntityDataSourceStr(ProjBillingComplianceEntity, ProjBillingComplianceHeader))
+    {
+        ProjBillingComplianceHeader header = _dataSourceCtx.getBuffer();
+        
+        switch (_entityCtx.getDatabaseOperation())
+        {
+            case DataEntityDatabaseOperation::Insert:
+                // Validate contract exists and is active for the project
+                ProjContract contract = ProjContract::find(header.ContractId);
+                if (!contract || contract.Status != ProjContractStatus::Active)
+                {
+                    throw error(strFmt("Contract %1 not found or not active.", header.ContractId));
+                }
+                
+                // Validate billing type matches contract line
+                ProjContractLine contractLine = ProjContractLine::find(header.ContractLineRecId);
+                if (contractLine && contractLine.BillingType != header.BillingType)
+                {
+                    throw error(strFmt("Billing type mismatch: contract line is %1, import has %2.", 
+                        contractLine.BillingType, header.BillingType));
+                }
+                break;
+            case DataEntityDatabaseOperation::Update:
+                // Preserve validated status — cannot be changed via import
+                header.ValidatedBy = header.orig().ValidatedBy;
+                header.ValidatedDate = header.orig().ValidatedDate;
+                break;
+        }
+    }
+}
+
+// 6. Revenue recognition service (simplified IFRS 15/ASC 606 logic)
+class ProjRevenueRecognitionService
+{
+    public static void processPeriod(ProjPeriodCode _periodCode)
+    {
+        ProjRevenueRecognition revRec;
+        ProjWIP projWIP;
+        
+        // Find all projects with active revenue recognition schedules
+        while select revRec
+            where revRec.PeriodCode == _periodCode
+            && revRec.Status == ProjRevenueRecStatus::NotStarted
+        {
+            // Calculate revenue to recognize based on contract type
+            AmountMST revenueToRecognize = ProjRevenueRecognitionService::calculateRevenueToRecognize(revRec);
+            
+            if (revenueToRecognize > 0)
+            {
+                // Create revenue recognition entry
+                revRec.RecognizedAmount = revenueToRecognize;
+                revRec.Status = ProjRevenueRecStatus::Completed;
+                revRec.RecognizedDate = DateTimeUtil::utcNow();
+                revRec.update();
+                
+                // Update WIP
+                projWIP = ProjWIP::findByProjectPeriod(revRec.ProjId, _periodCode);
+                if (projWIP)
+                {
+                    projWIP.RevenueRecognized += revenueToRecognize;
+                    projWIP.update();
+                }
+                
+                // Create GL voucher (simplified)
+                ProjRevenueRecognitionService::createGLVoucher(revRec, revenueToRecognize);
+            }
+        }
+    }
+    
+    private static AmountMST calculateRevenueToRecognize(ProjRevenueRecognition _revRec)
+    {
+        switch (_revRec.RecognitionMethod)
+        {
+            case ProjRevenueRecMethod::PercentageOfCompletion:
+                // IFRS 15: Recognize based on progress towards completion
+                return ProjRevenueRecognitionService::calculatePOC(_revRec);
+            case ProjRevenueRecMethod::CompletedContract:
+                // ASC 606: Recognize only when contract complete
+                return ProjRevenueRecognitionService::calculateCompletedContract(_revRec);
+            case ProjRevenueRecMethod::MilestoneBased:
+                // Recognize when milestones achieved
+                return ProjRevenueRecognitionService::calculateMilestone(_revRec);
+            case ProjRevenueRecMethod::TimeAndMaterial:
+                // Recognize as costs incurred
+                return ProjRevenueRecognitionService::calculateTnM(_revRec);
+        }
+        return 0;
+    }
+    
+    // ... helper methods for each recognition method
+}
+```
+
+**Project Operations-Specific Production Hardening:**
+- [ ] Contract billing rules validated against `ProjContractLine.BillingType` for each invoice
+- [ ] Revenue recognition schedules use `ProjPeriodCode` aligned with fiscal calendar
+- [ ] WIP (`ProjWIP`) balances reconciled monthly before period close
+- [ ] Milestone-based billing triggers validated against `ProjMilestone` completion criteria
+- [ ] Fixed-price project budget vs actual tracked in `ProjBudgetControl`
+- [ ] SSRS audit report includes contract reference, billing rule, and revenue recognition method per line
+- [ ] Configuration key `ProjBillingComplianceAdvanced` gates advanced features
+- [ ] Multi-currency support via `CurrencyCode` on `ProjBillingComplianceHeader`
+
+---
+
+### Capstone Comparison Matrix
+
+| Capstone | Module | Core Tables | Key Pattern | Batch Style | Report | Security Duties |
+|---|---|---|---|---|---|---|
+| **Base (Ch 15)** | SCM/Finance | POComplianceHeader/Line | CoC + Event Handler | RunBaseBatch + SysOperation | SSRS | 3 (Viewer, Processor, Admin) |
+| **A** | Finance | APTaxComplianceHeader | CoC on `checkPost` | SysOperation (nightly) | SSRS (tax authority) | 4 (TaxAnalyst, APSupervisor, TaxAdmin, Viewer) |
+| **B** | SCM | POAutomationVendorScorecard | CoC on release + Runtime Tasks | SysOperation (parallel tasks) | SSRS + Power BI | 3 (Buyer, CategoryManager, VendorAdmin) |
+| **C** | HR | HcmLeaveAccrualEngine (date-effective) | CoC on submit + Employment Event Handler | SysOperation (monthly accrual) | SSRS + Power BI | 4 (Employee, Manager, HRSpecialist, PayrollAdmin) |
+| **D** | Retail | RetailFulfillmentOrder/Line | Event Handler + CoC on ATP | Process Automation (real-time) | Power BI (streaming) + SSRS | 3 (StoreAssociate, StoreManager, OpsAnalyst) |
+| **E** | Project Operations | ProjBillingComplianceHeader/Line | CoC on checkPost + Revenue Rec Event Handler | SysOperation (period close) | SSRS (audit) + Power BI (rev rec) | 4 (ProjManager, BillingAnalyst, RevenueAcct, Viewer) |
+
+---
+
+### Choosing Your Capstone Path
+
+| If You Want To Specialize In... | Start With This Capstone | Then Extend To |
+|---|---|---|
+| **Finance/Tax** | Capstone A (AP Tax Compliance) | Financial Tags, Date Effectivity, ISV tax engine integration |
+| **Procurement/Supply Chain** | Capstone B (PO Automation) | VMI, Blanket Agreements, Procurement Catalogs, EDI |
+| **Human Resources/Payroll** | Capstone C (Leave Management) | Compensation, Benefits, Time & Attendance, Global Compliance |
+| **Retail/Commerce** | Capstone D (Omnichannel) | POS Extensions, Loyalty, Clienteling, CDX/Retail Server |
+| **Project Operations/PSA** | Capstone E (Project Billing Compliance) | Revenue Recognition, WIP, Milestone Billing, Contract Management |
+
+---
+
+### Capstone Completion Checklist (All Capstones)
+
+For each capstone you implement, validate:
+- [ ] All custom tables have `ConfigurationKey` and `DataClassification`
+- [ ] All forms have `WorkflowEnabled` and security role assignment
+- [ ] All batch jobs implement `BatchRetryable` and deadlock retry
+- [ ] All data entities have staging tables with `mapEntityToDataSource` validation
+- [ ] All CoC overrides call `next` and handle `checkFailed()` return
+- [ ] All event handlers use `Common` sender and check `_e.changed()`
+- [ ] SSRS reports use `SrsReportDataProviderPreProcessTempDB` for large datasets
+- [ ] Power BI reports use incremental refresh on OData entities
+- [ ] SysTest coverage ≥ 80% for business logic classes
+- [ ] Model manifest declares all dependencies and configuration keys
+- [ ] Deployment pipeline includes `Dynamics365ValidatePackage` task
+- [ ] Performance tested with 100K+ records (batch) / 10K+ concurrent users (forms)
+- [ ] Security tested with "Run as" for each duty/role
+- [ ] Accessibility validated (WCAG 2.1 AA for customer-facing forms)
+
+---
+
+---
+
+# Chapter 16 — Advanced Data Access: SysDa, RecordInsertList, and Bulk Operations
+
+Beyond the classic `while select`, `insert_recordset`, and `update_recordset` patterns, D365 F&O provides a modern, type-safe data access API through the **SysDa** classes. For a 5-month-experienced intern, these patterns are essential for writing production-grade code that balances readability, performance, and maintainability.
+
+## 16.1 The SysDa Classes — Type-Safe Data Access
+
+The SysDa API provides a fluent, strongly-typed way to build queries at runtime. Unlike string-based X++ select statements, SysDa gives you IntelliSense, compile-time checking, and refactoring support. The SysDa APIs are wrappers around the code that the X++ compiler generates, so SysDa adds no overhead (unlike the `QueryRun` object).
+
+The core SysDa types are:
+
+| Operation | Primary Classes |
+|---|---|
+| Select | `SysDaQueryObject`, `SysDaSearchObject`, `SysDaSearchStatement` |
+| Update | `SysDaUpdateObject`, `SysDaUpdateStatement` |
+| Insert | `SysDaInsertObject`, `SysDaInsertStatement` |
+| Delete | `SysDaQueryObject`, `SysDaDeleteObject`, `SysDaDeleteStatement` |
+
+Expression classes for building clauses include `SysDaEqualsExpression`, `SysDaLessThanOrEqualsExpression`, `SysDaInExpression`, `SysDaFieldExpression`, `SysDaValueExpression`, and `SysDaModExpression`.
+
+### When to Use SysDa vs. X++ Select
+
+| Scenario | Use | Why |
+|---|---|---|
+| Simple `while select` with static where clause | X++ select | More concise, idiomatic X++ |
+| Dynamic query construction at runtime | SysDa | Programmatically add ranges, joins, orderings |
+| Complex runtime joins with conditional logic | SysDa | Cleaner than string manipulation |
+| Need IntelliSense on table/field names | SysDa | Fully typed APIs |
+| Bulk insert of many records | RecordInsertList | Typed, validated batch inserts |
+
+### SysDa Query Example (Select)
+
+```xpp
+class VendComplianceQueryService
+{
+    public void getHighCreditVendors()
+    {
+        VendTable vendTable;
+
+        // Build the query with fluent builder
+        var qe = SysDaQueryObjectBuilder::from(VendTable)
+            .projection()
+                .add(fieldStr(VendTable, AccountNum))
+                .add(fieldStr(VendTable, CreditMax))
+            .whereClause(new SysDaGreaterThanExpression(
+                new SysDaFieldExpression(vendTable, fieldStr(VendTable, CreditMax)),
+                new SysDaValueExpression(500000)))
+            .orderByClause()
+                .addAscending(fieldStr(VendTable, AccountNum))
+            .toSysDaQueryObject();
+
+        // Execute the search
+        var so = new SysDaSearchObject(qe);
+        var ss = new SysDaSearchStatement();
+
+        while (ss.findNext(so))
+        {
+            info(strFmt("Vendor: %1 — Credit Max: %2", vendTable.AccountNum, vendTable.CreditMax));
+        }
+    }
+
+    public void getCustomersWithUnsettledInvoices()
+    {
+        CustTable custTable;
+
+        var qe = SysDaQueryObjectBuilder::from(CustTable)
+            .innerJoin(CustTrans)
+            .whereClause(new SysDaAndExpression(
+                new SysDaEqualsExpression(
+                    new SysDaFieldExpression(custTable, fieldStr(CustTable, AccountNum)),
+                    new SysDaFieldExpression(new CustTrans(), fieldStr(CustTrans, AccountNum))),
+                new SysDaEqualsExpression(
+                    new SysDaFieldExpression(new CustTrans(), fieldStr(CustTrans, HasNotBeenSettled)),
+                    new SysDaValueExpression(true))))
+            .toSysDaQueryObject();
+
+        var so = new SysDaSearchObject(qe);
+        var ss = new SysDaSearchStatement();
+
+        while (ss.findNext(so))
+        {
+            info(strFmt("Customer with unsettled invoices: %1", custTable.AccountNum));
+        }
+    }
+}
+```
+
+### SysDa Query Example (using SysDaQueryObjectBuilder with OR)
+
+```xpp
+var qe = SysDaQueryObjectBuilder::from(VendTable)
+    .wherever(new SysDaOrExpression(
+        new SysDaEqualsExpression(
+            new SysDaFieldExpression(new VendTable(), fieldStr(VendTable, CreditMax)),
+            new SysDaValueExpression(1000000)),
+        new SysDaEqualsExpression(
+            new SysDaFieldExpression(new VendTable(), fieldStr(VendTable, CreditMax)),
+            new SysDaValueExpression(500000))))
+    .toSysDaQueryObject();
+```
+
+### SysDa Insert Example
+
+```xpp
+TestTable t;
+
+// Specify fields for the insert
+var insertObject = new SysDaInsertObject(t);
+insertObject.fields()
+    .add(fieldStr(TestTable, StringField))
+    .add(fieldStr(TestTable, IntField));
+
+// Build the source query
+LanguageTable source;
+var qe = new SysDaQueryObject(source);
+var s1 = qe.projection()
+    .Add(fieldStr(LanguageTable, LanguageId))
+    .AddValue(40);
+
+qe.WhereClause(new SysDaEqualsExpression(
+    new SysDaFieldExpression(source, fieldStr(LanguageTable, LanguageId)),
+    new SysDaValueExpression("en-us")));
+
+insertObject.query(qe);
+
+ttsbegin;
+    new SysDaInsertStatement().insert(insertObject);
+ttscommit;
+```
+
+### SysDa Update Example
+
+```xpp
+TestTable t;
+
+var uo = new SysDaUpdateObject(t);
+uo.settingClause()
+    .add(fieldStr(TestTable, StringField), new SysDaValueExpression("fifty"));
+
+uo.WhereClause(new SysDaEqualsExpression(
+    new SysDaFieldExpression(t, fieldStr(TestTable, IntField)),
+    new SysDaValueExpression(50)));
+
+ttsbegin;
+    new SysDaUpdateStatement().update(uo);
+ttscommit;
+```
+
+### SysDa Delete Example
+
+```xpp
+TestTable t;
+
+var qe = new SysDaQueryObject(t);
+var s = qe.projection()
+    .add(fieldStr(TestTable, IntField));
+
+qe.WhereClause(new SysDaEqualsExpression(
+    new SysDaModExpression(
+        new SysDaFieldExpression(t, fieldStr(TestTable, IntField)),
+        new SysDaValueExpression(2)),
+    new SysDaValueExpression(0)));
+
+var ds = new SysDaDeleteStatement();
+var delobj = new SysDaDeleteObject(qe);
+
+ttsbegin;
+    ds.delete(delobj);
+ttscommit;
+```
+
+### SysDa Best Practices
+
+1. **Use `queryValue()` for parameters** — prevents SQL injection and ensures proper type conversion.
+2. **Prefer expression objects over string concatenation** — SysDa handles escaping and quoting automatically.
+3. **Use `SysDaQueryObjectBuilder`** for fluent, readable query construction.
+4. **Use `toString()` on SysDa objects** to debug the generated query (e.g., `qe.toString()`).
+5. **You are responsible for correctness** — SysDa won't catch type mismatches like comparing a GUID to an integer at compile time.
+
+---
+
+## 16.2 RecordInsertList — Typed Bulk Insert
+
+## 16.2 RecordInsertList — Typed Bulk Insert
+
+`RecordInsertList` is the type-safe alternative to `insert_recordset`. It validates each record before insertion and works with table buffers that have business logic in `validateWrite()`.
+
+```xpp
+class VendComplianceBulkInserter
+{
+    public void insertComplianceLogs(container _logData)
+    {
+        RecordInsertList insertList = new RecordInsertList();
+        APCustomsDeclaration log;
+        
+        // Build each record
+        for (int i = 1; i <= conLen(_logData); i++)
+        {
+            log.clear();
+            // ... populate fields from _logData ...
+            insertList.add(log);
+        }
+        
+        // Insert all records — each record's validateWrite() is called
+        insertList.insertDatabase();
+    }
+}
+```
+
+### RecordInsertList vs. insert_recordset
+
+| Aspect | RecordInsertList | insert_recordset |
+|---|---|---|
+| validateWrite() called | Yes — for each record | No — bypasses table logic |
+| Event handlers fire | Yes | No |
+| Returns RecId values | Yes | No |
+| Performance | Slightly slower (per-record validation) | Faster (single SQL statement) |
+| Type safety | Strongly typed | X++ select syntax |
+| Best for | Data with business logic validation | Pure bulk data loads |
+
+---
+
+## 16.3 RecordSortedList — Sorted Bulk Insert
+
+`RecordSortedList` extends `RecordInsertList` with automatic sorting before insertion, which can reduce page splits and improve insert performance on tables with clustered indexes.
+
+```xpp
+RecordSortedList sortedList = new RecordSortedList();
+sortedList.addField(fieldNum(APCustomsDeclaration, DeclId));
+sortedList.addField(fieldNum(APCustomsDeclaration, DeclDate));
+// ... add records ...
+sortedList.insertDatabase();
+```
+
+---
+
+## 16.4 doInsert / doUpdate / doDelete — The Internal Write Path
+
+When you call `insert()`, `update()`, or `delete()` on a table buffer, the framework routes through internal methods:
+
+- **`insert()`** → `validateWrite()` → `doInsert()` → SQL INSERT
+- **`update()`** → `validateWrite()` → `doUpdate()` → SQL UPDATE
+- **`delete()`** → `validateDelete()` → `doDelete()` → SQL DELETE
+
+Override `doInsert()`, `doUpdate()`, or `doDelete()` when you need to intercept the actual database write without re-running validation logic:
+
+```xpp
+// In a table extension via CoC
+public void doInsert()
+{
+    // Custom logic before the actual SQL insert
+    // e.g., setting audit fields, computing derived values
+    this.CreatedDateTime = DateTimeUtil::utcNow();
+    
+    // Call the actual write
+    next doInsert();
+    
+    // Post-insert logic
+    APComplianceLog::logInsert(this.RecId);
+}
+```
+
+**Important:** `doInsert()`, `doUpdate()`, and `doDelete()` are called **after** validation succeeds. Do not put validation logic here — put it in `validateWrite()`.
+
+---
+
+# Chapter 17 — Advanced Extensibility & Language Features
+
+For an intern with 5 months of experience, understanding the deeper language features and extensibility patterns is critical for writing upgrade-safe, maintainable code.
+
+## 17.1 Extension Methods — Adding Methods to Existing Types
+
+Extension methods let you add methods to existing classes, tables, views, or maps without modifying the original object. The extension class must be `static`, end with `_Extension`, and every extension method must be `public static` with the target type as the first parameter.
+
+```xpp
+public static class CustTable_Extension
+{
+    // Extension method on CustTable — callable as custTable.getCreditStatus()
+    public static str getCreditStatus(CustTable _custTable)
+    {
+        if (_custTable.CreditMax > 1000000)
+            return "High";
+        if (_custTable.CreditMax > 100000)
+            return "Medium";
+        return "Low";
+    }
+    
+    // Extension method with optional parameters
+    public static str formatVendorDisplay(VendTable _vendTable, boolean _includeGroup = false)
+    {
+        str result = strFmt("%1 (%2)", _vendTable.AccountNum, _vendTable.Name);
+        if (_includeGroup)
+            result = strFmt("%1 — Group: %2", result, _vendTable.GroupName);
+        return result;
+    }
+}
+```
+
+### Extension Method Rules
+
+| Rule | Requirement |
+|---|---|
+| Class must be `static` | `public static class Name_Extension` |
+| Class name suffix | Must end with `_Extension` |
+| Methods must be `public static` | No instance methods in extension class |
+| First parameter is the target type | The instance being extended is passed automatically |
+| Can't access protected/private members | Only public members of the target type |
+| Target types: Class, Table, View, Map | Not forms, reports, or other AOT objects |
+
+### Calling Extension Methods
+
+```xpp
+CustTable custTable = CustTable::find("CUST-001");
+str status = CustTable_Extension::getCreditStatus(custTable);
+// Or using dot syntax (X++ resolves extension methods):
+str status2 = custTable.getCreditStatus();
+```
+
+---
+
+## 17.2 Local Functions Inside Methods
+
+X++ allows you to declare functions inside a method. These are called **local functions** and can access variables declared earlier in the enclosing method.
+
+```xpp
+public void processComplianceDeclarations(CustTable _custTable)
+{
+    int declarationCount = 0;
+    
+    // Local function — can access declarationCount from enclosing method
+    void logDeclaration(str _declId)
+    {
+        declarationCount++;
+        info(strFmt("Processed declaration %1 (total: %2)", _declId, declarationCount));
+    }
+    
+    // Another local function
+    boolean isHighValue(Amount _amount)
+    {
+        return _amount > 50000;
+    }
+    
+    APCustomsDeclaration decl;
+    while select decl
+        where decl.VendTableRecId == _custTable.RecId
+    {
+        if (isHighValue(decl.CustomsRefAmount))
+        {
+            logDeclaration(decl.DeclId);
+        }
+    }
+}
+```
+
+### Local Function Rules
+
+- Can access variables declared **earlier** in the enclosing method
+- Cannot be called from outside the enclosing method
+- Can declare multiple local functions in one method
+- Each local function establishes its own scope
+
+---
+
+## 17.3 The `var` Keyword — Type Inference
+
+X++ supports the `var` keyword for local variable type inference. The compiler determines the type from the assigned expression.
+
+```xpp
+var custTable = CustTable::find("CUST-001");    // Type: CustTable
+var count = 42;                                  // Type: int
+var name = "Acme Corp";                          // Type: str
+var now = DateTimeUtil::utcNow();                // Type: utcdatetime
+var list = new List(Types::String);              // Type: List
+```
+
+### When to Use `var`
+
+- **Use `var`** when the type is obvious from the right-hand side (e.g., `new CustValidationService()`, `CustTable::find()`)
+- **Avoid `var`** when the type isn't immediately clear or when you want to be explicit for readability
+- **Never use `var`** for class-level fields — only local variables
+
+---
+
+## 17.4 The `orig()` Method — Accessing Original Field Values
+
+Every table buffer has an `orig()` method that returns a buffer containing the original field values (as they were when the record was read from the database). This is essential for change detection in `update()` and `validateWrite()`.
+
+```xpp
+public boolean validateWrite()
+{
+    boolean ret = super();
+    
+    CustTable orig = this.orig();
+    
+    // Detect if credit limit changed
+    if (this.CreditMax != orig.CreditMax)
+    {
+        // Credit limit was modified — run compliance checks
+        if (this.CreditMax > 500000 && this.ComplianceCode == '')
+        {
+            ret = checkFailed("Compliance code required when credit limit exceeds $500,000.");
+        }
+        
+        // Log the change
+        APComplianceLog::logCreditLimitChange(orig.CreditMax, this.CreditMax, this.AccountNum);
+    }
+    
+    return ret;
+}
+```
+
+### When `orig()` Is Available
+
+- `orig()` returns valid data after a `select` or `while select` reads a record
+- `orig()` returns the buffer's default values after `clear()` or before any database read
+- In `update()`, `orig()` contains the values before the update
+- In `validateWrite()` called from `update()`, `orig()` has the pre-update values
+
+---
+
+## 17.5 `prmIsDefault()` — Detecting Parameter Presence
+
+The `prmIsDefault()` function determines whether a parameter was actually passed to a `parmX()` accessor method or whether the default value was used.
+
+```xpp
+class VendComplianceContract
+{
+    ComplianceCode complianceCode;
+    
+    public ComplianceCode parmComplianceCode(ComplianceCode _complianceCode = complianceCode)
+    {
+        if (!prmIsDefault(_complianceCode))
+        {
+            // Caller explicitly passed a value — validate it
+            if (strLen(_complianceCode) > 20)
+            {
+                throw error("Compliance code cannot exceed 20 characters.");
+            }
+        }
+        complianceCode = _complianceCode;
+        return complianceCode;
+    }
+}
+```
+
+### Usage Pattern
+
+```xpp
+VendComplianceContract contract = new VendComplianceContract();
+
+// Caller passes a value — prmIsDefault returns false
+contract.parmComplianceCode("COMP-001");
+
+// Caller omits the value — prmIsDefault returns true, default used
+contract.parmComplianceCode();
+```
+
+---
+
+## 17.6 Chain of Command Execution Order — Advanced
+
+When multiple CoC extensions target the same method, the execution order follows the model layer hierarchy:
+
+1. **SYS layer** extensions run first (lowest layer)
+2. **ISV layer** extensions run next
+3. **VAR layer** extensions run next
+4. **CUS layer** extensions run last (highest layer — customer code)
+
+Within the same layer, the order is **not guaranteed** — do not rely on alphabetical or registration order.
+
+### CoC Return Value Chain
+
+When multiple extensions modify a return value, each extension receives the return value from the previous extension:
+
+```xpp
+// Extension A (CUS layer)
+[ExtensionOf(tableStr(CustTable))]
+final class CustTable_ExtA
+{
+    public boolean validateWrite()
+    {
+        boolean ret = next validateWrite();  // Gets result from base or previous extension
+        if (ret && this.AccountNum == "")
+        {
+            ret = checkFailed("Account number required.");
+        }
+        return ret;  // Passed to Extension B
+    }
+}
+
+// Extension B (CUS layer)
+[ExtensionOf(tableStr(CustTable))]
+final class CustTable_ExtB
+{
+    public boolean validateWrite()
+    {
+        boolean ret = next validateWrite();  // Gets result from Extension A
+        if (ret && this.Name == "")
+        {
+            ret = checkFailed("Name required.");
+        }
+        return ret;
+    }
+}
+```
+
+If Extension A returns `false`, Extension B's `next validateWrite()` still runs, but Extension B can check `ret` and short-circuit.
+
+---
+
+# Chapter 18 — Production Hardening & Performance at Scale
+
+## 18.1 SQL Statement Timeouts
+
+D365 F&O sets different SQL statement timeouts based on session type:
+
+| Session Type | Timeout | When It Applies |
+|---|---|---|
+| Interactive (user-driven) | 30 minutes | Forms, menu items, user-triggered actions |
+| Non-interactive | 3 hours | Batch jobs, services, OData calls |
+
+When a statement times out, X++ throws `Exception::Timeout` with the message *"A time-out occurred in the database while the query was executing."*
+
+### Handling SQL Timeouts
+
+```xpp
+static void exercise_sqlTimeoutHandling(Args _args)
+{
+    CustTable custTable;
+    int retryCount = 0;
+    boolean success = false;
+    
+    while (!success && retryCount < 3)
+    {
+        try
+        {
+            while select custTable
+                where custTable.CreditMax > 1000000
+            {
+                // Process high-credit customers
+            }
+            success = true;
+        }
+        catch (Exception::Timeout)
+        {
+            retryCount++;
+            info(strFmt("SQL timeout — retry %1 of 3", retryCount));
+            // Consider: log the timeout, reduce query scope, or add indexes
+        }
+        catch (Exception::Deadlock)
+        {
+            // ... deadlock handling ...
+        }
+    }
+    
+    if (!success)
+    {
+        error("Query failed after 3 retries due to SQL timeouts.");
+    }
+}
+```
+
+### Overriding Query Timeout
+
+Use the `queryTimeout` API to override the default timeout for specific queries:
+
+```xpp
+// Set timeout for a specific query (in seconds)
+queryTimeout(600);  // 10 minutes for this query
+```
+
+---
+
+## 18.2 `CacheLookup` Deep Dive — Production Considerations
+
+`CacheLookup` controls how SQL Server caches table lookups. Choose wisely based on table size and access pattern:
+
+| Value | Behavior | Best For | Avoid For |
+|---|---|---|---|
+| `None` | No caching | High-write tables, frequently changing data | Read-heavy lookup tables |
+| `NotInTTS` | Cache within transaction scope | Tables read within transactions | Cross-transaction lookups |
+| `Found` | Cache successful lookups | Reference tables (CustGroup, ItemGroup) | Large transactional tables |
+| `FoundAndEmpty` | Cache found and not-found | Lookup tables where misses are common | Tables with frequent inserts |
+| `EntireTable` | Load whole table into memory | Small, static reference tables (CurrencyTable) | Tables with >10,000 rows |
+
+**Production Rule:** Never set `CacheLookup = EntireTable` on a table with more than 10,000 rows or a table that receives frequent inserts/updates. This loads the entire table into server memory on first access and can cause memory pressure.
+
+---
+
+## 18.3 Deadlock Resolution in Production
+
+Deadlocks occur when two transactions hold locks that the other needs. In D365 F&O, implement retry logic with exponential backoff:
+
+```xpp
+static void exercise_deadlockWithBackoff(Args _args)
+{
+    int retryCount = 0;
+    int maxRetries = 5;
+    int baseDelayMs = 100;  // Start with 100ms
+    boolean success = false;
+    
+    while (!success && retryCount < maxRetries)
+    {
+        ttsBegin;
+        try
+        {
+            // ... database operations ...
+            ttsCommit;
+            success = true;
+        }
+        catch (Exception::Deadlock)
+        {
+            ttsAbort;
+            retryCount++;
+            
+            // Exponential backoff: 100ms, 200ms, 400ms, 800ms, 1600ms
+            int delayMs = baseDelayMs * (1 << (retryCount - 1));
+            info(strFmt("Deadlock — retry %1 of %2, waiting %3ms", retryCount, maxRetries, delayMs));
+            
+            // Sleep before retry (use xSession::sleep or similar)
+            // xSession::sleep(delayMs);  // Available in some versions
+        }
+    }
+}
+```
+
+---
+
+## 18.4 Indexing Strategy for Production
+
+| Index Type | When to Use | Production Consideration |
+|---|---|---|
+| Primary (RecId) | Always — auto-created | Never change; it's the clustered index |
+| Alternate (unique) | Natural keys that must be unique | `AllowDuplicates = No` enforces integrity at DB level |
+| Hash | Equality-only lookups | No range scans; use when you always filter by exact match |
+| Non-unique | Fields with many duplicates | Good for range scans and sorting |
+| Group Level | Multi-field with selective leading field | Leading field must be the most selective |
+
+**Leading Field Rule:** In an index on `(FieldA, FieldB)`, SQL can use the index for `where FieldA = ...` or `where FieldA = ... AND FieldB = ...`, but **NOT** for `where FieldB = ...` alone. Always put the most selective field first.
+
+**Missing Index Detection:** Use SQL Server's missing index DMVs or the D365 F&O SQL performance tools in LCS to identify tables that need indexes.
+
+---
+
+# Chapter 19 — Platform Integration: Power Platform, Copilot, Mobile, and Process Automation
+
+## 19.1 Power Platform Integration
+
+D365 F&O integrates with the Power Platform through several mechanisms:
+
+### Data Entities via OData
+
+Every public data entity is automatically exposed via OData at:
+```
+https://<environment>/data/<EntityName>
+```
+
+Power Apps and Power Automate can consume these endpoints directly.
+
+### Custom Services via SysOperationServiceController
+
+Expose business logic as OData actions/functions:
+
+```xpp
+class VendComplianceController extends SysOperationServiceController
+{
+    public static void main(Args _args)
+    {
+        // This controller can be called from Power Automate via OData
+        VendComplianceController controller = new VendComplianceController();
+        controller.parmContractType(classStr(VendComplianceContract));
+        controller.parmServiceType(classStr(VendComplianceService));
+        controller.startOperation();
+    }
+}
+```
+
+### Logic Apps and Azure Functions
+
+- **Logic Apps**: Orchestrate workflows between D365 F&O and external systems without code
+- **Azure Functions**: Run custom code triggered by D365 F&O events (webhooks, Service Bus messages)
+- **Azure Service Bus**: Async messaging for integration patterns
+
+---
+
+## 19.2 Copilot Capabilities in D365 F&O
+
+Microsoft Copilot is integrated into D365 F&O for AI-assisted development:
+
+- **Code generation**: Copilot can generate X++ code snippets from natural language descriptions
+- **Code explanation**: Select code and ask Copilot to explain what it does
+- **Debugging assistance**: Copilot can suggest fixes for compilation errors and runtime issues
+- **Documentation lookup**: Ask Copilot about Microsoft Learn documentation without leaving Visual Studio
+
+**Best Practice:** Always review Copilot-generated code against Microsoft best practices before committing. Copilot can suggest outdated patterns (e.g., overlayering instead of extensions).
+
+---
+
+## 19.3 Mobile Platform
+
+D365 F&O supports mobile access through:
+
+- **Dynamics 365 mobile app**: Native iOS/Android app for mobile access
+- **Mobile workspaces**: Role-specific workspaces optimized for mobile devices
+- **Offline capabilities**: Limited offline data access with sync when reconnected
+
+Developers should consider mobile form factors when designing forms that mobile users will access.
+
+---
+
+## 19.4 Process Automation Framework
+
+The Process Automation Framework enables business process automation. Batch jobs integrated with Process Automation use `SysOperationServiceController`, **not** `RunBaseBatch`:
+- `RunBaseBatch` jobs cannot be returned through the process automation list
+- Use `SysOperationServiceController` with `RunOn::Batch` for process automation integration
+- Wrap `RunBaseBatch` with `SysOperation` to get both dialog input and scheduled execution
+
+- **Business process flows**: Guide users through multi-step processes
+- **Business rules**: Enforce data quality and business logic at the form level
+- **Workflows**: Automated approval and routing processes
+
+Use these for declarative automation; reserve X++ for complex business logic that can't be expressed through the framework.
+
+---
+
+# Chapter 20 — Module Deep Dives: Finance, SCM, and HR
+
+For a 5-month-experienced intern, module specialization means understanding the domain-specific tables, EDTs, and business logic of your target module.
+
+## 20.1 Finance Module Deep Dive
+
+### Key Tables
+
+| Table | Purpose | Key Fields |
+|---|---|---|
+| `LedgerJournalTrans` | General ledger journal transactions | `AccountNum`, `AmountCur`, `TransDate`, `Voucher` |
+| `CustTrans` | Customer transactions (open/invoiced) | `AccountNum`, `Invoice`, `AmountMST`, `SettleDate` |
+| `VendTrans` | Vendor transactions | `AccountNum`, `Invoice`, `AmountMST`, `SettleDate` |
+| `LedgerTrans` | Posted ledger transactions | `AccountNum`, `AmountCur`, `TransDate`, `Voucher` |
+| `CurrencyTable` | Currency codes and exchange rates | `CurrencyCode`, `Currency` |
+
+### Key EDTs
+
+| EDT | Purpose | Base Type |
+|---|---|---|
+| `CustAccount` | Customer account number | string 20 |
+| `VendAccount` | Vendor account number | string 20 |
+| `AmountMST` | Amount in company currency | real |
+| `AmountCur` | Amount in transaction currency | real |
+| `AccountNum` | General ledger account | string 20 |
+
+### Common Finance Patterns
+
+- **Voucher numbering**: Use `Voucher` EDT with number sequences
+- **Exchange rate lookup**: `CurrencyExchangeRate` table for currency conversion
+- **Financial dimensions**: `DimensionAttribute` and `DimensionValue` for chart of accounts segments
+- **Tax calculation**: `Tax` table and `TaxAmount` EDT for tax-aware amounts
+
+---
+
+## 20.2 Supply Chain Management (SCM) Module Deep Dive
+
+### Key Tables
+
+| Table | Purpose | Key Fields |
+|---|---|---|
+| `InventTable` | Items/products | `ItemId`, `ItemName`, `ItemGroupId` |
+| `InventTrans` | Inventory transactions | `ItemId`, `InventTransId`, `StatusIssue`, `Receipt` |
+| `PurchTable` | Purchase orders | `PurchId`, `PurchName`, `VendorAccount` |
+| `PurchLine` | Purchase order lines | `PurchId`, `ItemId`, `PurchQty`, `PurchPrice` |
+| `SalesTable` | Sales orders | `SalesId`, `SalesName`, `CustomerAccount` |
+| `SalesLine` | Sales order lines | `SalesId`, `ItemId`, `SalesQty`, `SalesPrice` |
+| `InventLocation` | Warehouses/locations | `InventLocationId`, `Name` |
+
+### Key EDTs
+
+| EDT | Purpose |
+|---|---|
+| `ItemId` | Item/product identifier |
+| `InventLocationId` | Warehouse identifier |
+| `InventSiteId` | Site identifier |
+| `PurchId` | Purchase order identifier |
+| `SalesId` | Sales order identifier |
+| `Qty` | Quantity |
+
+### Common SCM Patterns
+
+- **Inventory dimensions**: `InventDim` for tracking inventory by site, warehouse, location, license plate
+- **Item groups**: Group items for pricing, posting, and reporting
+- **Unit of measure conversions**: `UnitOfMeasure` and `UnitOfMeasureConversion` for UOM conversions
+- **Item reservation**: `InventTrans` reservation for order fulfillment
+
+---
+
+## 20.3 Human Resources (HR) Module Deep Dive
+
+### Key Tables
+
+| Table | Purpose | Key Fields |
+|---|---|---|
+| `HcmWorker` | Workers/employees | `PersonnelNumber`, `Worker` |
+| `HcmEmployment` | Employment records | `Worker`, `EmploymentStartDate`, `EmploymentEndDate` |
+| `HcmPosition` | Positions/jobs | `PositionId`, `JobId`, `Department` |
+| `HcmJob` | Job definitions | `JobId`, `JobType`, `JobFunction` |
+| `HcmPositionWorkerAssignment` | Worker-to-position assignments | `PositionId`, `Worker` |
+
+### Key EDTs
+
+| EDT | Purpose |
+|---|---|
+| `PersonnelNumber` | Employee personnel number |
+| `PositionId` | Position identifier |
+| `JobId` | Job identifier |
+| `Worker` | Worker identifier |
+
+### Common HR Patterns
+
+- **Position hierarchy**: Positions belong to departments; workers are assigned to positions
+- **Employment lifecycle**: Hire → Employ → Terminate → Rehire
+- **Compensation**: `HcmCompensation` for salary and bonus management
+- **Leave/absence**: `HcmLeave` and `HcmLeaveType` for leave management
+
+---
+
+## 20.4 Choosing a Module for Specialization
+
+| Factor | Finance | SCM | HR |
+|---|---|---|---|
+| Core data model | General ledger, subledgers | Inventory, purchasing, sales | Workers, positions, jobs |
+| Transaction volume | High (GL postings) | Very high (inventory movements) | Moderate (HR cycles) |
+| Regulatory complexity | High (tax, GAAP/IFRS) | High (customs, trade compliance) | Moderate (labor laws) |
+| Integration needs | ERP-to-banking, tax authorities | ERP-to-warehouse, EDI | ERP-to-payroll, benefits |
+
+---
+
+# Chapter 21 — Advanced DevOps: Continuous Delivery, Package Validation, and Database Movement
+
+## 21.1 Continuous Delivery Pipeline
+
+Beyond the basic build → deploy pipeline, mature D365 F&O teams implement:
+
+```
+Source Commit → Build (Compile X++) → Package (.axmodel) → 
+Validate Package → Deploy to Dev → Automated Tests → 
+Deploy to Test → UAT Approval → Deploy to Production
+```
+
+### Validate Package Operation
+
+Before deploying to production, validate that the package is compatible with the target environment:
+
+```yaml
+# Azure DevOps pipeline step
+- task: Dynamics365ValidatePackage@1
+  inputs:
+    lcsConnection: 'LCS Service Connection'
+    environmentId: '$(productionEnvironmentId)'
+    packagePath: '$(Build.ArtifactStagingDirectory)/$(ModelName).axmodel'
+```
+
+This checks for:
+- Missing dependencies
+- Layer conflicts
+- Version mismatches
+- Breaking changes to standard methods
+
+---
+
+## 21.2 Database Movement Operations
+
+Move databases between environments for testing with production-like data:
+
+| Operation | Purpose | When to Use |
+|---|---|---|
+| Database export | Export production database to LCS | Create test environments with real data |
+| Database import | Import database from LCS to environment | Refresh test environments |
+| Database sync | Synchronize schema between environments | Deploy table changes without full redeploy |
+| Database refresh | Full database replacement | Major environment resets |
+
+**Best Practice:** Never move production data to a development environment without masking sensitive data (PII, PCI, financial data).
+
+---
+
+## 21.3 Build Automation Best Practices
+
+| Practice | Reason |
+|---|---|
+| Build on every commit | Catch compilation errors early |
+| Run unit tests in build | Prevent regressions |
+| Version increment on each build | Track which build is deployed |
+| Publish `.axmodel` as artifact | Enables deployment to any environment |
+| Fail build on best practice violations | Maintain code quality |
+| Use Release pipelines for promotion | Controlled deployment flow |
+
+---
+
+# Chapter 22 — Compliance & Governance: GDPR, ISV, Financial Tags, and Date Effectivity
+
+## 22.1 GDPR Compliance in Development
+
+The General Data Protection Regulation (GDPR) affects how you handle personal data in D365 F&O:
+
+| Requirement | Implementation |
+|---|---|
+| Right to be forgotten | Delete or anonymize personal data on request |
+| Data minimization | Only collect/store data you need |
+| Consent tracking | Record when and how consent was given |
+| Data portability | Export user data in machine-readable format |
+| Breach notification | Log and report data access anomalies |
+
+### GDPR Development Patterns
+
+- **Anonymization**: Replace personal identifiers with pseudonyms rather than deleting (preserves referential integrity)
+- **Retention policies**: Configure table retention to automatically purge old data
+- **Audit logging**: Track who accessed personal data and when
+- **Field-level encryption**: Encrypt sensitive fields at the database level
+
+---
+
+## 22.2 ISV Development Considerations
+
+Independent Software Vendors (ISVs) building managed solutions for D365 F&O must follow additional rules:
+
+| Consideration | Requirement |
+|---|---|
+| ISV layer | Develop in ISV layer, not CUS |
+| Signed assemblies | Strong-name sign all assemblies |
+| Model versioning | Semantic versioning for managed solutions |
+| Dependency declaration | Declare all model references in ModelManifest.xml |
+| Upgrade testing | Test against multiple D365 F&O versions |
+
+---
+
+## 22.3 Financial Tags
+
+Financial tags classify transactions for reporting and analysis:
+
+- **Purpose**: Categorize financial data beyond the chart of accounts
+- **Implementation**: Tag fields on ledger tables
+- **Usage**: Filter and group financial reports by tag values
+- **Development**: Use `FinancialTag` EDT and related tables when building finance extensions
+
+---
+
+## 22.4 Date Effectivity
+
+Date effectivity allows data to be version-dated — different values apply to different date ranges:
+
+| Concept | Description |
+|---|---|
+| Effective date | The date from which a record is effective |
+| Expiration date | The date until which a record is effective |
+| Date-effective tables | Tables with `EffectiveFrom` and `EffectiveTo` fields |
+| Effective query | Queries that return records effective on a specific date |
+
+**Use Case:** Price lists, tax rates, and organizational hierarchies change over time. Date effectivity lets you maintain historical data while supporting current values.
+
+---
+
+## 22.5 Security Hardening Checklist
+
+```
+□ All custom tables have appropriate SaveDataPerCompany settings
+□ All custom forms have security roles assigned via MenuItem security
+□ Field-level permissions restrict sensitive data access
+□ XDS policies implemented for row-level security
+□ Segregation of Duties (SoD) rules validated
+□ Configuration keys gate feature access
+□ Audit fields (CreatedBy, ModifiedBy, CreatedDateTime, ModifiedDateTime) on all custom tables
+□ No hardcoded credentials in X++ code
+□ Secrets stored in Azure Key Vault, not in code
+```
+
+---
+
+---
+---
+
+# Chapter 23 — Workflow Framework
+
+D365 F&O provides a built-in workflow framework for routing business documents through approval processes. The VSI Asset Management codebase uses it extensively for asset requests, retirements, and maintenance repairs.
+
+## 23.1 Workflow Architecture Components
+
+| Component | Purpose | Base Class / Type |
+|---|---|---|
+| Workflow Document | Defines the query and context exposed to the workflow | `WorkflowDocument` |
+| Workflow Type | Top-level container; groups approvals, tasks, and outcomes | `WorkflowType` AOT node |
+| Approval | Approve/reject/request-change step | `WorkflowApproval` AOT node |
+| Task | Work item assigned to a user (e.g., repair task) | `WorkflowTask` AOT node |
+| Event Handler | Reacts to workflow lifecycle events | `WorkflowElementEventHandler`, `WorkflowEventHandler` |
+| Menu Item Action | User action on a work item (Approve, Reject, Delegate, Resubmit) | `WorkflowWorkItemActionManager` |
+
+## 23.2 Workflow Document
+
+The workflow document exposes the business record to the workflow framework via a query:
+
+```xpp
+class VSIAssetRequestWorkflowDocument extends WorkflowDocument
+{
+    public queryName getQueryName()
+    {
+        return queryStr(VSIAssetRequestWorkflowQuery);
+    }
+}
+```
+
+### Key Methods
+
+- **`getQueryName()`** — Returns the AOT query that supplies workflow context fields.
+- **`getContextTableId()` / `getContextRecId()`** — Used by event handlers to identify the document record.
+
+## 23.3 Workflow Event Handlers
+
+Workflow event handlers implement one or more interfaces:
+
+| Interface | Method | Fires When |
+|---|---|---|
+| `WorkflowStartedEventHandler` | `started(WorkflowEventArgs)` | Workflow begins |
+| `WorkflowCompletedEventHandler` | `completed(WorkflowEventArgs)` | Workflow finishes |
+| `WorkflowCanceledEventHandler` | `canceled(WorkflowEventArgs)` | Workflow is canceled/recall |
+| `WorkflowElementStartedEventHandler` | `started(WorkflowElementEventArgs)` | Element (approval/task) begins |
+| `WorkflowElementCompletedEventHandler` | `completed(WorkflowElementEventArgs)` | Element completes |
+| `WorkflowElementDeniedEventHandler` | `denied(WorkflowElementEventArgs)` | Element rejected |
+| `WorkflowElementReturnedEventHandler` | `returned(WorkflowElementEventArgs)` | Element returned to submitter |
+| `WorkflowElemChangeRequestedEventHandler` | `changeRequested(WorkflowElementEventArgs)` | Change requested |
+| `WorkflowWorkItemsCreatedEventHandler` | `created(WorkflowWorkItemsEventArgs)` | Work items created |
+
+### Example: Request Approval Event Handler
+
+```xpp
+public final class VSIAssetRequestApprovalEventHandler implements
+    WorkflowElementCanceledEventHandler,
+    WorkflowElemChangeRequestedEventHandler,
+    WorkflowElementCompletedEventHandler,
+    WorkflowElementReturnedEventHandler,
+    WorkflowElementStartedEventHandler,
+    WorkflowWorkItemsCreatedEventHandler
+{
+    public void started(WorkflowElementEventArgs _workflowElementEventArgs)
+    {
+        VSIAssetRequest::changeStatusByRecId(
+            _workflowElementEventArgs.parmWorkflowContext().parmRecId(),
+            VSIRequestStatus::PendingApproval);
+    }
+
+    public void completed(WorkflowElementEventArgs _workflowElementEventArgs)
+    {
+        WorkflowContext context =
+            _workflowElementEventArgs.parmWorkflowContext();
+
+        VSIWorkerId approver =
+            VSIWorkflowActorHelper::approverWorkerIdOrBlank(
+                context.parmTableId(),
+                context.parmRecId());
+
+        VSIAssetRequest::changeStatusByRecId(
+            context.parmRecId(),
+            VSIRequestStatus::Approved,
+            approver);
+
+        info("@VSIAssetManagmentLabelFile:VSIAssetRequestWorkflowApproved");
+    }
+
+    public void changeRequested(WorkflowElementEventArgs _workflowElementEventArgs)
+    {
+        VSIAssetRequest::changeStatusByRecId(
+            _workflowElementEventArgs.parmWorkflowContext().parmRecId(),
+            VSIRequestStatus::Draft);
+
+        info("@VSIAssetManagmentLabelFile:VSIAssetRequestWorkflowChangeRequested");
+    }
+
+    public void returned(WorkflowElementEventArgs _workflowElementEventArgs)
+    {
+        VSIAssetRequest::changeStatusByRecId(
+            _workflowElementEventArgs.parmWorkflowContext().parmRecId(),
+            VSIRequestStatus::Rejected);
+
+        info("@VSIAssetManagmentLabelFile:VSIAssetRequestWorkflowRejected");
+    }
+
+    public void canceled(WorkflowElementEventArgs _workflowElementEventArgs)
+    {
+        VSIAssetRequest::changeStatusByRecId(
+            _workflowElementEventArgs.parmWorkflowContext().parmRecId(),
+            VSIRequestStatus::Draft);
+
+        info("@VSIAssetManagmentLabelFile:VSIAssetRequestWorkflowCanceled");
+    }
+
+    public void created(WorkflowWorkItemsEventArgs _workflowWorkItemsEventArgs)
+    {
+    }
+}
+```
+
+### Key Pattern: Status Transition Guard
+
+Notice how `changeStatusByRecId` uses `VSIDocumentStatusChangeContext` to guard direct status updates:
+
+```xpp
+using (VSIDocumentStatusChangeContext context = new VSIDocumentStatusChangeContext())
+{
+    request.RequestStatus = _newStatus;
+    request.update();
+}
+```
+
+This ensures status changes only happen through the authorized workflow context, not via direct table updates.
+
+## 23.4 Workflow Submit and Action Managers
+
+### Submit from a Form
+
+```xpp
+public static void main(Args _args)
+{
+    VSIAssetRequest request = _args.record() as VSIAssetRequest;
+    WorkflowSubmitDialog submitDialog;
+
+    if (!request || !request.validateForSubmission())
+    {
+        return;
+    }
+
+    submitDialog = WorkflowSubmitDialog::construct(
+        _args.caller().getActiveWorkflowConfiguration());
+    submitDialog.run();
+
+    if (submitDialog.parmIsClosedOK())
+    {
+        try
+        {
+            ttsbegin;
+            Workflow::activateFromWorkflowType(
+                workflowTypeStr(VSIAssetRequestWorkflow),
+                request.RecId,
+                submitDialog.parmWorkflowComment(),
+                NoYes::No);
+            VSIAssetRequest::changeStatusByRecId(
+                request.RecId,
+                VSIRequestStatus::PendingApproval);
+            ttscommit;
+            info("@VSIAssetManagmentLabelFile:VSIAssetRequestWorkflowSubmitted");
+        }
+        catch (Exception::Error)
+        {
+            error("@VSIAssetManagmentLabelFile:VSIWorkflowSubmitFailed");
+        }
+    }
+
+    _args.caller().updateWorkflowControls();
+}
+```
+
+### Resubmit Action
+
+```xpp
+public static void main(Args _args)
+{
+    VSIAssetRequest request = _args.record() as VSIAssetRequest;
+    WorkflowWorkItemTable workItem = _args.caller().getActiveWorkflowWorkItem();
+    WorkflowWorkItemActionDialog actionDialog;
+
+    if (!request || !workItem.RecId || !request.validateForSubmission())
+    {
+        return;
+    }
+
+    actionDialog = WorkflowWorkItemActionDialog::construct(
+        workItem,
+        WorkflowWorkItemActionType::Resubmit,
+        new MenuFunction(_args.menuItemName(), _args.menuItemType()));
+    actionDialog.run();
+
+    if (actionDialog.parmIsClosedOK())
+    {
+        try
+        {
+            ttsbegin;
+            WorkflowWorkItemActionManager::dispatchWorkItemAction(
+                workItem,
+                actionDialog.parmWorkflowComment(),
+                actionDialog.parmTargetUser(),
+                WorkflowWorkItemActionType::Resubmit,
+                _args.menuItemName());
+            VSIAssetRequest::changeStatusByRecId(
+                request.RecId,
+                VSIRequestStatus::PendingApproval);
+            ttscommit;
+            info("@VSIAssetManagmentLabelFile:VSIAssetRequestWorkflowResubmitted");
+        }
+        catch (Exception::Error)
+        {
+            error("@VSIAssetManagmentLabelFile:VSIWorkflowSubmitFailed");
+        }
+    }
+
+    _args.caller().updateWorkflowControls();
+}
+```
+
+## 23.5 Workflow-Enabled Forms
+
+A form participates in workflow when it sets:
+
+| Property | Value |
+|---|---|
+| `WorkflowDataSource` | The table bound to the workflow document |
+| `WorkflowEnabled` | `Yes` |
+| `WorkflowType` | The workflow type name (e.g., `VSIAssetRequestWorkflow`) |
+
+The form's action pane typically includes Submit, Approve, Reject, Delegate, Request Change, and Resubmit menu item buttons bound to the workflow action menu items.
+
+---
+
+# Chapter 24 — Number Sequences
+
+Number sequences generate unique identifiers for records. VSI Asset Management registers its own module and references eight data types.
+
+## 24.1 Registering a Number Sequence Module
+
+```xpp
+public class VSIAssetNumberSeqModule extends NumberSeqApplicationModule
+{
+    protected void loadModule()
+    {
+        this.createDatatype(
+            extendedTypeNum(VSIVendorId),
+            literalStr("@VSIAssetManagmentLabelFile:NumSeqHelpVendor"),
+            999999, 1, true);
+        // ... repeat for VSIWorkerId, VSIRequestId, VSIAssetId, ...
+    }
+
+    public NumberSeqModule numberSeqModule()
+    {
+        return NumberSeqModule::VSIAssetManagement;
+    }
+
+    [SubscribesTo(
+        classStr(NumberSeqGlobal),
+        delegateStr(NumberSeqGlobal, buildModulesMapDelegate))]
+    static void buildModulesMapSubscriber(Map _numberSeqModuleNamesMap)
+    {
+        NumberSeqGlobal::addModuleToMap(
+            classNum(VSIAssetNumberSeqModule),
+            _numberSeqModuleNamesMap);
+    }
+}
+```
+
+### Key Methods
+
+| Method | Purpose |
+|---|---|
+| `loadModule()` | Registers `NumberSeqDatatype` references for each EDT |
+| `numberSeqModule()` | Returns the module enum value (`NumberSeqModule::VSIAssetManagement`) |
+| `buildModulesMapSubscriber()` | Subscribes to the global module map delegate so the module appears in the Number Sequences form |
+
+## 24.2 Number Sequence Reference API
+
+```xpp
+// Find a reference in the current company scope
+NumberSeqReference ref = NumberSeqReference::findReference(
+    extendedTypeNum(VSIAssetId),
+    NumberSeqScopeFactory::createDataAreaScope(curExt()));
+
+// Find in shared (global) scope
+NumberSeqReference sharedRef = NumberSeqReference::findReference(
+    extendedTypeNum(VSIVendorId),
+    NumberSeqScopeFactory::createGlobalScope());
+
+// Generate the next number
+VSIAssetId nextId = NumberSeq::newGetNum(ref).num();
+
+// Check if a reference exists
+boolean exists = ref.RecId != 0;
+```
+
+### Scope Types
+
+| Scope | Use Case |
+|---|---|
+| `createDataAreaScope(curExt())` | Company-specific sequences (default) |
+| `createGlobalScope()` | Shared across all companies (e.g., VSIWorkerId, VSIVendorId) |
+
+## 24.3 Number Sequence Form Handler in Forms
+
+```xpp
+public class VSIAssetDetails extends FormRun
+{
+    NumberSeqFormHandler numberSeqFormHandler;
+
+    public NumberSeqFormHandler numberSeqFormHandler()
+    {
+        if (!numberSeqFormHandler)
+        {
+            numberSeqFormHandler = NumberSeqFormHandler::newForm(
+                VSIAssetParameters::numRefAssetId().NumberSequenceId,
+                element,
+                VSIAsset_ds,
+                fieldNum(VSIAsset, AssetId));
+        }
+        return numberSeqFormHandler;
+    }
+
+    public void close()
+    {
+        if (numberSeqFormHandler)
+        {
+            numberSeqFormHandler.formMethodClose();
+        }
+        super();
+    }
+
+    // Data source overrides:
+    public void create(boolean _append = false)
+    {
+        element.numberSeqFormHandler().formMethodDataSourceCreatePre();
+        super(_append);
+        element.numberSeqFormHandler().formMethodDataSourceCreate();
+    }
+
+    public void write()
+    {
+        ttsbegin;
+        super();
+        element.numberSeqFormHandler().formMethodDataSourceWrite();
+        ttscommit;
+    }
+
+    public boolean validateWrite()
+    {
+        boolean ret = super();
+        ret = element.numberSeqFormHandler().formMethodDataSourceValidateWrite(ret) && ret;
+        return ret;
+    }
+
+    public void delete()
+    {
+        ttsbegin;
+        element.numberSeqFormHandler().formMethodDataSourceDelete();
+        super();
+        ttscommit;
+    }
+
+    public void linkActive()
+    {
+        element.numberSeqFormHandler().formMethodDataSourceLinkActive();
+        super();
+    }
+}
+```
+
+### Handler Method Lifecycle
+
+| Form DS Method | Handler Call | Purpose |
+|---|---|---|
+| `create()` | `formMethodDataSourceCreatePre()` then `formMethodDataSourceCreate()` | Reserve then confirm the number |
+| `write()` | `formMethodDataSourceWrite()` | Confirm on save |
+| `validateWrite()` | `formMethodDataSourceValidateWrite(ret)` | Validate sequence state |
+| `delete()` | `formMethodDataSourceDelete()` | Release on delete |
+| `close()` | `formMethodClose()` | Release any reserved numbers |
+| `linkActive()` | `formMethodDataSourceLinkActive()` | Sync when record changes |
+
+## 24.4 Number Sequence Targets
+
+`VSINumberSeqTargets` maps each EDT to the table field it populates:
+
+```xpp
+public static Description usedOn(ExtendedTypeId _typeId)
+{
+    switch (_typeId)
+    {
+        case extendedTypeNum(VSIAssetId): return 'VSIAsset.AssetId';
+        case extendedTypeNum(VSIRequestId): return 'VSIAssetRequest.RequestId';
+        // ...
+    }
+    return '';
+}
+```
+
+---
+
+# Chapter 25 — Data Management Framework (DMF)
+
+DMF enables data import/export through staging tables and data entities.
+
+## 25.1 Data Entities
+
+VSI Asset Management exposes 10 public data entities, each backed by a staging table:
+
+| Entity | Staging Table | Category |
+|---|---|---|
+| `VSIAssetEntity` | `VSIAssetStaging` | Master |
+| `VSIAssetLicenseEntity` | `VSIAssetLicenseStaging` | Master |
+| `VSIAssetTypeEntity` | `VSIAssetTypeStaging` | Reference |
+| `VSIFunctionalLocationEntity` | `VSIFunctionalLocationStaging` | Reference |
+| `VSIVendorEntity` | `VSIVendorStaging` | Reference |
+| `VSIWorkerEntity` | `VSIWorkerStaging` | Reference |
+| `VSIAssetAssignmentHistoryEntity` | `VSIAssetAssignmentHistoryStaging` | Transaction |
+| `VSIAssetMaintenanceEntity` | `VSIAssetMaintenanceStaging` | Transaction |
+| `VSIAssetRequestEntity` | `VSIAssetRequestStaging` | Document |
+| `VSIAssetRetirementEntity` | `VSIAssetRetirementStaging` | Transaction |
+| `VSIAssetStatusHistoryEntity` | `VSIAssetStatusHistoryStaging` | Transaction |
+
+### Entity Properties
+
+```xml
+<IsPublic>Yes</IsPublic>
+<DataManagementEnabled>Yes</DataManagementEnabled>
+<DataManagementStagingTable>VSIAssetStaging</DataManagementStagingTable>
+<PrimaryCompanyContext>DataAreaId</PrimaryCompanyContext>
+<EntityCategory>Transaction</EntityCategory>
+<PrimaryKey>EntityKey</PrimaryKey>
+<PublicEntityName>VSIAsset</PublicEntityName>
+```
+
+## 25.2 Staging Tables
+
+Staging tables are `TableGroup = Staging`, `SaveDataPerCompany = No`, and include system-generated fields:
+
+| Field | Purpose |
+|---|---|
+| `DefinitionGroup` | DMF definition group name |
+| `ExecutionId` | DMF execution identifier |
+| `IsSelected` | Whether the row is selected for processing |
+| `TransferStatus` | `DMFTransferStatus` (Pending, etc.) |
+
+Each staging table has a foreign-key relation to its data entity via the primary key fields.
+
+## 25.3 Custom Field Mapping on Import
+
+`VSIVendorEntity` and `VSIWorkerEntity` override `mapEntityToDataSource` to control ID assignment during import:
+
+```xpp
+public void mapEntityToDataSource(
+    DataEntityRuntimeContext           _entityCtx,
+    DataEntityDataSourceRuntimeContext _dataSourceCtx)
+{
+    super(_entityCtx, _dataSourceCtx);
+
+    if (_dataSourceCtx.name() != dataEntityDataSourceStr(VSIVendorEntity, VSIVendor))
+    {
+        return;
+    }
+
+    VSIVendor vendor = _dataSourceCtx.getBuffer();
+
+    switch (_entityCtx.getDatabaseOperation())
+    {
+        case DataEntityDatabaseOperation::Insert:
+            vendor.VendorId = VSIVendorEntity::nextVendorId();
+            break;
+        case DataEntityDatabaseOperation::Update:
+            vendor.VendorId = vendor.orig().VendorId;
+            break;
+    }
+}
+
+private static VSIVendorId nextVendorId()
+{
+    NumberSequenceReference reference = VSIAssetParameters::numRefVendorId();
+    if (!reference.NumberSequenceId)
+    {
+        throw error(strFmt(
+            "@VSIAssetManagmentLabelFile:ImportNumSeqNotSetUpInCompany",
+            new DictType(extendedTypeNum(VSIVendorId)).label(),
+            curExt()));
+    }
+    return NumberSeq::newGetNum(reference).num();
+}
+```
+
+### Key Rules
+
+- **Insert**: Generate the ID from the number sequence; ignore any ID in the import file.
+- **Update**: Preserve the existing ID using `orig()`; ignore changes to the ID field.
+- Throw an error if no number sequence is mapped in the current company.
+
+## 25.4 Import/Export Flow
+
+1. Create a **Definition Group** in Data management workspace.
+2. Add the data entity to the group.
+3. Generate mapping (auto-maps staging fields to entity fields).
+4. Upload source file (CSV/Excel/XML).
+5. **Staging**: Data lands in the staging table with `TransferStatus`.
+6. **Validate**: Check staging errors before pushing to target.
+7. **Push to target**: Moves data from staging to the target table via `mapEntityToDataSource`.
+
+---
+
+# Chapter 26 — Advanced Form Patterns
+
+## 26.1 List Page Pattern (`ListPage`)
+
+Used for `VSIAssetListPage`. Key elements:
+
+- **Action Pane** with button groups for New, Details, Assign, Return, Reassign, Print Tag.
+- **Custom Filter Group** with `CustomAndQuickFilters` pattern containing filter controls (TypeFilter, StatusFilter, LocationFilter, VendorFilter, CustodianFilter).
+- **Grid** with `DefaultAction` set to the Details menu item button.
+- **Parts** (FactBoxes) referenced via `AxFormPartReference`.
+
+Filter controls typically call `executeQuery()` on `modified()`:
+
+```xpp
+public boolean modified()
+{
+    boolean ret = super();
+    VSIAsset_ds.executeQuery();
+    return ret;
+}
+```
+
+### Data Source Init for Filters
+
+```xpp
+public void init()
+{
+    super();
+    qbdsCustodian = this.queryBuildDataSource().addDataSource(tableNum(VSIAssetAssignmentHistory));
+    qbdsCustodian.joinMode(JoinMode::ExistsJoin);
+    qbdsCustodian.relations(false);
+    qbdsCustodian.addLink(fieldNum(VSIAsset, AssetId), fieldNum(VSIAssetAssignmentHistory, AssetId));
+    qbdsCustodian.addRange(fieldNum(VSIAssetAssignmentHistory, ReturnedDateTime))
+        .value(SysQuery::value(utcDateTimeNull()));
+    qbdsCustodian.enabled(false);
+}
+```
+
+## 26.2 Simple List Details — Grid Pattern (`SimpleListDetails-Grid`)
+
+Used for `VSIAssetMaintenance`. Layout:
+
+- **Navigation List Group** (`SidePanel` style) with a grid on the left.
+- **Vertical Splitter** (`SplitterVerticalContainer`).
+- **Details Header** (`FieldsFieldGroups` pattern).
+- **Details Tab** (`FastTabs` style) with tab pages for Fault, Repair, etc.
+
+## 26.3 FactBox Forms
+
+Two patterns:
+
+| Pattern | Use | Example |
+|---|---|---|
+| `FormPartFactboxGrid` | List of related records | `VSIAssetAssignmentFactBox` (assignment history grid) |
+| `FormPartFactboxCard` | Key-value summary | `VSIAssetLicenseFactBox` (seat count, renewal date) |
+
+FactBoxes are referenced from list pages via `AxFormPartReference`:
+```xml
+<AxFormPartReference>
+    <Name>AssignmentPart</Name>
+    <DataSource>VSIAsset</DataSource>
+    <MenuItemName>VSIAssetAssignmentFactBox</MenuItemName>
+</AxFormPartReference>
+```
+
+## 26.4 Tree Form Pattern (`SimpleListDetails-Tree`)
+
+Used for `VSIFunctionalLocation`. Key mechanics:
+
+- **Tree Control** (`FormTreeControl`) on the left navigation panel.
+- Recursive tree building in `buildTree()`:
+
+```xpp
+public void buildTree(RefRecId _selectRecId = 0)
+{
+    VSIFunctionalLocation loc;
+    List rows = new List(Types::Container);
+    Set knownIds = new Set(Types::String);
+    Map childrenByParent = new Map(Types::String, Types::Class);
+
+    while select RecId, LocationId, Name, ParentLocationId from loc
+        order by loc.Name
+    {
+        rows.addEnd([loc.RecId, loc.LocationId, loc.Name, loc.ParentLocationId]);
+        knownIds.add(loc.LocationId);
+    }
+
+    // ... build parent->children map ...
+    this.addNodes(0, '', childrenByParent);
+    this.selectNode(_selectRecId);
+}
+```
+
+- **Selection changed** syncs the data source cursor:
+```xpp
+public void selectionChanged(FormTreeItem _oldItem, FormTreeItem _newItem, FormTreeSelect _how)
+{
+    RefRecId targetRecId = _newItem.data();
+    VSIFunctionalLocation target;
+    select firstonly target where target.RecId == targetRecId;
+    VSIFunctionalLocation_ds.findRecord(target);
+    element.selectNode(VSIFunctionalLocation.RecId);
+}
+```
+
+## 26.5 Dialog Field Overrides
+
+Register override methods in `postRun()` of a UI builder:
+
+```xpp
+public void postRun()
+{
+    super();
+    checkRequestsField.registerOverrideMethod(
+        methodStr(FormCheckBoxControl, modified),
+        methodStr(VSIAssetIntegrityAuditBatchUIBuilder, checkRequestsModified),
+        this);
+}
+
+public boolean checkRequestsModified(FormCheckBoxControl _control)
+{
+    approvedDaysField.enabled(_control.value() == NoYes::Yes);
+    return true;
+}
+```
+
+## 26.6 MultiSelectionHelper
+
+Used for multi-select ranges on tag label reports:
+
+```xpp
+MultiSelectionHelper selection = MultiSelectionHelper::construct();
+selection.parmDatasource(formDataSource);
+VSIAsset asset = selection.getFirst();
+while (asset)
+{
+    rangeValue = rangeValue ? rangeValue + ',' + queryValue(asset.AssetId) : queryValue(asset.AssetId);
+    asset = selection.getNext();
+}
+```
+
+---
+
+# Chapter 27 — Notifications & IDisposable Pattern
+
+## 27.1 Action Center Notifications
+
+`VSIAssetNotificationHelper` sends notifications to asset administrators via `SystemNotificationsManager`:
+
+```xpp
+public static boolean notifyUsers(List _userIds, str _title, str _message)
+{
+    SystemNotificationDataContract notification = new SystemNotificationDataContract();
+    ListEnumerator enumerator = _userIds.getEnumerator();
+    int userIndex;
+
+    while (enumerator.moveNext())
+    {
+        userIndex++;
+        notification.Users().value(userIndex, enumerator.current());
+    }
+
+    notification.Title(_title);
+    notification.Message(VSIAssetNotificationHelper::truncate(_message));
+    notification.RuleId(VSIAssetNotificationHelper::RuleId);
+    notification.ExpirationDateTime(
+        DateTimeUtil::addHours(DateTimeUtil::utcNow(), VSIBatchConstants::NotificationExpiryHours));
+
+    SystemNotificationsManager::AddSystemNotification(notification);
+    return true;
+}
+```
+
+### Message Truncation
+
+```xpp
+private static str truncate(str _message)
+{
+    if (strLen(_message) <= VSIBatchConstants::MaxNotificationLength)
+    {
+        return _message;
+    }
+    return subStr(_message, 1, VSIBatchConstants::MaxNotificationLength - 3) + '...';
+}
+```
+
+### Finding Administrator Users
+
+```xpp
+public static List assetAdministratorUserIds()
+{
+    List userIds = new List(Types::String);
+    VSIWorker worker;
+    UserInfo userInfo;
+
+    while select PlatformUserId from worker
+        order by worker.PlatformUserId
+        where worker.IsAssetAdmin == NoYes::Yes
+           && worker.EmploymentStatus == VSIEmploymentStatus::Active
+           && worker.PlatformUserId != ''
+        exists join userInfo
+            where userInfo.id == worker.PlatformUserId
+               && userInfo.enable == 1
+    {
+        userIds.addEnd(worker.PlatformUserId);
+    }
+    return userIds;
+}
+```
+
+## 27.2 IDisposable Status Change Context
+
+`VSIAssetStatusChangeContext` and `VSIDocumentStatusChangeContext` enforce that status changes only occur within an authorized scope:
+
+```xpp
+public final class VSIAssetStatusChangeContext implements System.IDisposable
+{
+    private static VSIAssetStatusChangeContext instance;
+
+    public void new()
+    {
+        if (instance)
+        {
+            throw error("@VSIAssetManagmentLabelFile:StatusContextNested");
+        }
+        instance = this;
+    }
+
+    public void dispose()
+    {
+        instance = null;
+    }
+
+    public static boolean isActive()
+    {
+        return instance != null;
+    }
+}
+```
+
+### Usage in `validateWrite`/`update`
+
+```xpp
+public void update()
+{
+    if (this.Status != this.orig().Status && !VSIAssetStatusChangeContext::isActive())
+    {
+        throw error("@VSIAssetManagmentLabelFile:DocumentStatusChangeNotAllowed");
+    }
+    super();
+}
+```
+
+### Usage in `VSIAssetStatusHelper::changeStatus`
+
+```xpp
+using (VSIAssetStatusChangeContext context = new VSIAssetStatusChangeContext())
+{
+    asset.Status = _newStatus;
+    asset.update();
+}
+VSIAssetStatusHistory::log(...);
+```
+
+This pattern ensures status transitions are auditable and cannot be bypassed by direct table updates.
+
+---
+
+# Chapter 28 — Advanced Batch & Concurrency
+
+## 28.1 SysOperation Batch Pattern
+
+VSI Asset Management uses `SysOperationServiceController` / `SysOperationServiceBase` for all batch operations:
+
+| Class | Purpose |
+|---|---|
+| `VSIAssetIntegrityAuditBatchController` | Controller for integrity audit |
+| `VSIAssetIntegrityAuditBatchService` | Service with `process()` and `processTask()` |
+| `VSIAssetIntegrityAuditBatchContract` | Data contract with `SysOperationValidatable` |
+| `VSIAssetIntegrityAuditBatchUIBuilder` | Dialog field overrides |
+| `VSIAssetIntegrityAuditBatchTaskContract` | Runtime task contract |
+| `VSIAssetIntegrityAuditBatchTaskController` | Task controller (`parmShowDialog(false)`) |
+
+### Controller Pattern
+
+```xpp
+public static VSIAssetIntegrityAuditBatchController construct(
+    SysOperationExecutionMode _executionMode = SysOperationExecutionMode::Synchronous)
+{
+    VSIAssetIntegrityAuditBatchController controller =
+        new VSIAssetIntegrityAuditBatchController(
+            classStr(VSIAssetIntegrityAuditBatchService),
+            methodStr(VSIAssetIntegrityAuditBatchService, process),
+            _executionMode);
+    controller.parmDialogCaption("@VSIAssetManagmentLabelFile:VSIAssetIntegrityAuditBatchCaption");
+    return controller;
+}
+
+public static void main(Args _args)
+{
+    VSIAssetIntegrityAuditBatchController controller = VSIAssetIntegrityAuditBatchController::construct();
+    controller.parmArgs(_args);
+    controller.startOperation();
+}
+```
+
+## 28.2 Batch Runtime Tasks
+
+For large datasets, the service dispatches multiple runtime tasks via `BatchHeader`:
+
+```xpp
+if (this.isExecutingInBatch())
+{
+    batchHeader = this.getCurrentBatchHeader();
+}
+
+// ... split recIds into bundles ...
+
+batchHeader.addRuntimeTask(taskController, this.getCurrentBatchTask().RecId);
+// ...
+batchHeader.save();
+```
+
+### Task Controller (No Dialog)
+
+```xpp
+public static VSIAssetIntegrityAuditBatchTaskController construct()
+{
+    VSIAssetIntegrityAuditBatchTaskController controller =
+        new VSIAssetIntegrityAuditBatchTaskController(
+            classStr(VSIAssetIntegrityAuditBatchService),
+            methodStr(VSIAssetIntegrityAuditBatchService, processTask),
+            SysOperationExecutionMode::Synchronous);
+    controller.parmShowDialog(false);
+    return controller;
+}
+```
+
+## 28.3 Deadlock & Concurrency Retry
+
+`VSIAssetServiceHelper::execute` wraps service calls in retry logic:
+
+```xpp
+ttsbegin;
+_processor.process(_operation, _request, _response);
+ttscommit;
+```
+
+Catch blocks handle:
+- `Exception::Deadlock` — retry up to `#RetryNum` times
+- `Exception::UpdateConflict` — retry up to `#RetryNum` times
+- `Exception::Error` — mark failure, no retry
+
+```xpp
+catch (Exception::Deadlock)
+{
+    if (appl.ttsLevel() == 0 && xSession::currentRetryCount() < #RetryNum)
+    {
+        retry;
+    }
+    _response.markFailure(...);
+}
+```
+
+## 28.4 Cross-Company Queries
+
+`VSIAssetInquiryService.processWorkerAssets` queries across all companies:
+
+```xpp
+container companies = this.companies(_request.parmAllCompanies());
+
+while select crossCompany : companies assignment
+    order by DataAreaId, AssignedDateTime
+    where assignment.WorkerId == worker.WorkerId
+       && assignment.ReturnedDateTime == utcDateTimeNull()
+{
+    // ...
+}
+
+private container companies(boolean _allCompanies)
+{
+    DataArea dataArea;
+    container result;
+    if (!_allCompanies)
+    {
+        return [curExt()];
+    }
+    while select Id from dataArea where dataArea.IsVirtual == NoYes::No
+    {
+        result += [dataArea.Id];
+    }
+    return result;
+}
+```
+
+## 28.5 Batch Constants
+
+`VSIBatchConstants` holds shared limits:
+
+| Constant | Value | Purpose |
+|---|---|---|
+| `MaxRetries` | 5 | Max deadlock/update-conflict retries |
+| `DefaultBundleSize` | 200 | Records per batch task |
+| `MinBundleSize` | 10 | Minimum bundle size |
+| `MaxBundleSize` | 5000 | Maximum bundle size |
+| `NotificationExpiryHours` | 168 | Notification expiry (7 days) |
+| `MaxNotificationLength` | 1000 | Max notification message length |
+| `MaxDigestLines` | 20 | Max lines in notification digest |
+
+---
+
+# Chapter 29 — Labels, AppChecker & Configuration Keys
+
+## 29.1 Label Files
+
+Labels are stored in `VSIAssetManagmentLabelFile.en-US.label.txt` and referenced via `@VSIAssetManagmentLabelFile:LabelId` syntax in X++ and XML metadata.
+
+### Label File Format
+
+```
+ActionNotAllowed=Asset %1 can't be used for this action while its status is %2.
+ ;Assignment action not allowed, %1 = asset tag, %2 = status
+```
+
+### Label File Metadata
+
+`VSIAssetManagmentLabelFile_en-US.xml` maps the label file ID to the `.label.txt` resource file.
+
+## 29.2 AppChecker / Best Practices
+
+The project file (`VSIAssetManagement.rnrproj`) controls build behavior:
+
+| Property | Value | Purpose |
+|---|---|---|
+| `RunAppCheckerRules` | `False` | Disable AppChecker rules during build |
+| `LogAppcheckerDiagsAsErrors` | `False` | Don't log AppChecker diagnostics as errors |
+| `GenerateCrossReferences` | `True` | Generate X++ cross-reference data |
+| `GenerateFormAdaptors` | `False` | Disable form adaptor generation |
+| `DBSyncInBuild` | `False` | Disable database sync during build |
+
+## 29.3 Configuration Keys
+
+Configuration keys gate feature visibility. The handbook mentions them in the hardening checklist but the codebase uses them implicitly through security roles and privileges rather than explicit `ConfigurationKey` properties on tables/forms.
+
+**Best Practice:** Assign `ConfigurationKey` to custom tables and forms to allow administrators to enable/disable features without code changes.
+
+---
+
+# Chapter 30 — Custom Services & JSON/CLR Interop
+
+## 30.1 Service Pattern Overview
+
+VSI Asset Management exposes two custom services:
+
+| Service | Operations |
+|---|---|
+| `VSIAssetAssignmentService` | `assignAsset` |
+| `VSIAssetInquiryService` | `getAssetDetails`, `getWorkerAssets` |
+
+### Service Interface
+
+```xpp
+public interface VSIAssetServiceProcessor
+{
+    public void process(
+        str _operation,
+        VSIAssetServiceRequest _request,
+        VSIAssetServiceResponse _response);
+}
+```
+
+### Request / Response Contracts
+
+```xpp
+[DataContractAttribute]
+public final class VSIAssetAssignRequestContract implements VSIAssetServiceRequest
+{
+    [DataMemberAttribute('AssetId')]
+    public VSIAssetId parmAssetId(VSIAssetId _assetId = assetId) { ... }
+    
+    public str companyId() { return dataAreaId; }
+}
+
+[DataContractAttribute]
+public final class VSIAssetAssignmentResponseContract implements VSIAssetServiceResponse
+{
+    [DataMemberAttribute('Success')]
+    public boolean parmSuccess(boolean _success = success) { ... }
+    
+    public void markSuccess(str _message) { ... }
+    public void markFailure(List _errors) { ... }
+    public void setCompany(str _dataAreaId) { ... }
+}
+```
+
+## 30.2 Shared Service Executor
+
+`VSIAssetServiceHelper::execute` provides the common entry point:
+
+```xpp
+public static void execute(
+    VSIAssetServiceProcessor _processor,
+    str _operation,
+    VSIAssetServiceRequest _request,
+    VSIAssetServiceResponse _response)
+{
+    int infologStart = infologLine();
+    str company;
+
+    try
+    {
+        if (!_request) throw error("@VSIAssetManagmentLabelFile:ServiceRequestMissing");
+        company = VSIAssetServiceHelper::resolveCompany(_request.companyId());
+        _response.setCompany(company);
+
+        changecompany(company)
+        {
+            ttsbegin;
+            _processor.process(_operation, _request, _response);
+            ttscommit;
+        }
+    }
+    catch (Exception::Deadlock) { /* retry logic */ }
+    catch (Exception::UpdateConflict) { /* retry logic */ }
+    catch (Exception::Error) { _response.markFailure(...); }
+    catch { _response.markFailure(...); }
+}
+```
+
+## 30.3 JSON Serialization with CLR Interop
+
+`VSIAssetServiceCatalog` provides a test harness that serializes contracts to/from JSON using `FormJsonSerializer` and `Newtonsoft.Json`:
+
+```xpp
+private static str wrapRequest(Object _contract)
+{
+    return VSIAssetServiceCatalog::prettyPrint(
+        '{"' + VSIAssetServiceCatalog::RequestParameterName + '":'
+        + FormJsonSerializer::serializeClass(_contract)
+        + '}');
+}
+
+private static str prettyPrint(str _json)
+{
+    return Newtonsoft.Json.Linq.JToken::Parse(_json).ToString();
+}
+```
+
+### Running a Service Test from a Form
+
+```xpp
+public void runTest()
+{
+    str inboundJson = VSIAssetServiceOperationTmp.InboundJson;
+
+    if (VSIAssetServiceCatalog::isWriteOperation(VSIAssetServiceOperationTmp.OperationName)
+        && Box::yesNo(
+            strFmt("@VSIAssetManagmentLabelFile:ServiceTestConfirm",
+                   VSIAssetServiceCatalog::requestCompany(inboundJson)),
+            DialogButton::No) != DialogButton::Yes)
+    {
+        return;
+    }
+
+    VSIAssetServiceOperationTmp.OutboundJson = VSIAssetServiceCatalog::runTest(
+        VSIAssetServiceOperationTmp.OperationName, inboundJson);
+    VSIAssetServiceOperationTmp_ds.write();
+    VSIAssetServiceOperationTmp_ds.refresh();
+}
+```
+
+### Deserializing Inbound JSON
+
+```xpp
+response = assignmentService.assignAsset(
+    FormJsonSerializer::deserializeObject(
+        classNum(VSIAssetAssignRequestContract), requestJson)
+        as VSIAssetAssignRequestContract);
+```
+
+## 30.4 Service Exposure
+
+Services are registered in `AxService` and `AxServiceGroup` metadata:
+
+```xml
+<AxServiceGroup>
+    <Name>VSIAssetServiceGroup</Name>
+    <AutoDeploy>Yes</AutoDeploy>
+    <Services>
+        <AxServiceGroupService><Name>VSIAssetAssignmentService</Name><Service>VSIAssetAssignmentService</Service></AxServiceGroupService>
+        <AxServiceGroupService><Name>VSIAssetInquiryService</Name><Service>VSIAssetInquiryService</Service></AxServiceGroupService>
+    </Services>
+</AxServiceGroup>
+```
+
+Service operations are secured via `AxSecurityPrivilege` entries:
+```xml
+<AxSecurityEntryPointReference>
+    <Name>assignAsset</Name>
+    <ObjectName>VSIAssetAssignmentService</ObjectName>
+    <ObjectType>ServiceOperation</ObjectType>
+</AxSecurityEntryPointReference>
+```
+
+---
+
+# Summary: From 5-Month Intern to Production-Ready Developer
+
+Your handbook now covers:
+
+| Level | Topics | Coverage |
+|---|---|---|
+| **Foundations** (Months 1-2) | X++ basics, tables, EDTs, CRUD, forms | ✅ Complete |
+| **Intermediate** (Months 3-4) | CoC, event handlers, RunBase, SysOperation | ✅ Complete |
+| **Advanced** (Months 5-6) | SysDa, extension methods, orig(), prmIsDefault, local functions, var | ✅ Complete |
+| **Production** (Months 7-8) | SQL timeouts, deadlock handling, CacheLookup, indexing, debugging | ✅ Complete |
+| **Integration** (Months 9-10) | Power Platform, OData, Logic Apps, Azure Functions, mobile | ✅ Complete |
+| **Specialization** (Months 11-12) | Finance, SCM, HR module deep dives | ✅ Complete |
+| **DevOps** (Ongoing) | CI/CD, validate package, database movement, continuous delivery | ✅ Complete |
+| **Compliance** (Ongoing) | GDPR, ISV rules, financial tags, date effectivity, security hardening | ✅ Complete |
+| **Workflow** (New) | WorkflowDocument, WorkflowType, Approvals, Tasks, event handlers, submit/resubmit | ✅ New |
+| **Number Sequences** (New) | NumberSeqApplicationModule, loadModule, NumberSeqFormHandler, scope types | ✅ New |
+| **Data Management** (New) | Data entities, staging tables, mapEntityToDataSource, import/export flow | ✅ New |
+| **Advanced Forms** (New) | ListPage, SimpleListDetails-Grid, FactBox, Tree forms, dialog overrides | ✅ New |
+| **Notifications** (New) | Action Center, SystemNotificationsManager, IDisposable status context | ✅ New |
+| **Batch & Concurrency** (New) | Runtime tasks, deadlock retry, cross-company queries, batch constants | ✅ New |
+| **Labels & AppChecker** (New) | Label files, AppChecker config, configuration keys | ✅ New |
+| **Services & JSON/CLR** (New) | Custom services, contracts, FormJsonSerializer, Newtonsoft.Json, service security | ✅ New |
+
+**Next Steps for the Intern:**
+1. Complete all 30 chapters with hands-on exercises
+2. Build a capstone project spanning at least two modules (e.g., Finance + SCM)
+3. Set up a CI/CD pipeline with automated testing
+4. Prepare for Microsoft certification (MB-310 or MB-330)
+5. Contribute to the standard codebase using extension patterns only

@@ -550,7 +550,7 @@ error("Error message");             // Red
 | Table extension | `[ExtensionOf(tableStr(CustTable))]` | `final` class, `ExtensionOf` attribute |
 | EDT extension | `[ExtendsWithEDT('AddressCountryRegionId')]` | Static method with `_Ext` suffix |
 | Event handler | `CustTable_inserted` | `TableName_EventName` |
-| Delegate | `modifyPrice` | Method name on the delegate publisher |
+| Delegate | *(deprecated)* | Do not create new delegates — use Chain of Command (CoC) instead |
 
 ---
 
