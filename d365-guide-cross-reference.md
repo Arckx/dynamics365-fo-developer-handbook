@@ -40,11 +40,11 @@ metadata:
 | **Phase 20** | Workflow Framework (Months 5-6) | **Ch 23** | WorkflowDocument, WorkflowType, Approvals, Tasks, event handlers, submit/resubmit |
 | **Phase 21** | Number Sequences (Months 5-6) | **Ch 24** | NumberSeqApplicationModule, loadModule, NumberSeqFormHandler, scope types |
 | **Phase 22** | Data Management Framework (Months 7-8) | **Ch 25** | Data entities, staging tables, mapEntityToDataSource, import/export |
-| **Phase 23** | Advanced Forms (Months 9-10) | **Ch 26** | ListPage, SimpleListDetails-Grid, FactBox, Tree forms, dialog overrides |
-| **Phase 24** | Notifications & IDisposable (Months 9-10) | **Ch 27** | Action Center, SystemNotificationsManager, status change context |
-| **Phase 25** | Batch & Concurrency (Months 7-8) | **Ch 28** | Runtime tasks, deadlock retry, cross-company queries, batch constants |
+| **Phase 23** | Advanced Forms (Months 9-10) | **Ch 26** | ListPage, SimpleListDetails-Grid, FactBox, Tree forms, dialog overrides, SysQueryRangeUtil, MultiSelectionHelper |
+| **Phase 24** | Notifications & IDisposable (Months 9-10) | **Ch 27** | Action Center, SystemNotificationsManager, status change context, VSIAssetStatusHelper, VSIAssetNotificationHelper, multi-company notifications |
+| **Phase 25** | Batch & Concurrency (Months 7-8) | **Ch 28** | Runtime tasks, deadlock retry, cross-company queries, batch constants, VSIWorker PlatformUserId query pattern |
 | **Phase 26** | Labels & AppChecker (Ongoing) | **Ch 29** | Label files, AppChecker config, configuration keys |
-| **Phase 27** | Services & JSON/CLR (Months 9-10) | **Ch 30** | Custom services, contracts, FormJsonSerializer, Newtonsoft.Json, service security |
+| **Phase 27** | Services & JSON/CLR (Months 9-10) | **Ch 30** | Custom services, contracts, FormJsonSerializer, Newtonsoft.Json, service security, VSIAssetServiceHelper.execute, VSIAssetServiceCatalog test harness |
 
 ---
 
@@ -118,13 +118,20 @@ Use this table to find where a specific topic is covered across both guides.
 | Tree forms | Phase 23, Ch 26 | Ch 26 |
 | Action Center notifications | Phase 24, Ch 27 | Ch 27 |
 | IDisposable status change context | Phase 24, Ch 27 | Ch 27 |
+| VSIAssetStatusHelper::changeStatus | Phase 24, Ch 27 | Ch 27 |
+| VSIAssetNotificationHelper | Phase 24, Ch 27 | Ch 27 |
+| Multi-company notifications | Phase 24, Ch 27 | Ch 27 |
 | Batch runtime tasks | Phase 25, Ch 28 | Ch 28 |
 | Deadlock retry logic | Phase 25, Ch 28 | Ch 28 |
 | Cross-company queries | Phase 25, Ch 28 | Ch 28 |
+| VSIWorker PlatformUserId query pattern | Phase 25, Ch 28 | Ch 28 |
 | Label files | Phase 26, Ch 29 | Ch 29 |
 | AppChecker configuration | Phase 26, Ch 29 | Ch 29 |
 | Custom services & contracts | Phase 27, Ch 30 | Ch 30 |
 | FormJsonSerializer / Newtonsoft.Json | Phase 27, Ch 30 | Ch 30 |
+| VSIAssetServiceHelper::execute | Phase 27, Ch 30 | Ch 30 |
+| VSIAssetServiceCatalog test harness | Phase 27, Ch 30 | Ch 30 |
+| SysQueryRangeUtil & advanced query ranges | Phase 23, Ch 26 | Ch 26 |
 | End-to-end capstone (Procurement-to-Pay) | Phase 12, §12.3 | Ch 15 |
 | Capstone A — Finance: AP Tax Compliance | Phase 17 | Ch 15.5 |
 | Capstone B — SCM: PO Automation | Phase 17 | Ch 15.5 |

@@ -12939,6 +12939,173 @@ while (asset)
 }
 ```
 
+## 26.7 SysQueryRangeUtil — Advanced Query Ranges
+
+`SysQueryRangeUtil` provides static methods for building complex query ranges, commonly used in VSI reports and batch jobs for date filtering:
+
+### Common Date Range Methods
+
+| Method | Syntax | Example Result |
+|---|---|---|
+| `dayRange(_fromDate, _toDate)` | `SysQueryRangeUtil::dayRange(today(), today())` | `11/11/2026..11/11/2026` |
+| `monthRange(_fromDate, _toDate)` | `SysQueryRangeUtil::monthRange(DateTimeUtil::date(DateTimeUtil::addMonths(DateTimeUtil::utcNow(), -1)), today())` | `10/1/2026..11/30/2026` |
+| `yearRange(_fromDate, _toDate)` | `SysQueryRangeUtil::yearRange(DateTimeUtil::date(DateTimeUtil::addYears(DateTimeUtil::utcNow(), -1)), today())` | `1/1/2025..12/31/2026` |
+| `dateRange(_fromDate, _toDate)` | `SysQueryRangeUtil::dateRange(systemDateGet(), systemDateGet())` | `11/11/2026..11/11/2026` |
+| `greaterThanDate(_date)` | `SysQueryRangeUtil::greaterThanDate(systemDateGet())` | `>11/11/2026` |
+| `lessThanDate(_date)` | `SysQueryRangeUtil::lessThanDate(systemDateGet())` | `<11/11/2026` |
+
+### VSI Report Usage Pattern
+
+```xpp
+public class VSIAssetIntegrityAuditReportDP extends SrsReportDataProviderPreProcessTmp
+{
+    VSIAssetIntegrityAuditTmp tmp;
+
+    public void processReport()
+    {
+        VSIAssetIntegrityAuditContract contract = this.parmDataContract();
+        QueryBuildRange qbr;
+
+        // Date range filter on assignment date
+        qbr = this.query().dataSourceTable(tableNum(VSIAssetAssignmentHistory))
+            .addRange(fieldNum(VSIAssetAssignmentHistory, AssignedDateTime));
+        qbr.value(SysQueryRangeUtil::dateRange(
+            contract.parmFromDate(), 
+            contract.parmToDate()));
+
+        // Status filter using enum range
+        qbr = this.query().dataSourceTable(tableNum(VSIAsset))
+            .addRange(fieldNum(VSIAsset, Status));
+        qbr.value(SysQueryRangeUtil::enumRange(
+            VSIAssetStatus::Assigned, 
+            VSIAssetStatus::Maintenance));
+
+        // Multi-value range for asset types
+        qbr = this.query().dataSourceTable(tableNum(VSIAsset))
+            .addRange(fieldNum(VSIAsset, AssetTypeId));
+        qbr.value(SysQueryRangeUtil::inList([
+            'Laptop', 'Monitor', 'Mobile', 'DockingStation']));
+
+        // Complex: date range with time component
+        qbr = this.query().dataSourceTable(tableNum(VSIAssetStatusHistory))
+            .addRange(fieldNum(VSIAssetStatusHistory, ChangedDateTime));
+        qbr.value(strFmt('%1..%2',
+            DateTimeUtil::toStr(contract.parmFromDateTime()),
+            DateTimeUtil::toStr(contract.parmToDateTime())));
+
+        super();
+    }
+}
+```
+
+### Enum Range Helper
+
+```xpp
+/// <summary>
+/// Builds a query range for enum values from _from to _to inclusive.
+/// </summary>
+public static str enumRange(int _from, int _to)
+{
+    str range = '';
+    for (int i = _from; i <= _to; i++)
+    {
+        range += (strLen(range) ? ',' : '') + int2str(i);
+    }
+    return range;
+}
+```
+
+### InList Helper for Multiple Values
+
+```xpp
+/// <summary>
+/// Builds a comma-separated query range from a container of values.
+/// </summary>
+public static str inList(container _values)
+{
+    str result = '';
+    for (int i = 1; i <= conLen(_values); i++)
+    {
+        result += (strLen(result) ? ',' : '') + queryValue(conPeek(_values, i));
+    }
+    return result;
+}
+```
+
+### DateTime Range with Time Precision
+
+For datetime fields, use the full datetime format:
+
+```xpp
+qbr.value(strFmt('%1..%2',
+    DateTimeUtil::toStr(DateTimeUtil::addDays(DateTimeUtil::utcNow(), -7)), // 7 days ago
+    DateTimeUtil::toStr(DateTimeUtil::utcNow())));
+```
+
+**Output format:** `11/4/2026 14:30:00..11/11/2026 14:30:00`
+
+### Performance Tip: Range vs. Multiple Ranges
+
+| Approach | Query Plan | Use When |
+|---|---|---|
+| Single `..` range | Single seek | Contiguous values |
+| Multiple comma values | Multiple seeks | Sparse/discrete values |
+| `inList()` with 100+ values | Consider temp table | Large discrete sets |
+
+---
+
+## 26.8 Activity — Build a Report with Dynamic Ranges
+
+**Objective:** Create a report data provider that uses `SysQueryRangeUtil` for all filter types.
+
+**Requirements:**
+1. Contract with FromDate, ToDate, AssetStatus (enum), AssetTypes (container)
+2. Use `dateRange()`, `enumRange()`, `inList()` in `processReport()`
+3. Handle empty filter values (no range applied)
+4. Test with various combinations
+
+**Hints:**
+- Check `contract.parmFromDate()` before adding range
+- Use `SysQueryRangeUtil::dateRange()` for date-only fields
+- Use `DateTimeUtil::toStr()` for datetime fields
+
+**Ideal Solution Pattern:**
+
+```xpp
+public void processReport()
+{
+    MyContract contract = this.parmDataContract();
+    QueryBuildDataSource qbds = this.query().dataSourceTable(tableNum(MyTable));
+    QueryBuildRange qbr;
+
+    // Optional date range
+    if (contract.parmFromDate() && contract.parmToDate())
+    {
+        qbr = qbds.addRange(fieldNum(MyTable, TransDate));
+        qbr.value(SysQueryRangeUtil::dateRange(
+            contract.parmFromDate(), contract.parmToDate()));
+    }
+
+    // Optional enum range
+    if (contract.parmFromStatus() != MyStatus::None || 
+        contract.parmToStatus() != MyStatus::None)
+    {
+        qbr = qbds.addRange(fieldNum(MyTable, Status));
+        qbr.value(SysQueryRangeUtil::enumRange(
+            contract.parmFromStatus(), contract.parmToStatus()));
+    }
+
+    // Optional multi-value list
+    if (conLen(contract.parmTypeIds()) > 0)
+    {
+        qbr = qbds.addRange(fieldNum(MyTable, TypeId));
+        qbr.value(SysQueryRangeUtil::inList(contract.parmTypeIds()));
+    }
+
+    super();
+}
+```
+
 ---
 
 # Chapter 27 — Notifications & IDisposable Pattern
@@ -13063,6 +13230,408 @@ VSIAssetStatusHistory::log(...);
 ```
 
 This pattern ensures status transitions are auditable and cannot be bypassed by direct table updates.
+
+## 27.3 VSIAssetStatusHelper — Complete Implementation
+
+The `VSIAssetStatusHelper` class encapsulates the full status change workflow including multi-field updates, history logging, and cross-company support:
+
+```xpp
+public final class VSIAssetStatusHelper
+{
+    /// <summary>
+    /// Changes the asset status with full audit trail and validation.
+    /// </summary>
+    /// <param name="_asset">The asset buffer to update</param>
+    /// <param name="_newStatus">The new status enum value</param>
+    /// <param name="_workerId">Optional worker ID for assignment context</param>
+    /// <param name="_companyId">Optional company for cross-company operations</param>
+    public static void changeStatus(
+        VSIAsset _asset,
+        VSIAssetStatus _newStatus,
+        VSIWorkerId _workerId = '',
+        str _companyId = '')
+    {
+        if (!_asset)
+        {
+            throw error("@VSIAssetManagmentLabelFile:AssetNotFound");
+        }
+
+        if (_asset.Status == _newStatus)
+        {
+            return; // No change needed
+        }
+
+        // Validate status transition
+        VSIAssetStatusHelper::validateTransition(_asset.Status, _newStatus);
+
+        str company = _companyId ? _companyId : _asset.dataAreaId;
+
+        changecompany(company)
+        {
+            using (VSIAssetStatusChangeContext context = new VSIAssetStatusChangeContext())
+            {
+                // Capture previous status for history
+                VSIAssetStatus oldStatus = _asset.Status;
+
+                // Update asset status and related fields
+                _asset.Status = _newStatus;
+                
+                // Update assignment-related fields based on status
+                switch (_newStatus)
+                {
+                    case VSIAssetStatus::Assigned:
+                        _asset.AssignedWorkerId = _workerId;
+                        _asset.AssignedDateTime = DateTimeUtil::utcNow();
+                        break;
+                    case VSIAssetStatus::Returned:
+                        _asset.AssignedWorkerId = '';
+                        _asset.ReturnedDateTime = DateTimeUtil::utcNow();
+                        break;
+                    case VSIAssetStatus::Retired:
+                        _asset.RetiredDateTime = DateTimeUtil::utcNow();
+                        break;
+                }
+
+                _asset.update();
+
+                // Log status history with full context
+                VSIAssetStatusHistory::log(
+                    _asset.RecId,
+                    oldStatus,
+                    _newStatus,
+                    _workerId,
+                    VSIAssetStatusHistoryReason::ManualChange);
+            }
+        }
+
+        // Send notification if configured
+        if (VSIAssetParameters::find().NotifyOnStatusChange)
+        {
+            VSIAssetNotificationHelper::notifyStatusChange(_asset, oldStatus, _newStatus);
+        }
+    }
+
+    /// <summary>
+    /// Validates that a status transition is allowed.
+    /// </summary>
+    private static void validateTransition(VSIAssetStatus _from, VSIAssetStatus _to)
+    {
+        // Define valid transitions using a transition matrix
+        Map validTransitions = new Map(Types::Integer, Types::Container);
+        validTransitions.insert(VSIAssetStatus::Available, [VSIAssetStatus::Assigned, VSIAssetStatus::Maintenance, VSIAssetStatus::Retired]);
+        validTransitions.insert(VSIAssetStatus::Assigned, [VSIAssetStatus::Available, VSIAssetStatus::Returned, VSIAssetStatus::Maintenance]);
+        validTransitions.insert(VSIAssetStatus::Maintenance, [VSIAssetStatus::Available, VSIAssetStatus::Retired]);
+        validTransitions.insert(VSIAssetStatus::Returned, [VSIAssetStatus::Available, VSIAssetStatus::Assigned]);
+        validTransitions.insert(VSIAssetStatus::Retired, []); // Terminal state
+
+        container allowed = validTransitions.lookup(_from);
+        if (!conFind(allowed, _to))
+        {
+            throw error(strFmt(
+                "@VSIAssetManagmentLabelFile:InvalidStatusTransition",
+                enum2str(_from), enum2str(_to)));
+        }
+    }
+}
+```
+
+### VSIAssetStatusHistory — Audit Trail Logging
+
+```xpp
+public static void log(
+    RecId _assetRecId,
+    VSIAssetStatus _fromStatus,
+    VSIAssetStatus _toStatus,
+    VSIWorkerId _workerId = '',
+    VSIAssetStatusHistoryReason _reason = VSIAssetStatusHistoryReason::ManualChange)
+{
+    VSIAssetStatusHistory history;
+    
+    history.clear();
+    history.AssetRecId = _assetRecId;
+    history.FromStatus = _fromStatus;
+    history.ToStatus = _toStatus;
+    history.WorkerId = _workerId;
+    history.Reason = _reason;
+    history.ChangedBy = curUserId();
+    history.ChangedDateTime = DateTimeUtil::utcNow();
+    history.DataAreaId = curExt();
+    
+    history.insert();
+}
+```
+
+---
+
+## 27.4 VSIAssetNotificationHelper — Complete Pattern
+
+The notification helper demonstrates production-ready patterns for the Action Center:
+
+### Full notifyUsers Implementation
+
+```xpp
+public static boolean notifyUsers(
+    List _userIds, 
+    str _title, 
+    str _message,
+    RecId _referenceRecId = 0,
+    TableId _referenceTableId = 0)
+{
+    if (!_userIds || _userIds.elements() == 0)
+    {
+        return false;
+    }
+
+    if (strLen(_title) == 0 || strLen(_message) == 0)
+    {
+        return false;
+    }
+
+    SystemNotificationDataContract notification = new SystemNotificationDataContract();
+    ListEnumerator enumerator = _userIds.getEnumerator();
+    int userIndex;
+
+    while (enumerator.moveNext())
+    {
+        userIndex++;
+        notification.Users().value(userIndex, enumerator.current());
+    }
+
+    notification.Title(VSIAssetNotificationHelper::truncate(_title));
+    notification.Message(VSIAssetNotificationHelper::truncate(_message));
+    notification.RuleId(VSIAssetNotificationHelper::RuleId);
+    notification.ExpirationDateTime(
+        DateTimeUtil::addHours(
+            DateTimeUtil::utcNow(), 
+            VSIBatchConstants::NotificationExpiryHours));
+
+    // Optional: Link notification to a specific record
+    if (_referenceRecId && _referenceTableId)
+    {
+        notification.MenuItemName(menuItemDisplayStr(VSIAssetDetails));
+        notification.MenuItemParameters(strFmt("%1:%2", _referenceTableId, _referenceRecId));
+    }
+
+    SystemNotificationsManager::AddSystemNotification(notification);
+    return true;
+}
+```
+
+### Status Change Notification Wrapper
+
+```xpp
+public static void notifyStatusChange(
+    VSIAsset _asset,
+    VSIAssetStatus _fromStatus,
+    VSIAssetStatus _toStatus)
+{
+    List adminIds = VSIAssetNotificationHelper::assetAdministratorUserIds();
+    
+    if (adminIds.elements() == 0)
+    {
+        return;
+    }
+
+    str title = strFmt(
+        "@VSIAssetManagmentLabelFile:AssetStatusChangeTitle",
+        _asset.AssetId);
+
+    str message = strFmt(
+        "@VSIAssetManagmentLabelFile:AssetStatusChangeMessage",
+        _asset.AssetId,
+        enum2str(_fromStatus),
+        enum2str(_toStatus),
+        _asset.AssignedWorkerId);
+
+    VSIAssetNotificationHelper::notifyUsers(
+        adminIds,
+        title,
+        message,
+        _asset.RecId,
+        tableNum(VSIAsset));
+}
+```
+
+### Administrator Lookup with PlatformUserId Join
+
+The pattern for finding enabled administrators using an `exists join` with `UserInfo`:
+
+```xpp
+public static List assetAdministratorUserIds()
+{
+    List userIds = new List(Types::String);
+    VSIWorker worker;
+    UserInfo userInfo;
+
+    while select PlatformUserId from worker
+        order by worker.PlatformUserId
+        where worker.IsAssetAdmin == NoYes::Yes
+           && worker.EmploymentStatus == VSIEmploymentStatus::Active
+           && worker.PlatformUserId != ''
+        exists join userInfo
+            where userInfo.id == worker.PlatformUserId
+               && userInfo.enable == 1
+    {
+        userIds.addEnd(worker.PlatformUserId);
+    }
+    return userIds;
+}
+```
+
+**Key Points:**
+- **`exists join`** — More efficient than `join` when you only need to verify existence; doesn't return UserInfo fields
+- **`PlatformUserId`** — Links the worker to the AAD user; must not be empty
+- **`UserInfo.enable == 1`** — Filters to only active/enabled users
+- **Ordering** — Consistent ordering for deterministic notification delivery
+
+### Message Truncation with Constant
+
+```xpp
+private static str truncate(str _message)
+{
+    if (strLen(_message) <= VSIBatchConstants::MaxNotificationLength)
+    {
+        return _message;
+    }
+    return subStr(_message, 1, VSIBatchConstants::MaxNotificationLength - 3) + '...';
+}
+```
+
+---
+
+## 27.5 Multi-Company Notification Pattern
+
+For cross-company notifications (e.g., batch jobs running across companies):
+
+```xpp
+public static void notifyAdminsCrossCompany(
+    str _title,
+    str _message,
+    container _companyIds = conNull())
+{
+    container companies = _companyIds ? _companyIds : VSIAssetNotificationHelper::getAllCompanies();
+    
+    List allAdminIds = new List(Types::String);
+    
+    for (int i = 1; i <= conLen(companies); i++)
+    {
+        str company = conPeek(companies, i);
+        
+        changecompany(company)
+        {
+            List adminIds = VSIAssetNotificationHelper::assetAdministratorUserIds();
+            ListEnumerator enum = adminIds.getEnumerator();
+            while (enum.moveNext())
+            {
+                // Prefix with company to avoid duplicates across companies
+                str qualifiedId = strFmt("%1\\%2", company, enum.current());
+                if (!allAdminIds.in(qualifiedId))
+                {
+                    allAdminIds.addEnd(qualifiedId);
+                }
+            }
+        }
+    }
+    
+    if (allAdminIds.elements() > 0)
+    {
+        VSIAssetNotificationHelper::notifyUsers(allAdminIds, _title, _message);
+    }
+}
+
+private static container getAllCompanies()
+{
+    DataArea dataArea;
+    container result;
+    while select Id from dataArea where dataArea.IsVirtual == NoYes::No
+    {
+        result += [dataArea.Id];
+    }
+    return result;
+}
+```
+
+---
+
+## 27.6 Activity — Extend Status Change Context
+
+**Objective:** Create a `VSIDocumentStatusChangeContext` that mirrors `VSIAssetStatusChangeContext` but works for any document type (requests, retirements, maintenance).
+
+**Requirements:**
+1. Generic singleton context class implementing `System.IDisposable`
+2. Accept a table ID and record ID in constructor for context tracking
+3. Provide `isActive()` and `getContextTableId()` / `getContextRecId()` methods
+4. Integrate with `VSIAssetRequest::update()` to guard status changes
+
+**Hints:**
+- Use a static `Map` keyed by table ID to support nested contexts for different tables
+- Throw error if nested context detected for same table
+- Call `VSIAssetRequest::changeStatusByRecId()` from workflow event handlers
+
+**Ideal Solution:**
+
+```xpp
+public final class VSIDocumentStatusChangeContext implements System.IDisposable
+{
+    private static Map activeContexts; // Map<TableId, VSIDocumentStatusChangeContext>
+    private TableId contextTableId;
+    private RecId contextRecId;
+
+    static void new()
+    {
+        activeContexts = new Map(Types::Integer, Types::Class);
+    }
+
+    private void new(TableId _tableId, RecId _recId)
+    {
+        if (activeContexts.lookup(_tableId))
+        {
+            throw error("@VSIAssetManagmentLabelFile:StatusContextNested");
+        }
+        
+        contextTableId = _tableId;
+        contextRecId = _recId;
+        activeContexts.insert(_tableId, this);
+    }
+
+    public static VSIDocumentStatusChangeContext create(TableId _tableId, RecId _recId)
+    {
+        return new VSIDocumentStatusChangeContext(_tableId, _recId);
+    }
+
+    public void dispose()
+    {
+        activeContexts.remove(contextTableId);
+    }
+
+    public static boolean isActive(TableId _tableId = 0)
+    {
+        return _tableId 
+            ? activeContexts.lookup(_tableId) != null 
+            : !activeContexts.isEmpty();
+    }
+
+    public static TableId getContextTableId()
+    {
+        MapEnumerator enum = activeContexts.getEnumerator();
+        if (enum.moveNext())
+        {
+            return enum.currentKey();
+        }
+        return 0;
+    }
+
+    public static RecId getContextRecId()
+    {
+        MapEnumerator enum = activeContexts.getEnumerator();
+        if (enum.moveNext())
+        {
+            return enum.currentValue().contextRecId;
+        }
+        return 0;
+    }
+}
+```
 
 ---
 
@@ -13207,6 +13776,97 @@ private container companies(boolean _allCompanies)
 | `MaxNotificationLength` | 1000 | Max notification message length |
 | `MaxDigestLines` | 20 | Max lines in notification digest |
 
+## 28.6 VSIWorker Query Pattern — PlatformUserId Join
+
+A common VSI pattern queries active workers with enabled PlatformUserId for notifications, assignments, and cross-company lookups:
+
+```xpp
+public static List getActiveAssetAdmins()
+{
+    List userIds = new List(Types::String);
+    VSIWorker worker;
+    UserInfo userInfo;
+
+    while select PlatformUserId from worker
+        order by worker.PlatformUserId
+        where worker.IsAssetAdmin == NoYes::Yes
+           && worker.EmploymentStatus == VSIEmploymentStatus::Active
+           && worker.PlatformUserId != ''
+        exists join userInfo
+            where userInfo.id == worker.PlatformUserId
+               && userInfo.enable == 1
+    {
+        userIds.addEnd(worker.PlatformUserId);
+    }
+    return userIds;
+}
+```
+
+### Pattern Breakdown
+
+| Element | Purpose |
+|---|---|
+| `PlatformUserId` | Links `VSIWorker` to Azure AD user (`UserInfo.id`) |
+| `exists join` | Efficient existence check; doesn't return `UserInfo` fields |
+| `UserInfo.enable == 1` | Filters to only active/enabled AD users |
+| `EmploymentStatus == Active` | Business logic filter on worker record |
+| `PlatformUserId != ''` | Guards against workers without AD linkage |
+
+### Cross-Company Worker Lookup
+
+For batch processes querying worker assignments across companies:
+
+```xpp
+public static container getWorkerAssetsCrossCompany(VSIWorkerId _workerId)
+{
+    container companies = VSIAssetInquiryService::getAllCompanies();
+    container result;
+
+    while select crossCompany : companies RecId, AssetId, DataAreaId
+        from assignment
+        join AssetId, AssetName from asset
+            where asset.RecId == assignment.AssetRecId
+                && asset.Status == VSIAssetStatus::Assigned
+        where assignment.WorkerId == _workerId
+           && assignment.ReturnedDateTime == utcDateTimeNull()
+    {
+        result += [assignment.RecId, assignment.AssetId, assignment.DataAreaId, asset.AssetName];
+    }
+
+    return result;
+}
+
+private static container getAllCompanies()
+{
+    DataArea dataArea;
+    container result;
+    while select Id from dataArea where dataArea.IsVirtual == NoYes::No
+    {
+        result += [dataArea.Id];
+    }
+    return result;
+}
+```
+
+### Key Cross-Company Query Points
+
+- **`crossCompany : companies`** — Specifies the company list for the query
+- **`DataAreaId` in select list** — Returns the company for each row
+- **`order by DataAreaId`** — Groups results by company for readability
+- **Company list caching** — Cache the company container to avoid repeated `DataArea` queries
+
+---
+
+| Constant | Value | Purpose |
+|---|---|---|
+| `MaxRetries` | 5 | Max deadlock/update-conflict retries |
+| `DefaultBundleSize` | 200 | Records per batch task |
+| `MinBundleSize` | 10 | Minimum bundle size |
+| `MaxBundleSize` | 5000 | Maximum bundle size |
+| `NotificationExpiryHours` | 168 | Notification expiry (7 days) |
+| `MaxNotificationLength` | 1000 | Max notification message length |
+| `MaxDigestLines` | 20 | Max lines in notification digest |
+
 ---
 
 # Chapter 29 — Labels, AppChecker & Configuration Keys
@@ -13293,9 +13953,9 @@ public final class VSIAssetAssignmentResponseContract implements VSIAssetService
 }
 ```
 
-## 30.2 Shared Service Executor
+## 30.2 Shared Service Executor — Complete Implementation
 
-`VSIAssetServiceHelper::execute` provides the common entry point:
+`VSIAssetServiceHelper::execute` provides the common entry point with full retry logic, infolog capture, and cross-company support:
 
 ```xpp
 public static void execute(
@@ -13306,25 +13966,497 @@ public static void execute(
 {
     int infologStart = infologLine();
     str company;
+    int retryCount = 0;
+    boolean success = false;
 
     try
     {
-        if (!_request) throw error("@VSIAssetManagmentLabelFile:ServiceRequestMissing");
+        if (!_request)
+        {
+            throw error("@VSIAssetManagmentLabelFile:ServiceRequestMissing");
+        }
+
         company = VSIAssetServiceHelper::resolveCompany(_request.companyId());
         _response.setCompany(company);
 
-        changecompany(company)
+        while (!success && retryCount <= VSIBatchConstants::MaxRetries)
         {
-            ttsbegin;
-            _processor.process(_operation, _request, _response);
-            ttscommit;
+            try
+            {
+                changecompany(company)
+                {
+                    ttsbegin;
+                    _processor.process(_operation, _request, _response);
+                    ttscommit;
+                }
+                success = true;
+            }
+            catch (Exception::Deadlock)
+            {
+                if (appl.ttsLevel() == 0 && xSession::currentRetryCount() < VSIBatchConstants::MaxRetries)
+                {
+                    retryCount++;
+                    continue; // Retry the transaction
+                }
+                throw; // Re-throw if max retries exceeded
+            }
+            catch (Exception::UpdateConflict)
+            {
+                if (appl.ttsLevel() == 0 && xSession::currentRetryCount() < VSIBatchConstants::MaxRetries)
+                {
+                    retryCount++;
+                    continue; // Retry the transaction
+                }
+                throw; // Re-throw if max retries exceeded
+            }
         }
     }
-    catch (Exception::Deadlock) { /* retry logic */ }
-    catch (Exception::UpdateConflict) { /* retry logic */ }
-    catch (Exception::Error) { _response.markFailure(...); }
-    catch { _response.markFailure(...); }
+    catch (Exception::Error)
+    {
+        // Capture infolog messages for the response
+        str errorMessage = VSIAssetServiceHelper::getInfologText(infologStart);
+        _response.markFailure(VSIAssetServiceHelper::stringToList(errorMessage));
+    }
+    catch
+    {
+        // Catch any other exception
+        str errorMessage = VSIAssetServiceHelper::getInfologText(infologStart);
+        if (strLen(errorMessage) == 0)
+        {
+            errorMessage = "@VSIAssetManagmentLabelFile:ServiceUnexpectedError";
+        }
+        _response.markFailure(VSIAssetServiceHelper::stringToList(errorMessage));
+    }
 }
+
+/// <summary>
+/// Resolves the company from the request, defaulting to current company.
+/// </summary>
+private static str resolveCompany(str _requestedCompany)
+{
+    str company = _requestedCompany ? _requestedCompany : curExt();
+    
+    // Validate company exists
+    DataArea dataArea;
+    select firstOnly Id from dataArea where dataArea.Id == company;
+    if (!dataArea)
+    {
+        throw error(strFmt("@VSIAssetManagmentLabelFile:InvalidCompany", company));
+    }
+    
+    return company;
+}
+
+/// <summary>
+/// Captures infolog messages since a given line number.
+/// </summary>
+private static str getInfologText(int _infologStart)
+{
+    str infologText = '';
+    for (int i = _infologStart + 1; i <= infologLine(); i++)
+    {
+        infologText += infologText(i) + '\n';
+    }
+    return infologText;
+}
+
+/// <summary>
+/// Converts a newline-delimited string to a List for the response.
+/// </summary>
+private static List stringToList(str _text)
+{
+    List errors = new List(Types::String);
+    if (strLen(_text) > 0)
+    {
+        container lines = str2con(_text, '\n');
+        for (int i = 1; i <= conLen(lines); i++)
+        {
+            str line = conPeek(lines, i);
+            if (strLen(strRem(line, '\r')) > 0)
+            {
+                errors.addEnd(strRem(line, '\r'));
+            }
+        }
+    }
+    return errors;
+}
+```
+
+### Key Patterns in the Executor
+
+| Pattern | Purpose |
+|---|---|
+| `infologLine()` capture | Records starting infolog line to isolate service-generated messages |
+| `resolveCompany()` | Validates and defaults company; supports cross-company calls |
+| `changecompany(company)` | Executes the processor in the target company context |
+| Retry loop with `#RetryNum` | Handles deadlock/update-conflict with configurable max retries |
+| `getInfologText()` | Extracts error messages from infolog for structured response |
+| `stringToList()` | Converts infolog text to `List` for `markFailure()` |
+
+---
+
+## 30.3 JSON Serialization with CLR Interop — Complete VSIAssetServiceCatalog
+
+`VSIAssetServiceCatalog` provides a comprehensive test harness for service development and debugging:
+
+### Full Test Harness Implementation
+
+```xpp
+public final class VSIAssetServiceCatalog
+{
+    public static str RequestParameterName = 'request';
+    public static str ResponseParameterName = 'response';
+
+    /// <summary>
+    /// Runs a service test operation and returns the JSON response.
+    /// </summary>
+    public static str runTest(str _operationName, str _inboundJson)
+    {
+        VSIAssetServiceProcessor processor;
+        VSIAssetServiceRequest request;
+        VSIAssetServiceResponse response;
+
+        // Deserialize request
+        request = VSIAssetServiceCatalog::deserializeRequest(_operationName, _inboundJson);
+        if (!request)
+        {
+            return VSIAssetServiceCatalog::wrapError(
+                strFmt("@VSIAssetManagmentLabelFile:ServiceDeserializeFailed", _operationName));
+        }
+
+        // Get processor instance
+        processor = VSIAssetServiceCatalog::getProcessor(_operationName);
+        if (!processor)
+        {
+            return VSIAssetServiceCatalog::wrapError(
+                strFmt("@VSIAssetManagmentLabelFile:ServiceUnknownOperation", _operationName));
+        }
+
+        // Create response contract
+        response = VSIAssetServiceCatalog::createResponse(_operationName);
+
+        // Execute service
+        VSIAssetServiceHelper::execute(processor, _operationName, request, response);
+
+        // Serialize response
+        return VSIAssetServiceCatalog::serializeResponse(response);
+    }
+
+    /// <summary>
+    /// Deserializes the request JSON to the appropriate contract.
+    /// </summary>
+    private static VSIAssetServiceRequest deserializeRequest(str _operationName, str _inboundJson)
+    {
+        str requestJson = VSIAssetServiceCatalog::extractRequestJson(_inboundJson);
+        ClassId contractClass = VSIAssetServiceCatalog::getRequestContractClass(_operationName);
+        
+        if (!contractClass)
+        {
+            return null;
+        }
+
+        return FormJsonSerializer::deserializeObject(contractClass, requestJson) as VSIAssetServiceRequest;
+    }
+
+    /// <summary>
+    /// Extracts the request object from the wrapper JSON.
+    /// </summary>
+    private static str extractRequestJson(str _inboundJson)
+    {
+        Newtonsoft.Json.Linq.JObject jObject = Newtonsoft.Json.Linq.JObject::Parse(_inboundJson);
+        Newtonsoft.Json.Linq.JToken requestToken = jObject.get_Item(VSIAssetServiceCatalog::RequestParameterName);
+        return requestToken ? requestToken.ToString() : '';
+    }
+
+    /// <summary>
+    /// Maps operation name to request contract class.
+    /// </summary>
+    private static ClassId getRequestContractClass(str _operationName)
+    {
+        switch (_operationName)
+        {
+            case 'assignAsset':
+                return classNum(VSIAssetAssignRequestContract);
+            case 'getAssetDetails':
+                return classNum(VSIAssetGetDetailsRequestContract);
+            case 'getWorkerAssets':
+                return classNum(VSIAssetGetWorkerAssetsRequestContract);
+        }
+        return 0;
+    }
+
+    /// <summary>
+    /// Maps operation name to processor instance.
+    /// </summary>
+    private static VSIAssetServiceProcessor getProcessor(str _operationName)
+    {
+        switch (_operationName)
+        {
+            case 'assignAsset':
+                return VSIAssetAssignmentService::construct();
+            case 'getAssetDetails':
+            case 'getWorkerAssets':
+                return VSIAssetInquiryService::construct();
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Creates the appropriate response contract for the operation.
+    /// </summary>
+    private static VSIAssetServiceResponse createResponse(str _operationName)
+    {
+        switch (_operationName)
+        {
+            case 'assignAsset':
+                return new VSIAssetAssignmentResponseContract();
+            case 'getAssetDetails':
+                return new VSIAssetGetDetailsResponseContract();
+            case 'getWorkerAssets':
+                return new VSIAssetGetWorkerAssetsResponseContract();
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Serializes the response contract to JSON.
+    /// </summary>
+    private static str serializeResponse(VSIAssetServiceResponse _response)
+    {
+        str json = FormJsonSerializer::serializeClass(_response);
+        return VSIAssetServiceCatalog::prettyPrint(
+            '{"' + VSIAssetServiceCatalog::ResponseParameterName + '":' + json + '}');
+    }
+
+    /// <summary>
+    /// Pretty-prints JSON using Newtonsoft.Json for readability.
+    /// </summary>
+    public static str prettyPrint(str _json)
+    {
+        return Newtonsoft.Json.Linq.JToken::Parse(_json).ToString(
+            Newtonsoft.Json.Formatting::Indented);
+    }
+
+    /// <summary>
+    /// Wraps an error message in standard response format.
+    /// </summary>
+    private static str wrapError(str _message)
+    {
+        Map errorMap = new Map(Types::String, Types::String);
+        errorMap.insert('error', _message);
+        str json = FormJsonSerializer::serializeClass(errorMap);
+        return VSIAssetServiceCatalog::prettyPrint(
+            '{"' + VSIAssetServiceCatalog::ResponseParameterName + '":' + json + '}');
+    }
+
+    /// <summary>
+    /// Checks if an operation is a write operation (requires confirmation).
+    /// </summary>
+    public static boolean isWriteOperation(str _operationName)
+    {
+        return _operationName == 'assignAsset'; // Add other write operations as needed
+    }
+
+    /// <summary>
+    /// Extracts the company ID from the inbound JSON for confirmation dialog.
+    /// </summary>
+    public static str requestCompany(str _inboundJson)
+    {
+        try
+        {
+            Newtonsoft.Json.Linq.JObject jObject = Newtonsoft.Json.Linq.JObject::Parse(_inboundJson);
+            Newtonsoft.Json.Linq.JToken requestToken = jObject.get_Item(VSIAssetServiceCatalog::RequestParameterName);
+            if (requestToken)
+            {
+                Newtonsoft.Json.Linq.JToken companyToken = requestToken.get_Item('companyId');
+                if (companyToken)
+                {
+                    return companyToken.ToString();
+                }
+            }
+        }
+        catch
+        {
+            // Ignore parsing errors
+        }
+        return curExt(); // Default to current company
+    }
+}
+```
+
+### Running a Service Test from a Form — Complete Pattern
+
+```xpp
+public void runTest()
+{
+    str inboundJson = VSIAssetServiceOperationTmp.InboundJson;
+    str operationName = VSIAssetServiceOperationTmp.OperationName;
+
+    // Confirm write operations
+    if (VSIAssetServiceCatalog::isWriteOperation(operationName)
+        && Box::yesNo(
+            strFmt("@VSIAssetManagmentLabelFile:ServiceTestConfirm",
+                   VSIAssetServiceCatalog::requestCompany(inboundJson)),
+            DialogButton::No) != DialogButton::Yes)
+    {
+        return;
+    }
+
+    // Execute test
+    VSIAssetServiceOperationTmp.OutboundJson = VSIAssetServiceCatalog::runTest(
+        operationName, inboundJson);
+    
+    // Refresh form
+    VSIAssetServiceOperationTmp_ds.write();
+    VSIAssetServiceOperationTmp_ds.refresh();
+}
+```
+
+### Deserializing Inbound JSON — Complete Pattern
+
+```xpp
+// In VSIAssetAssignmentService::process()
+public void process(str _operation, VSIAssetServiceRequest _request, VSIAssetServiceResponse _response)
+{
+    VSIAssetAssignRequestContract assignRequest = _request as VSIAssetAssignRequestContract;
+    VSIAssetAssignmentResponseContract assignResponse = _response as VSIAssetAssignmentResponseContract;
+
+    if (_operation == 'assignAsset')
+    {
+        // Validate request
+        if (!assignRequest.parmAssetId())
+        {
+            assignResponse.markFailure(VSIAssetServiceHelper::stringToList(
+                "@VSIAssetManagmentLabelFile:AssetIdRequired"));
+            return;
+        }
+
+        // Find asset
+        VSIAsset asset;
+        select firstOnly asset where asset.AssetId == assignRequest.parmAssetId();
+        if (!asset)
+        {
+            assignResponse.markFailure(VSIAssetServiceHelper::stringToList(
+                strFmt("@VSIAssetManagmentLabelFile:AssetNotFound", assignRequest.parmAssetId())));
+            return;
+        }
+
+        // Assign asset using status helper (respects context guard)
+        VSIAssetStatusHelper::changeStatus(
+            asset,
+            VSIAssetStatus::Assigned,
+            assignRequest.parmWorkerId());
+
+        assignResponse.markSuccess(
+            strFmt("@VSIAssetManagmentLabelFile:AssetAssigned", asset.AssetId));
+    }
+}
+```
+
+### JSON Serialization Helper Methods
+
+```xpp
+/// <summary>
+/// Serializes any data contract to JSON string.
+/// </summary>
+public static str serializeContract(Object _contract)
+{
+    return FormJsonSerializer::serializeClass(_contract);
+}
+
+/// <summary>
+/// Deserializes JSON string to data contract.
+/// </summary>
+public static Object deserializeContract(str _json, ClassId _contractClass)
+{
+    return FormJsonSerializer::deserializeObject(_contractClass, _json);
+}
+
+/// <summary>
+/// Creates a standard service request wrapper.
+/// </summary>
+public static str wrapRequest(Object _contract)
+{
+    return VSIAssetServiceCatalog::prettyPrint(
+        '{"' + VSIAssetServiceCatalog::RequestParameterName + '":'
+        + FormJsonSerializer::serializeClass(_contract)
+        + '}');
+}
+```
+
+---
+
+## 30.5 Activity — Build a Custom Service End-to-End
+
+**Objective:** Create a new custom service `VSIAssetTransferService` with operation `transferAsset` that moves an asset between workers.
+
+**Requirements:**
+1. Create request/response contracts with `DataContractAttribute`/`DataMemberAttribute`
+2. Implement `VSIAssetServiceProcessor` interface
+3. Register in `AxServiceGroup` metadata
+4. Add security privilege for the operation
+5. Test using `VSIAssetServiceCatalog` harness
+
+**Hints:**
+- Request: AssetId, FromWorkerId, ToWorkerId, CompanyId
+- Response: Success, Message, NewAssignmentRecId
+- Use `VSIAssetStatusHelper::changeStatus()` for status transitions
+- Validate both workers exist and are active
+- Handle cross-company scenario
+
+**Ideal Solution Structure:**
+
+```xpp
+[DataContractAttribute]
+public final class VSIAssetTransferRequestContract implements VSIAssetServiceRequest
+{
+    [DataMemberAttribute('AssetId')]
+    public VSIAssetId parmAssetId(VSIAssetId _assetId = assetId) { ... }
+
+    [DataMemberAttribute('FromWorkerId')]
+    public VSIWorkerId parmFromWorkerId(VSIWorkerId _fromWorkerId = fromWorkerId) { ... }
+
+    [DataMemberAttribute('ToWorkerId')]
+    public VSIWorkerId parmToWorkerId(VSIWorkerId _toWorkerId = toWorkerId) { ... }
+
+    public str companyId() { return dataAreaId; }
+}
+
+public final class VSIAssetTransferService implements VSIAssetServiceProcessor
+{
+    public static VSIAssetTransferService construct()
+    {
+        return new VSIAssetTransferService();
+    }
+
+    public void process(str _operation, VSIAssetServiceRequest _request, VSIAssetServiceResponse _response)
+    {
+        VSIAssetTransferRequestContract request = _request as VSIAssetTransferRequestContract;
+        VSIAssetTransferResponseContract response = _response as VSIAssetTransferResponseContract;
+
+        if (_operation != 'transferAsset') { return; }
+
+        // Validate and execute transfer...
+        // Return new assignment RecId in response
+    }
+}
+```
+
+**Register in AxServiceGroup:**
+```xml
+<AxServiceGroupService>
+    <Name>VSIAssetTransferService</Name>
+    <Service>VSIAssetTransferService</Service>
+</AxServiceGroupService>
+```
+
+**Security Entry Point:**
+```xml
+<AxSecurityEntryPointReference>
+    <Name>transferAsset</Name>
+    <ObjectName>VSIAssetTransferService</ObjectName>
+    <ObjectType>ServiceOperation</ObjectType>
+</AxSecurityEntryPointReference>
 ```
 
 ## 30.3 JSON Serialization with CLR Interop
