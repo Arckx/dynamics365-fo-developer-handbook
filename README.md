@@ -78,9 +78,9 @@ The handbook covers the complete technical stack of D365 F&O, including X++ prog
 - **Checkpoint:** Walk through entire solution explaining design decisions
 
 ### Phase 11: Module Specialization (Month 11)
-- **Theme:** Go deep in your chosen module (Finance, SCM, or HR)
-- **Topics:** Module-specific tables, workflows, business processes
-- **Deliverable:** Module-specific deep-dive document with code samples and end-to-end data flow analysis
+- **Theme:** Go deep in your chosen module (Finance, SCM, HR, Retail/Commerce, or Project Operations)
+- **Topics:** Module-specific tables, workflows, business processes; Capstones A–E (AP Tax Compliance, PO Automation, Leave Management, Omnichannel Fulfillment, Project Billing Compliance)
+- **Deliverable:** Module-specific deep-dive document with code samples and end-to-end data flow analysis (choose one capstone to implement fully)
 - **Checkpoint:** Explain end-to-end business process; identify key tables, EDTs, and logic classes
 
 ### Phase 12: Advanced Patterns & Certification Prep (Month 12)
@@ -91,7 +91,7 @@ The handbook covers the complete technical stack of D365 F&O, including X++ prog
 
 ## Key Files in This Repository
 
-- **d365-learning-guide.md** — Condensed learning guide with key concepts and quick references
+- **d365-learning-guide.md** — Comprehensive 30-chapter desktop guide with full code examples, tables, activities, and 5 module-specific capstones (Finance, SCM, HR, Retail, Project Operations)
 - **d365-fao-learning-journey.md** — Detailed month-by-month study plan and milestones
 - **d365-xpp-quick-reference.md** — Quick reference for X++ syntax and common patterns
 - **d365-xpp-exercises.md** — Hands-on coding exercises for each phase
@@ -121,7 +121,7 @@ Upon completion of this 12-month journey, you will be able to:
 ✅ Set up CI/CD pipelines for automated deployments  
 ✅ Optimize code for performance and diagnose issues  
 ✅ Deploy complete end-to-end solutions  
-✅ Specialize in Finance, SCM, or HR modules  
+✅ Specialize in Finance, SCM, HR, Retail/Commerce, or Project Operations modules  
 ✅ Prepare for Microsoft D365 F&O certifications (MB-310, MB-330)
 
 ## Prerequisites
@@ -143,5 +143,5 @@ This is a **Technical Developer Handbook** designed for interns and junior devel
 
 ---
 
-**Last Updated:** August 31, 2026  
-**Format:** Comprehensive learning guide with 12-phase curriculum, code examples, and practical exercises
+**Last Updated:** November 11, 2026  
+**Format:** Comprehensive learning guide with 12-phase curriculum, 30-chapter desktop guide, code examples, practical exercises, and 5 module-specific capstones

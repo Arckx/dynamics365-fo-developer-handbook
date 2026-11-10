@@ -34,7 +34,7 @@ metadata:
 | **Phase 14** | Advanced Extensibility (Months 5–6) | **Ch 17** | Extension methods, local functions, var keyword, orig(), prmIsDefault(), CoC execution order |
 | **Phase 15** | Production Hardening (Months 7–8) | **Ch 18** | SQL timeouts, CacheLookup, deadlock handling, indexing strategy |
 | **Phase 16** | Platform Integration (Months 9–10) | **Ch 19** | Power Platform, OData, Logic Apps, Copilot, mobile, Process Automation |
-| **Phase 17** | Module Deep Dives (Months 11–12) | **Ch 20** | Finance, SCM, HR module tables, EDTs, patterns |
+| **Phase 17** | Module Deep Dives (Months 11–12) | **Ch 20** | Finance, SCM, HR, Retail/Commerce, Project Operations module tables, EDTs, patterns |
 | **Phase 18** | Advanced DevOps (Ongoing) | **Ch 21** | Continuous delivery, validate package, database movement |
 | **Phase 19** | Compliance & Governance (Ongoing) | **Ch 22** | GDPR, ISV considerations, financial tags, date effectivity, security hardening |
 | **Phase 20** | Workflow Framework (Months 5-6) | **Ch 23** | WorkflowDocument, WorkflowType, Approvals, Tasks, event handlers, submit/resubmit |
@@ -125,7 +125,12 @@ Use this table to find where a specific topic is covered across both guides.
 | AppChecker configuration | Phase 26, Ch 29 | Ch 29 |
 | Custom services & contracts | Phase 27, Ch 30 | Ch 30 |
 | FormJsonSerializer / Newtonsoft.Json | Phase 27, Ch 30 | Ch 30 |
-| End-to-end capstone | Phase 12, §12.3 | Ch 15 |
+| End-to-end capstone (Procurement-to-Pay) | Phase 12, §12.3 | Ch 15 |
+| Capstone A — Finance: AP Tax Compliance | Phase 17 | Ch 15.5 |
+| Capstone B — SCM: PO Automation | Phase 17 | Ch 15.5 |
+| Capstone C — HR: Leave Management | Phase 17 | Ch 15.5 |
+| Capstone D — Retail: Omnichannel Fulfillment | Phase 17 | Ch 15.5 |
+| Capstone E — Project Operations: Project Billing Compliance | Phase 17 | Ch 15.5 |
 
 | Aspect | Main Guide (`d365_fao_technical_concepts_guide.md`) | Desktop Guide (`d365-learning-guide.md`) |
 |---|---|---|
@@ -161,7 +166,7 @@ For a 5-month-experienced intern starting the advanced journey:
 16. **Ch 13** → Set up DevOps pipelines
 17. **Ch 14** → Optimize performance
 18. **Ch 19** → Platform integration: Power Platform, Copilot, mobile, Process Automation
-19. **Ch 20** → Module specialization: Finance, SCM, or HR deep dive
+19. **Ch 20** → Module specialization: Finance, SCM, HR, Retail/Commerce, or Project Operations deep dive
 20. **Ch 21** → Advanced DevOps: Continuous delivery, validate package, database movement
 21. **Ch 22** → Compliance & Governance: GDPR, ISV, financial tags, date effectivity
 22. **Ch 23** → Workflow Framework: WorkflowDocument, Approvals, Tasks, event handlers

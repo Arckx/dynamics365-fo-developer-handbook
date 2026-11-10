@@ -12030,7 +12030,7 @@ Use these for declarative automation; reserve X++ for complex business logic tha
 
 ---
 
-# Chapter 20 — Module Deep Dives: Finance, SCM, and HR
+# Chapter 20 — Module Deep Dives: Finance, SCM, HR, Retail/Commerce, and Project Operations
 
 For a 5-month-experienced intern, module specialization means understanding the domain-specific tables, EDTs, and business logic of your target module.
 
@@ -12131,12 +12131,12 @@ For a 5-month-experienced intern, module specialization means understanding the 
 
 ## 20.4 Choosing a Module for Specialization
 
-| Factor | Finance | SCM | HR |
-|---|---|---|---|
-| Core data model | General ledger, subledgers | Inventory, purchasing, sales | Workers, positions, jobs |
-| Transaction volume | High (GL postings) | Very high (inventory movements) | Moderate (HR cycles) |
-| Regulatory complexity | High (tax, GAAP/IFRS) | High (customs, trade compliance) | Moderate (labor laws) |
-| Integration needs | ERP-to-banking, tax authorities | ERP-to-warehouse, EDI | ERP-to-payroll, benefits |
+| Factor | Finance | SCM | HR | Retail/Commerce | Project Operations |
+|---|---|---|---|---|---|
+| Core data model | General ledger, subledgers | Inventory, purchasing, sales | Workers, positions, jobs | Channels, products, store fulfillment | Projects, contracts, WIP, revenue rec |
+| Transaction volume | High (GL postings) | Very high (inventory movements) | Moderate (HR cycles) | Extreme (POS/e-commerce orders) | High (time/expense & billing) |
+| Regulatory complexity | High (tax, GAAP/IFRS) | High (customs, trade compliance) | Moderate (labor laws) | High (payment/PCI compliance) | High (IFRS 15/ASC 606 revenue rec) |
+| Integration needs | ERP-to-banking, tax engines | ERP-to-WMS, EDI, supplier portals | ERP-to-payroll, benefits platforms | ERP-to-e-commerce, POS, payment gateways | ERP-to-PSA, time-tracking, client portals |
 
 ---
 
@@ -13415,7 +13415,7 @@ Your handbook now covers:
 | **Advanced** (Months 5-6) | SysDa, extension methods, orig(), prmIsDefault, local functions, var | ✅ Complete |
 | **Production** (Months 7-8) | SQL timeouts, deadlock handling, CacheLookup, indexing, debugging | ✅ Complete |
 | **Integration** (Months 9-10) | Power Platform, OData, Logic Apps, Azure Functions, mobile | ✅ Complete |
-| **Specialization** (Months 11-12) | Finance, SCM, HR module deep dives | ✅ Complete |
+| **Specialization** (Months 11-12) | Finance, SCM, HR, Retail, Project Operations module deep dives | ✅ Complete |
 | **DevOps** (Ongoing) | CI/CD, validate package, database movement, continuous delivery | ✅ Complete |
 | **Compliance** (Ongoing) | GDPR, ISV rules, financial tags, date effectivity, security hardening | ✅ Complete |
 | **Workflow** (New) | WorkflowDocument, WorkflowType, Approvals, Tasks, event handlers, submit/resubmit | ✅ New |
