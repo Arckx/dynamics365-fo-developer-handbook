@@ -91,13 +91,14 @@ The handbook covers the complete technical stack of D365 F&O, including X++ prog
 
 ## Key Files in This Repository
 
-- **d365-learning-guide.md** — Comprehensive 30-chapter desktop guide with full code examples, tables, activities, and 5 module-specific capstones (Finance, SCM, HR, Retail, Project Operations) — **Enhanced with VSI deep-dives: VSIAssetStatusHelper, VSIAssetNotificationHelper, VSIAssetServiceHelper, VSIAssetServiceCatalog, SysQueryRangeUtil, VSIWorker query patterns**
+- **d365-learning-guide.md** — Comprehensive 30-chapter desktop guide with full code examples, tables, activities, and 5 module-specific capstones (Finance, SCM, HR, Retail, Project Operations) — **Enhanced with VSI deep-dives: VSIAssetStatusHelper, VSIAssetNotificationHelper, VSIAssetServiceHelper, VSIAssetServiceCatalog, SysQueryRangeUtil, VSIWorker query patterns, and comprehensive VSI Gap Analysis (`VSI_GAP_ANALYSIS.md`)**
 - **d365-fao-learning-journey.md** — Detailed month-by-month study plan and milestones
 - **d365-xpp-quick-reference.md** — Quick reference for X++ syntax and common patterns
 - **d365-xpp-exercises.md** — Hands-on coding exercises for each phase
 - **d365-glossary.md** — Comprehensive glossary of D365 F&O terminology
-- **d365-guide-cross-reference.md** — Index linking all guides and resources
-- **VSI_GAP_ANALYSIS.md** — Gap analysis between VSI codebase and learning guide with enhancement roadmap
+- **d365-guide-cross-reference.md** — Index linking all guides and resources with expanded 30-chapter mapping
+- **VSI_GAP_ANALYSIS.md** — Comprehensive gap analysis between VSI codebase and learning guide with enhancement roadmap
+- **BatchProcessinginD365F&ORunBaseBatchvsSysOperation.md** — Dedicated deep dive into batch processing frameworks (RunBaseBatch vs SysOperation)
 
 ## How to Use This Handbook
 
@@ -144,5 +145,5 @@ This is a **Technical Developer Handbook** designed for interns and junior devel
 
 ---
 
-**Last Updated:** November 11, 2026  
-**Format:** Comprehensive learning guide with 12-phase curriculum, 30-chapter desktop guide, code examples, practical exercises, and 5 module-specific capstones
+**Last Updated:** November 13, 2026  
+**Format:** Comprehensive learning guide with 12-phase curriculum, 30-chapter desktop guide, code examples, practical exercises, batch processing comparison guides, 5 module-specific capstones, and VSI codebase gap analysis.
