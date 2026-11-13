@@ -496,7 +496,7 @@ Open `ModelManifest.xml` in your project and verify:
 
 ---
 
-## 1.5 LCS (Lifecycle Services) — The Orchestration Platform
+## 1.6 LCS (Lifecycle Services) — The Orchestration Platform
 
 ### 1.5.1 What Is LCS?
 
