@@ -496,9 +496,11 @@ Open `ModelManifest.xml` in your project and verify:
 
 ---
 
+## 1.5 Language Mindset & Foundational Concepts — The X++ Way
+
 ## 1.6 LCS (Lifecycle Services) — The Orchestration Platform
 
-### 1.5.1 What Is LCS?
+### 1.6.1 What Is LCS?
 
 LCS (Lifecycle Services) is a **cloud-based application lifecycle management portal** provided by Microsoft as part of the Microsoft Dynamics 365 platform. It is the central hub for:
 
@@ -5125,8 +5127,6 @@ A `Derived View` is a low-level pattern that creates a view in the AOT with cust
 
 ## 9.2 Entity Design — IsPublic, Public Entity Name, Public Collection Name, and Staging Tables
 
-## 9.2 Entity Design — IsPublic, Public Entity Name, Public Collection Name, and Staging Tables
-
 ### OData Exposure and Staging
 
 Every DataEntity controls OData exposure and staging via the following mechanisms:
@@ -8240,7 +8240,7 @@ public static void testIsolatedSetup()
 
 **Best practice:** Use shared setup for read-only test data. Use per-method setup for tests that modify or delete data.
 
-## 12.3 Test Isolation and Data-Driven Testing
+## 12.4 Test Isolation and Data-Driven Testing
 
 ### `SysTestTransaction` — Test Isolation
 
@@ -8320,8 +8320,6 @@ class VendComplianceTest extends SysTestCase
 - Run only Priority 1 tests: `Priority=1`
 
 ---
-
-## 12.4 Test Coverage Metrics in LCS
 
 ## 12.4 Test Coverage Metrics in LCS
 

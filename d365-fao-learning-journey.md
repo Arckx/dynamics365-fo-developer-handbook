@@ -17,7 +17,7 @@ User is a Technical Microsoft Dynamics 365 Finance & Operations intern working o
 - Phase 4 — Chapters 6–7 fully expanded in Desktop guide with deep code examples ✅
 - Chapters 8–30 in Desktop guide now fully expanded with deep content, code examples, tables, and activities ✅
 - Chapter 2 (X++ Language Fundamentals and Class Design) — newly written and inserted between Chapter 1 and Chapter 3 ✅
-- Main guide (d365_fao_technical_concepts_guide.md) has all 12 phases complete ✅
+- Main guide (d365_fao_technical_concepts_guide.md) has all 27 phases complete ✅
 - Exercises expanded from 15 to 17 (added NumberSeq and SysOperation) ✅
 - Advanced chapters 16–30 added: SysDa, extension methods, orig(), prmIsDefault(), local functions, var keyword, SQL timeouts, CacheLookup, deadlock handling, indexing, Power Platform, Copilot, mobile, Process Automation, Finance/SCM/HR module deep dives, DevOps, validate package, database movement, GDPR, ISV, financial tags, date effectivity, security hardening, Workflow Framework, Number Sequences, Data Management Framework, Advanced Forms, Notifications, Labels & AppChecker, Custom Services & JSON/CLR ✅
 - Accuracy fixes applied: CoC event handler pattern corrected (_args.setReturnValue(checkFailed())), validateWrite() uses checkFailed() not error(), AX 2012 legacy references updated to current Microsoft Learn docs ✅
@@ -146,7 +146,7 @@ User is a Technical Microsoft Dynamics 365 Finance & Operations intern working o
 | 1 | First X++ job — read/write data | ⬜ |
 | 2 | Custom table design with EDTs and indexes | ⬜ |
 | 3 | Form with parent-child data sources + business logic class | ⬜ |
-| 4 | CoC + Event Handler + Delegate extension | ⬜ |
+| 4 | CoC + Event Handler + Table/Form Extension | ⬜ |
 | 5 | Security role + data entity integration | ⬜ |
 | 6 | SSRS report + RunBaseBatch job | ⬜ |
 | 7 | 5 SysTest unit tests | ⬜ |

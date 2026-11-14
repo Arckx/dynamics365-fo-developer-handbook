@@ -30,7 +30,7 @@ This handbook is built around a fundamental engineering shift. Developers transi
 
 ## Curriculum Overview
 
-The curriculum spans four foundational quarters and twelve progressive phases:
+The curriculum spans 27 progressive phases organized into four foundational quarters:
 
 * **Quarter 1 (Months 1–3): Foundations and Data Layer**
   - Phase 1: Platform Architecture and First X++ Job

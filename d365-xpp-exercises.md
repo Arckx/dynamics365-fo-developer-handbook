@@ -590,12 +590,6 @@ Original: 1000.00 — Discounted (with CoC VIP extension): 850.00
 | Runtime subscription can be forgotten | Compile-time enforcement — extension always applies |
 | Microsoft recommends against creating new | Microsoft-recommended extensibility mechanism |
 
-
-**Expected Infolog output:**
-```
-Original: 1000 — Discounted: 850
-```
-
 ---
 
 ## Exercise 11 — Chain of Command (CoC)
@@ -1142,21 +1136,3 @@ static void exercise17_sysOperation(Args _args)
 | 15 | Putting It All Together | Complete end-to-end job |
 | 16 | Number Sequence | `NumberSeq`, `NumberSeqReference` |
 | 17 | SysOperation Service | `SysOperationServiceBase`, `SysOperationServiceController` |
-
-| # | Topic | Key Concept |
-|---|---|---|
-| 1 | Containers & Type Casting | `conPeek`, `typeid()` |
-| 2 | While Select with Filtering | `while select` with `where` |
-| 3 | Bulk Update | `update_recordset` |
-| 4 | Transactions | `ttsBegin`/`ttsCommit`/`ttsAbort` |
-| 5 | Method Overriding | `super()` in table extensions |
-| 6 | Deadlock Handling | Retry pattern with `catch (Exception::Deadlock)` |
-| 7 | Class Design | Constructor, private helpers, static methods |
-| 8 | Inheritance & Polymorphism | `extends`, method overriding |
-| 9 | Event Handlers | `[SubscribesTo]` attribute |
-| 10 | Chain of Command (CoC) | `next` keyword, `[ExtensionOf]`, replaces delegate pattern |
-| 11 | Chain of Command | `next` keyword, multiple extensions |
-| 12 | Data Entities | `DataEntity`, `Query`, OData exposure |
-| 13 | SSRS Data Provider | `SrsReportDataProvider`, `processReport()` |
-| 14 | Error Handling Best Practices | `super()`, `exists join`, transactions |
-| 15 | Putting It All Together | Complete end-to-end job |

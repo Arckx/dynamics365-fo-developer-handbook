@@ -10,7 +10,7 @@ metadata:
 
 # D365 F&O Guides — Cross-Reference Map
 
-> **How to navigate both guides.** The main guide (`d365_fao_technical_concepts_guide.md`) is organized into 12 phases. The Desktop guide (`d365-learning-guide.md`) is organized into 15 chapters. This map shows where each concept lives in both documents.
+> **How to navigate both guides.** The main guide (`d365_fao_technical_concepts_guide.md`) is organized into 27 phases. The Desktop guide (`d365-learning-guide.md`) is organized into 30 chapters. This map shows where each concept lives in both documents.
 
 ---
 
@@ -141,12 +141,12 @@ Use this table to find where a specific topic is covered across both guides.
 
 | Aspect | Main Guide (`d365_fao_technical_concepts_guide.md`) | Desktop Guide (`d365-learning-guide.md`) |
 |---|---|---|
-| **Structure** | 12 phases organized by learning month | 30 chapters organized by topic area |
+| **Structure** | 27 phases organized by learning month | 30 chapters organized by topic area |
 | **Depth** | Conceptual overviews with key code snippets | Deep dives with full code examples, tables, and activities |
 | **Best for** | Quick reference, understanding what to learn next | In-depth study, hands-on practice, exam prep |
 | **Length** | ~1,784 lines (~197 KB) | ~14,000+ lines (~700 KB+) |
 | **Activities** | No — reference only | Yes — each chapter has an activity with hints and ideal solution |
-| **Approach** | Linear progression (Phase 1 → 12) | Topic-focused (Ch 1 covers landscape, Ch 2 covers X++, etc.) |
+| **Approach** | Linear progression (Phase 1 → 27) | Topic-focused (Ch 1 covers landscape, Ch 2 covers X++, etc.) |
 | **Audience Level** | Beginner to intermediate | Intermediate to advanced (5-month+ intern focus) |
 
 ---

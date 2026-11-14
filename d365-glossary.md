@@ -48,7 +48,7 @@ metadata:
 | **Data Entity** | A D365 F&O object that exposes table data to external systems via OData/REST APIs — consists of a `DataEntity` node, a `Query`, and optionally a staging table. |
 | **Data Project** | A Visual Studio project that groups data entities and their dependencies for deployment — used to build and export data integration packages. |
 | **Data Area** | The top-level organizational unit in D365 F&O — also called a Legal Entity; represents a distinct legal entity for financial reporting and regulatory compliance. |
-| **Delegate** | A type-safe function pointer in X++ that allows consumers to inject custom logic into a publisher class — subscribed to using the `+=` operator. |
+| **Delegate** | A type-safe function pointer in X++ that allows consumers to inject custom logic into a publisher class — subscribed to using the `+=` operator. **Do not create new delegates** — the Chain of Command (CoC) provides a richer, more robust, and more concise extension mechanism that supersedes delegates. |
 | **Deployment** | The process of pushing compiled `.axmodel` artifacts from a build environment to a target environment (Dev → Test → Production). |
 | **Development Lifecycle** | The end-to-end workflow for D365 F&O development: code → build → deploy → test → promote → production, managed through LCS and Azure DevOps. |
 | **DGML** | Directed Graph Markup Language — a diagram format used in Visual Studio to visualize model dependency graphs in the AOT. |
@@ -61,7 +61,7 @@ metadata:
 | **EDT Extension** | A mechanism to add new allowed values to an existing EDT (e.g., adding a new country code to `AddressCountryRegionId`). |
 | **E-Signature** | The electronic signature framework in D365 F&O that enables digitally signed approvals and document workflows. |
 | **Element** | A single object in the AOT — a table, class, form, view, EDT, enum, report, data entity, or any other metadata item. |
-| **Event Handler** | A method that automatically executes in response to a specific system event. Table data events (e.g., `inserted`, `updated`, `deleted`) use `[DataEventHandler]`; custom delegate-based events use `[SubscribesTo]`. Microsoft recommends against creating new delegates — use Chain of Command (CoC) instead. |
+| **Event Handler** | A method that automatically executes in response to a specific system event. Table data events (e.g., `inserted`, `updated`, `deleted`) use `[DataEventHandler]`; custom delegate-based events use `[SubscribesTo]`. Microsoft recommends against creating new delegates — use Chain of Command (CoC) instead. Event handlers execute within the transaction scope of the base methods. |
 | **Exception Types** | The categories of errors in X++: `Error`, `Warning`, `Info`, `Broken`, `Deadlock`, and `DuplicateKey` — each handled in a separate `catch` block. |
 | **Extension** | A customization approach that adds fields, methods, or event handlers to a base table or class without modifying the original — the preferred method over overlayering. |
 | **Extensible EDT** | An EDT that allows consumers to add new values to base enums, enabling customization without modifying the base EDT definition. |
@@ -139,7 +139,7 @@ metadata:
 |---|---|
 | **OData/REST API** | The protocol used to expose D365 F&O data to external systems — data entities are automatically available via OData endpoints at `/data/<EntityName>`. |
 | **Outer Join** | A form data source link type where ALL child records show even if no matching parent exists — used for "show me all children regardless of parent." |
-| **Overlayering** | Modifying base Microsoft tables and classes directly — the deprecated approach that causes upgrade conflicts; replaced by the extension pattern. |
+| **Overlayering** | Modifying base Microsoft tables and classes directly — the **legacy** approach that causes upgrade conflicts; replaced by the extension pattern. Supported only to upgrade from legacy versions or for advanced customizations in models that overlay the source model. |
 
 ## P
 
@@ -178,7 +178,7 @@ metadata:
 | **SrsReportDataProvider** | The base class for SSRS report data providers — contains the `get()` method for standard providers and `processReport()` for `SrsReportDataProviderPreProcessTempDB` (TempDB pre-processing). |
 | **Static Variable** | A variable declared with the `static` keyword — shared across all instances of the class, persists for the lifetime of the application. |
 | **Staging Table** | An intermediate table used in data entities and integration patterns to accumulate, validate, and stage records before pushing them to the target system. |
-| **SysOperation** | The modern framework for service operations with parameter classes — replaces the older RunBase pattern for service-based integrations. |
+| **SysOperation** | The modern framework for service operations with parameter classes — the recommended pattern for service-based integrations and batch jobs. It separates Contract, UI Builder, Service, and Controller concerns, and provides built-in progress reporting, cancellation, and error handling. |
 | **SoD (Segregation of Duties)** | A security principle that prevents a single user from having conflicting permissions — D365 F&O supports SoD validation through the security model and XDS policies. |
 | **SysTest** | The built-in unit testing framework in D365 F&O — tests are classes that extend `SysTestCase` and are executed through the Test Runner. |
 | **System Class** | A class in the `Sys**` namespace (e.g., `SysTableLookup`, `SrsReportDataProvider`) — provides framework-level functionality that developers use directly. |
