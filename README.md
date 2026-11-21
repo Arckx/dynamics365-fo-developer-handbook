@@ -14,7 +14,7 @@ This handbook is built around a fundamental engineering shift. D365 F&O comes wi
 
 ---
 
-## 🚀 30-Minute Quick Start (New Developers)
+## 30-Minute Quick Start (New Developers)
 
 If you're new to D365 F&O, start here:
 
@@ -29,6 +29,20 @@ If you're new to D365 F&O, start here:
 ---
 
 ## Repository Structure
+
+| File | Description | Recommended Use |
+|---|---|---|
+| `d365-learning-guide.md` | 35-chapter technical desktop guide with full code examples, tables, and exercises. Covers X++, architecture, tables, forms, workflows, services, VSI patterns, Data Entities, SysTest, Performance, and more. | In-depth technical study and daily code reference. |
+| `d365-fao-learning-journey.md` | 12-month structured study plan with quarterly milestones and deliverables. | Structuring internship programs and training paths. |
+| `d365-guide-cross-reference.md` | Master index mapping curriculum phases to desktop guide chapters. | Navigating between study phases and reference chapters. |
+| `d365-xpp-quick-reference.md` | X++ syntax cheat sheet covering CRUD operations, CoC, LINQ-style queries, and exception handling. | Quick syntax checks while writing code. |
+| `d365-xpp-exercises.md` | 17 hands-on coding exercises aligned with each learning phase (beginner → advanced). | Practical application of core concepts. |
+| `d365-glossary.md` | Glossary of 100+ core D365 terms (AOT, EDTs, CoC, XDS, etc.) with one-sentence definitions. | Terminology lookups. |
+| `d365-handbook-appendices.md` | Reference appendices: EDT table, X++→SQL cheat sheet, Debugging cookbook, Microsoft Learn URLs. | Quick lookups and troubleshooting. |
+| `d365-anti-patterns.md` | Anti-pattern library documenting "What NOT to do" with code examples and fixes. | Avoiding common mistakes and upgrade issues. |
+| `d365-certification-mapping.md` | Mapping of 35 chapters to MB-310, MB-330, MB-500 exam domains. | Study planning and exam preparation. |
+| `VSI_GAP_ANALYSIS.md` | Analysis of real-world VSI codebase patterns and architectural enhancement roadmap. | Advanced architectural review. |
+| `BatchProcessinginD365F&ORunBaseBatchvsSysOperation.md` | Technical comparison of `RunBaseBatch` versus `SysOperationServiceController`. | Designing asynchronous background jobs. |
 
 | File | Description | Recommended Use |
 |---|---|---|
