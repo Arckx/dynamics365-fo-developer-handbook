@@ -1,6 +1,6 @@
 # Dynamics 365 Finance & Operations (D365 F&O) Developer Handbook
 
-> The definitive technical handbook, 30-chapter desktop guide, and 12-month learning journey designed for Microsoft D365 F&O developers, technical interns, and enterprise engineers.
+> The definitive technical handbook, 35-chapter desktop guide, and 12-month learning journey designed for Microsoft D365 F&O developers, technical interns, and enterprise engineers.
 
 ---
 
@@ -14,44 +14,89 @@ This handbook is built around a fundamental engineering shift. D365 F&O comes wi
 
 ---
 
+## 🚀 30-Minute Quick Start (New Developers)
+
+If you're new to D365 F&O, start here:
+
+1. **Environment Setup** — [Prerequisites](#prerequisites-and-environment-setup) → Get a Tier-1 VM or Dev VM with VS + Dynamics 365 Add-in
+2. **First X++ Job** — [Exercise 1](d365-xpp-exercises.md#exercise-1---variable-declaration-and-type-casting) → `conPeek`, `typeid()`, `info()`
+3. **First Query** — [Exercise 2](d365-xpp-exercises.md#exercise-2---while-select-with-filtering) → `while select` with `where`
+4. **First Table Extension** — [Learning Guide Ch 9](d365-learning-guide.md#9-table-design--edts) → `[ExtensionOf(tableStr(VendTable))]`
+5. **First Data Entity** — [Learning Guide Ch 16](d365-learning-guide.md#16-data-entities) → `IsPublic = Yes`, OData endpoint
+
+> **Tip:** Keep [d365-xpp-quick-reference.md](d365-xpp-quick-reference.md) open while coding — it's your syntax cheat sheet.
+
+---
+
 ## Repository Structure
 
 | File | Description | Recommended Use |
 |---|---|---|
-| `d365-learning-guide.md` | 30-chapter technical desktop guide with full code examples, tables, and exercises. Covers X++, architecture, tables, forms, workflows, services, and VSI patterns. | In-depth technical study and daily code reference. |
+| `d365-learning-guide.md` | 35-chapter technical desktop guide with full code examples, tables, and exercises. Covers X++, architecture, tables, forms, workflows, services, VSI patterns, Data Entities, SysTest, Performance, and more. | In-depth technical study and daily code reference. |
 | `d365-fao-learning-journey.md` | 12-month structured study plan with quarterly milestones and deliverables. | Structuring internship programs and training paths. |
 | `d365-guide-cross-reference.md` | Master index mapping curriculum phases to desktop guide chapters. | Navigating between study phases and reference chapters. |
 | `d365-xpp-quick-reference.md` | X++ syntax cheat sheet covering CRUD operations, CoC, LINQ-style queries, and exception handling. | Quick syntax checks while writing code. |
-| `d365-xpp-exercises.md` | Hands-on coding exercises aligned with each learning phase. | Practical application of core concepts. |
-| `d365-glossary.md` | Glossary of core D365 terms (AOT, EDTs, CoC, XDS, etc.). | Terminology lookups. |
+| `d365-xpp-exercises.md` | 17 hands-on coding exercises aligned with each learning phase (beginner → advanced). | Practical application of core concepts. |
+| `d365-glossary.md` | Glossary of 100+ core D365 terms (AOT, EDTs, CoC, XDS, etc.) with one-sentence definitions. | Terminology lookups. |
 | `VSI_GAP_ANALYSIS.md` | Analysis of real-world VSI codebase patterns and architectural enhancement roadmap. | Advanced architectural review. |
 | `BatchProcessinginD365F&ORunBaseBatchvsSysOperation.md` | Technical comparison of `RunBaseBatch` versus `SysOperationServiceController`. | Designing asynchronous background jobs. |
 
 ---
 
-## Curriculum Overview
+## Curriculum Overview (35 Chapters)
 
-The curriculum spans 27 progressive phases organized into four foundational quarters:
+The curriculum spans **35 chapters** organized into **four foundational quarters**:
 
-* **Quarter 1 (Months 1–3): Foundations and Data Layer**
-  - Phase 1: Platform Architecture and First X++ Job
-  - Phase 2: Tables, Extended Data Types (EDTs), Alternate Indexes, and Data Integrity
-  - Phase 3: Forms, Parent-Child Data Sources, and Business Logic Classes
+### Quarter 1 (Months 1–3): Foundations & Data Layer
+| Ch | Topic | Key Skills |
+|---|---|---|
+| 1 | Platform Architecture & AOT | AOS, AOT, model store, layers |
+| 2 | Models, Layers, Packages | Model manifest, dependencies, SYS/ISV/VAR/CUS |
+| 3 | VS Setup & Language Mindset | Relational-first, metadata, extensibility, primitives, EDTs |
+| 4 | LCS & Development Lifecycle | Environments, build pipeline, release pipeline, hotfixes |
+| 5 | X++ Data Types & Variables | Primitives, composites, `real` precision, block scope |
+| 6 | Control Flow & CRUD | `while select`, `update_recordset`, `delete_from`, transactions |
+| 7 | Methods, Exceptions, Classes | `super()`/`next`, `try/catch`, inheritance, abstract, interfaces |
+| 8 | VS Development & Activity | Debugging, build/deploy, customer validation service |
 
-* **Quarter 2 (Months 4–6): Extensibility and Backend Architecture**
-  - Phase 4: Chain of Command (CoC) and Event Handlers
-  - Phase 5: Security Hierarchies and Data Entities
-  - Phase 6: SSRS Reporting and Batch Processing
+### Quarter 2 (Months 4–6): Extensibility & Backend Architecture
+| Ch | Topic | Key Skills |
+|---|---|---|
+| 9 | Table Design & EDTs | Field groups, relations, indexes, TempDB/InMemory, validation |
+| 10 | Form Architecture & CoC | Data sources, controls, CoC patterns, form extensions |
+| 11 | Views & Lookups | View definitions, `SysTableLookup`, multi-select lookups |
+| 12 | Class Fundamentals & RunBase | `RunBase`/`RunBaseBatch`, dialog, `SysOperation` pattern |
+| 13 | Event Handlers & Command Pattern | Pre/Post handlers, `SubscribesTo`, menu item → class chain |
+| 14 | Extensibility Deep Dive | CoC vs override vs event handler, `ExtensionOf`, attributes |
+| 15 | Security Model | Hierarchy, XDS, record-level, privilege assertions, audit |
 
-* **Quarter 3 (Months 7–9): Quality, DevOps, and Advanced Performance**
-  - Phase 7: Unit Testing (`SysTest`), ATL, and RSAT
-  - Phase 8: Azure DevOps Build Pipelines, LCS, and Release Management
-  - Phase 9: SQL Performance Tuning, Caching Strategies, and Deadlock Handling
+### Quarter 3 (Months 7–9): Quality, DevOps & Advanced Performance
+| Ch | Topic | Key Skills |
+|---|---|---|
+| 16 | Data Entities | OData, staging, composite entities, DMF, Power Platform |
+| 17 | SSRS & Electronic Reporting | `SrsReportDataProvider`, RDL, ER, pre-processing |
+| 18 | Batch Processing | `RunBaseBatch`, `SysOperation`, progress, retry, cancellation |
+| 19 | SysTest Framework | `SysTestCase`, assertions, data fixtures, CI/CD integration |
+| 20 | LCS Deep Dive & CI/CD | Model management, `AxModelStore`, pipeline design |
+| 21 | Performance & SQL Tuning | Query plans, `CacheLookup`, deadlock resolution, indexing |
 
-* **Quarter 4 (Months 10–12): Enterprise Solutions and Module Specialization**
-  - Phase 10: End-to-End Capstone Project Solution Architecture
-  - Phase 11: Module Specialization Deep Dive (Finance, SCM, HR, Retail, Project Operations)
-  - Phase 12: Advanced Patterns (Workflows, Number Sequences, Custom Services) and Certification Prep (MB-310 / MB-330)
+### Quarter 4 (Months 10–12): Enterprise Solutions & Specialization
+| Ch | Topic | Key Skills |
+|---|---|---|
+| 22 | Capstone Projects | End-to-end architecture, manufacturing P2P compliance |
+| 23 | Advanced X++ Patterns | `SysDa`, `RecordInsertList`, `var`, `orig()`, CoC order |
+| 24 | Production Debugging | Timeouts, memory, slow forms, deadlocks |
+| 25 | Power Platform & Copilot | Logic Apps, Power Automate, mobile, process automation |
+| 26 | Module Specialization | Finance, SCM, HR deep dives, certification prep |
+| 27 | Advanced DevOps | CD pipelines, DB movement, build automation |
+| 28 | Compliance & ISV | GDPR, financial tags, date effectivity, hardening |
+| 29 | Workflow Architecture | Document, events, submit/action managers, enabled forms |
+| 30 | Number Sequences | Module registration, reference API, form handler, targets |
+| 31 | Form Patterns | ListPage, Grid, FactBox, Tree, Dialog, MultiSelectionHelper |
+| 32 | VSI Patterns | Status change context, notifications, multi-company |
+| 33 | Advanced Batch | Cross-company, `VSIWorker`, constants, retry patterns |
+| 34 | Localization & Best Practices | Labels, AppChecker, configuration keys |
+| 35 | Service Patterns | `SysOperation`, shared executor, JSON/CLR interop, exposure |
 
 ---
 
@@ -62,9 +107,11 @@ Upon completing this handbook, developers will be able to:
 * Implement non-invasive customizations using Chain of Command.
 * Design secure tables, EDTs, forms, and custom data entities.
 * Build asynchronous background batch jobs and custom SSRS reports.
-* Configure automated Azure DevOps CI/CD pipelines and unit tests.
-* Troubleshoot and optimize complex SQL queries and memory caching.
+* Configure automated Azure DevOps CI/CD pipelines and unit tests (`SysTest`).
+* Troubleshoot and optimize complex SQL queries, memory caching, and deadlocks.
 * Specialize in core D365 F&O enterprise modules and prepare for Microsoft certifications MB-310 and MB-330.
+* Integrate with Power Platform (Logic Apps, Power Automate, Dataverse).
+* Build and consume custom service endpoints (OData, REST, JSON).
 
 ---
 
@@ -76,5 +123,4 @@ Upon completing this handbook, developers will be able to:
 
 ---
 
-**Last Updated:** November 14, 2026  
 **Target Audience:** Technical Interns, Junior-to-Senior X++ Developers, Enterprise Solution Architects.
