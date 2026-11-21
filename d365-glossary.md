@@ -95,7 +95,7 @@ metadata:
 
 | Term | Definition |
 |---|---|
-| **IL (Intermediate Language)** | The compiled output of X++ — X++ compiles to .NET CIL (Common Intermediate Language), the same IL used by C# and VB.NET. |
+| **IL (Intermediate Language)** | The compiled output of X++ — X++ compiles to .NET CIL (Common Intermediate Language), a low-level format used by the .NET runtime to execute code efficiently. |
 | **Infolog** | The message window in the D365 F&O client that displays informational messages (`info`), warnings (`warning`), and errors (`error`). |
 | **Integration Components** | Supporting components that connect D365 F&O to external systems — includes Azure Service Bus, Azure Functions, Logic Apps, and OData/REST endpoints. |
 | **Inner Join** | A form data source link type where child records only show when a matching parent record exists — the default link type. |
@@ -219,7 +219,7 @@ metadata:
 | Term | Definition |
 |---|---|
 | **X++** | The primary development language for D365 F&O — object-oriented, application-aware, data-aware, compiles to .NET CIL, and runs on the AOS. |
-| **X++ IL** | The compiled form of X++ code — X++ compiles to .NET CIL (Common Intermediate Language), the same IL used by C# and VB.NET. |
+| **X++ IL** | The compiled form of X++ code — X++ compiles to .NET CIL (Common Intermediate Language), the low-level format used by the .NET runtime to execute code efficiently. |
 | **XDS (Extensible Data Security)** | A policy-based security framework that controls access to data at the row and field level — applies security rules dynamically based on context, roles, and query ranges. |
 
 ---

@@ -25,7 +25,7 @@ Per Microsoft's official X++ primitive type list — these are the built-in scal
 |---|---|---|
 | `int` | `int i = 5;` | 32-bit signed integer |
 | `int64` | `int64 recId = 5637144576;` | 64-bit — used for `RecId` |
-| `real` | `real price = 19.99;` | X++'s `real` is internally represented with decimal-like precision (not standard IEEE-754 binary float), which is why it's safe to use for monetary values via EDTs like `AmountMST` — it does NOT have the rounding problems that IEEE-754 doubles have in languages like C#/Java |
+| `real` | `real price = 19.99;` | X++'s `real` is internally represented with decimal-like precision (not standard IEEE-754 binary float), which is why it's safe to use for monetary values via EDTs like `AmountMST` — it does NOT have the rounding problems that IEEE-754 doubles have |
 | `str` | `str name = "Customer";` | Unicode string |
 | `boolean` | `boolean flag = true;` | `true` / `false` |
 | `date` | `date d = today();` | No time component |

@@ -6,10 +6,11 @@
 
 ## The Language Mindset
 
-This handbook is built around a fundamental engineering shift. Developers transitioning from languages like C# or Java must adopt a specific mindset for Dynamics 365:
-* **Relational-First, Not Object-First:** The database is the primary focus; data access and movement drive the application architecture.
-* **Metadata over Code:** Business logic and configurations are defined in the Application Object Tree (AOT) rather than hardcoded.
-* **Extensibility as a Constraint:** Customizations must be non-invasive, relying on Chain of Command (CoC) and Event Handlers to protect the evergreen Microsoft core.
+This handbook is built around a fundamental engineering shift. D365 F&O comes with its own language mindset that impacts how developers think about software:
+
+* **Relational-First, Not Object-First:** The database is the primary focus; data access and movement drive the application architecture. D365 F&O is built around SQL tables with business entities represented as rows. Developers think in terms of relations between data sets, not just objects.
+* **Metadata over Code:** Business logic and configurations are defined in the Application Object Tree (AOT) rather than hardcoded. The AOT contains all definitions (tables, classes, forms, enums) and stores them as metadata that the AOS loads and executes.
+* **Extensibility as a Constraint:** Customizations must be non-invasive, relying on Chain of Command (CoC) and Event Handlers to protect the evergreen Microsoft core. Since Microsoft updates D365 F&O frequently, your code must not directly modify standard Microsoft tables or classes, or your customizations will be overwritten during future updates.
 
 ---
 
