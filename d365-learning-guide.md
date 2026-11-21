@@ -23,7 +23,8 @@ metadata:
 
 ---
 
-# Chapter 1 — The D365 F&O Developmental Landscape
+
+# Chapter 1: Platform Architecture & AOT
 
 ## 1.1 The Platform Architecture — What You Are Actually Working Inside
 
@@ -288,9 +289,11 @@ All classes in X++ ultimately inherit from `Object` (not from a named class you 
 
 ---
 
-## 1.3 Models, Layers, and Packages — Deep Technical Details
+# Chapter 2: Models, Layers, Packages
 
-### 1.3.1 What Is a Model?
+## 2.1 Models, Layers, and Packages — Deep Technical Details
+
+### 2.1.1 What Is a Model?
 
 A **model** is the fundamental unit of versioning and dependency in D365 F&O. A model is a named, versioned collection of AOT objects that share a single `ModelManifest.xml`. Each model:
 
@@ -300,7 +303,7 @@ A **model** is the fundamental unit of versioning and dependency in D365 F&O. A 
   - Is assigned a **layer** (`SYS`, `ISV`, `VAR`, `CUS`, `USR`)
 - Exports to a **`.axmodel` file** — a binary package containing the model's metadata as XML serialization blobs
 
-### 1.3.2 Layers — The Upgrade Boundary
+### 2.1.2 Layers — The Upgrade Boundary
 
 The **layer** is the concept that determines whether your code survives a Microsoft update or gets overwritten.
 
@@ -337,7 +340,7 @@ When Microsoft releases a CU (Cumulative Update), they deliver updates to the VA
 | **CUS** | Default layer for customer customizations | **Yes.** This is where you develop as a customer technical intern |
 | **USR** | User-specific layer, highest priority, no key required | Rarely used directly by developers — mainly for end-user personalizations, not standard development work |
 
-### 1.3.3 Packages — The Deployable Unit
+### 2.1.3 Packages — The Deployable Unit
 
 A **package** is the unit of deployment. It contains one or more models and their `.axmodel` files. Packages are created and managed as part of the build pipeline in Azure DevOps or GitHub Actions.
 
@@ -346,7 +349,7 @@ A **package** is the unit of deployment. It contains one or more models and thei
 - Package dependencies determine deployment order — a package can declare that it depends on another package, meaning the dependency must be deployed first
 - Package names follow a naming convention like `MyModel_1.0.0.0` and live in LCS as build artifacts
 
-### 1.3.4 Model Manifest — The Heart of Your Project
+### 2.1.4 Model Manifest — The Heart of Your Project
 
 The `ModelManifest.xml` file lives at the root of every Visual Studio model project. It defines everything that the deployment system needs to know about your model.
 
@@ -393,9 +396,11 @@ The `ModelManifest.xml` file lives at the root of every Visual Studio model proj
 
 ---
 
-## 1.4 Visual Studio Connection & Project Setup — Production-Grade
+# Chapter 3: Visual Studio Setup & Language Mindset
 
-### 1.4.1 Prerequisites Before You Connect
+## 3.1 Visual Studio Connection & Project Setup — Production-Grade
+
+### 3.1.1 Prerequisites Before You Connect
 
 Before opening Visual Studio and connecting to Dynamics 365, ensure:
 
@@ -405,7 +410,7 @@ Before opening Visual Studio and connecting to Dynamics 365, ensure:
 4. **Network connectivity** — your machine must be able to reach the Azure region where your LCS environment resides (corporate firewalls may block this)
 5. **A valid Azure subscription** linked to the LCS project (LCS handles this provisioning automatically when creating an environment)
 
-### 1.4.2 Connecting Visual Studio — Step by Step
+### 3.1.2 Connecting Visual Studio — Step by Step
 
 **Step 1: Open Visual Studio**
 Launch Visual Studio and either create a new model project or open an existing solution.
@@ -428,7 +433,7 @@ If the environment has no model project for your customizations yet:
 If a model project already exists (typical when working in a team):
 - **File → Open → Dynamics 365 Project** and navigate to the `.csproj` file in the model store of your connected environment
 
-### 1.4.3 The Model Store — File System Architecture
+### 3.1.3 The Model Store — File System Architecture
 
 The model store is **not** a SQL database. It is a **shared file system directory** on the AOS server machine (on-premises) or an **Azure File Share** (in cloud deployments). The model store contains:
 
@@ -469,7 +474,7 @@ C:\Views\ (on-premises AOS)  OR  \\[AzureFileShare]\ModelStore (cloud)
 - The `Binary` folder contains **compiled IL** — when Visual Studio builds your project, it produces the `.dll` file that goes here
 - Multiple versions of the same model can coexist (for rollback) — the AOS uses the **highest version** that satisfies all dependency requirements
 
-### 1.4.4 Project Settings You Must Configure Correctly
+### 3.1.4 Project Settings You Must Configure Correctly
 
 #### Model Manifest Configuration
 Open `ModelManifest.xml` in your project and verify:
@@ -496,11 +501,11 @@ Open `ModelManifest.xml` in your project and verify:
 
 ---
 
-## 1.5 Language Mindset & Foundational Concepts — The X++ Way
+## 3.2 Language Mindset & Foundational Concepts — The X++ Way
 
 D365 F&O comes with its own language mindset that fundamentally changes how you think about software development. Before writing your first line of X++, internalize these foundational concepts:
 
-### 1.5.1 The Three Pillars of X++ Thinking
+### 3.2.1 The Three Pillars of X++ Thinking
 
 **Relational-First, Not Object-First**
 
@@ -522,7 +527,7 @@ Microsoft pushes updates (Cumulative Updates, hotfixes) to the `SYS` layer sever
 
 ---
 
-### 1.5.2 Foundational Technical Concepts
+### 3.2.2 Foundational Technical Concepts
 
 #### Primitive Data Types & the `real` Type
 X++ has **true primitive types** that map directly to SQL types: `int` (32-bit), `int64` (64-bit, used for `RecId`), `real` (decimal-precision floating point), `str` (Unicode string), `date` (date only), `utcdatetime` (UTC date+time), `timeOfDay` (seconds since midnight as integer), `boolean`, `enum`, `guid`, and `anytype`. Unlike standard IEEE-754 binary floating point used in many languages, X++'s `real` type uses **decimal-like precision** internally. This makes it safe for monetary values — EDTs like `AmountMST` use `real` without the rounding errors you'd see with `double` in other languages.
@@ -587,7 +592,7 @@ These are **reference types** (class instances) — declare with `List list = ne
 
 ---
 
-### 1.5.3 Design Principles Summary
+### 3.2.3 Design Principles Summary
 
 | Principle | What It Means | Why It Matters |
 |---|---|---|
@@ -599,9 +604,11 @@ These are **reference types** (class instances) — declare with `List list = ne
 
 ---
 
-## 1.6 LCS (Lifecycle Services) — The Orchestration Platform
+# Chapter 4: LCS & Dev Lifecycle
 
-### 1.6.1 What Is LCS?
+## 4.1 LCS (Lifecycle Services) — The Orchestration Platform
+
+### 4.1.1 What Is LCS?
 
 LCS (Lifecycle Services) is a **cloud-based application lifecycle management portal** provided by Microsoft as part of the Microsoft Dynamics 365 platform. It is the central hub for:
 
@@ -612,7 +619,7 @@ LCS (Lifecycle Services) is a **cloud-based application lifecycle management por
 - **Change tracking** — tracking all model deployments and configuration changes for audit purposes
 - **Reporting** — built-in reports on deployment success/failure, performance, and compliance
 
-### 1.6.2 LCS Environments — Detailed Overview
+### 4.1.2 LCS Environments — Detailed Overview
 
 | Environment | Purpose | Data Source | AOS Tier | Who Has Access | When Updated |
 |---|---|---|---|---|---|
@@ -623,7 +630,7 @@ LCS (Lifecycle Services) is a **cloud-based application lifecycle management por
 | **Preview** (optional) | Preview of upcoming CUs and hotfixes for testing | Standard data with CU applied | Dedicated preview AOS | ITOps, developers, early adopters | When Microsoft releases a CU |
 | **Production** | Live business operations | Live transactional data | Production AOS (high-availability, redundant) | IT Operations, limited developer access during deployments | Only after formal release management approval |
 
-### 1.6.3 Azure DevOps Build Pipeline — The Build Process
+### 4.1.3 Azure DevOps Build Pipeline — The Build Process
 
 The standard build pipeline in D365 F&O development follows this structure (Azure DevOps YAML or classic editor):
 
@@ -686,7 +693,7 @@ steps:
 - Generates `.log` files with any compilation errors or warnings
 - Fails the build if any compilation errors exist — the `.axmodel` is not produced
 
-### 1.6.4 LCS Release Pipeline — Promoting Builds
+### 4.1.4 LCS Release Pipeline — Promoting Builds
 
 The release pipeline in LCS (accessible via the LCS web portal at `lcs.dynamics.com`) manages the movement of your `.axmodel` build artifacts across environments:
 
@@ -699,7 +706,7 @@ The release pipeline in LCS (accessible via the LCS web portal at `lcs.dynamics.
    - The deployment status is reported back to LCS
 4. **Rollback**: If a deployment fails, LCS allows rolling back to the previous model version (stored in the model store as a previous version folder — see `C:\Views` structure above)
 
-### 1.6.5 Hotfix Deployment
+### 4.1.5 Hotfix Deployment
 
 When Microsoft releases a Critical Update (CU) or hotfix:
 1. The update arrives as a `.axupdate` file package in LCS
@@ -710,7 +717,7 @@ When Microsoft releases a Critical Update (CU) or hotfix:
 
 **Critical best practice**: After any hotfix deployment, redeploy your custom model to ensure it is still compatible with the updated standard code. Microsoft may have changed a method signature or behavior that your CoC override or event handler depends on.
 
-### 1.6.6 Configuration Keys
+### 4.1.6 Configuration Keys
 
 A **Configuration Key** is a boolean flag that controls whether a feature in D365 F&O is active or inactive. Configuration keys are defined in the model store and referenced in code.
 
@@ -739,9 +746,9 @@ The `FeatureEnabled::isEnabled()` check uses the `SysFeatureElement` table to de
 
 ---
 
-## 1.7 The Development Lifecycle — Step by Step in Detail
+## 4.2 The Development Lifecycle — Step by Step in Detail
 
-### 1.7.1 Developer Workflow (Day-to-Day)
+### 4.2.1 Developer Workflow (Day-to-Day)
 
 ```
 [1] Open Visual Studio → Connect to LCS Dev/Test environment
@@ -773,7 +780,7 @@ The `FeatureEnabled::isEnabled()` check uses the `SysFeatureElement` table to de
 [10] Promote the build to Test → UAT → Production via the release pipeline
 ```
 
-### 1.7.2 Debugging in D365 F&O
+### 4.2.2 Debugging in D365 F&O
 
 Breakpoint debugging works from Visual Studio when connected to a Dev/Test environment:
 
@@ -790,7 +797,7 @@ Breakpoint debugging works from Visual Studio when connected to a Dev/Test envir
 - Set breakpoints on `init()`, `executeQuery()`, `validateWrite()`, `modified()`, and `run()` methods — these are the most commonly debugged methods in form-based development
 - `Global::info()` output appears in Visual Studio's Debug Output window in addition to the Infolog — this is useful for tracing logic execution flow without cluttering the Infolog
 
-### 1.7.3 The Complete Build → Deploy → Promote Cycle
+### 4.2.3 The Complete Build → Deploy → Promote Cycle
 
 | Step | Environment | Action | Who Triggers |
 |---|---|---|---|
@@ -808,7 +815,7 @@ Breakpoint debugging works from Visual Studio when connected to a Dev/Test envir
 
 ---
 
-## 1.8 Activity — Layer & AOT Decision Exercise
+## 4.3 Activity — Layer & AOT Decision Exercise
 
 > **Scenario**: Acme Manufacturing needs to customize the Accounts Payable invoice approval workflow. The requirements are:
 > 1. Add a new field to `VendTable` for an internal compliance approval code
@@ -950,11 +957,12 @@ The ideal approach for this activity combines all recommended patterns and follo
 ---
 ---
 
-# Chapter 2 — X++ Language Fundamentals and Class Design
 
 Before you can work with tables, forms, or data entities, you need to be fluent in X++ itself — the language that runs on the Application Object Server. This chapter covers the language fundamentals and the object-oriented patterns you'll use every day.
 
-## 2.1 X++ Data Types
+# Chapter 5: X++ Data Types & Variables
+
+## 5.1 X++ Data Types
 
 X++ has a set of primitive data types and a rich system of Extended Data Types (EDTs) that wrap primitives with additional metadata.
 
@@ -1002,7 +1010,7 @@ if (anyValue is int)
 }
 ```
 
-## 2.2 Variable Declaration and Scope
+## 5.2 Variable Declaration and Scope
 
 ### Declaration Keywords
 
@@ -1062,7 +1070,9 @@ public void goodExample()
 
 **Source:** [X++ variables - Declare anywhere](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/dev-ref/xpp-variables-data-types#declare-anywhere)
 
-## 2.3 Control Flow Statements
+# Chapter 6: Control Flow & CRUD
+
+## 6.1 Control Flow Statements
 
 ### If / Else If / Else
 
@@ -1179,7 +1189,7 @@ do
 while (i <= 5);
 ```
 
-## 2.4 Table Operations (CRUD)
+## 6.2 Table Operations (CRUD)
 
 ### Select
 
@@ -1290,7 +1300,9 @@ catch (Exception::Error)
 
 **Critical rule**: Always call `super()` first in table `insert()`, `update()`, and `delete()` methods, and in `validateWrite()` / `validateDelete()`. The base class methods handle framework-level logic (workflow, auditing, etc.) that your code depends on.
 
-## 2.5 Method Overriding and `super()`
+# Chapter 7: Methods, Exceptions, Classes
+
+## 7.1 Method Overriding and `super()`
 
 X++ supports method overriding through inheritance. When a subclass overrides a base class method, it can call the base implementation using `super()`.
 
@@ -1381,7 +1393,7 @@ final class CustTable_Extension
 }
 ```
 
-## 2.6 Exception Handling
+## 7.2 Exception Handling
 
 X++ uses a `try`/`catch` block with typed exceptions. The `Exception` enum defines the error categories.
 
@@ -1456,9 +1468,9 @@ while (!success && retryCount < 3)
 }
 ```
 
-## 2.7 Classes and Objects
+## 7.3 Classes and Objects
 
-### 2.7.1 Class Structure
+### 7.3.1 Class Structure
 
 Every X++ class has three sections: **declarations** (class-level variables), **constructor(s)**, and **methods**.
 
@@ -1544,7 +1556,7 @@ else
 }
 ```
 
-### 2.7.2 Inheritance and Polymorphism
+### 7.3.2 Inheritance and Polymorphism
 
 X++ supports single inheritance — a class can extend exactly one base class using the `extends` keyword.
 
@@ -1596,7 +1608,7 @@ paymentService = new CreditCardPaymentService();
 paymentService.pay(custTable, 100.00);  // Calls CreditCardPaymentService::pay()
 ```
 
-### 2.7.3 Abstract Classes and Interfaces
+### 7.3.3 Abstract Classes and Interfaces
 
 **Abstract classes** cannot be instantiated directly — they serve as blueprints for subclasses. They may contain both abstract (unimplemented) and concrete (implemented) methods.
 
@@ -1654,9 +1666,11 @@ class CsvSalesReportGenerator extends AbstractReportGenerator implements IExport
 }
 ```
 
-## 2.8 Visual Studio Development Environment
+# Chapter 8: VS Development & Activity
 
-> **Refresher** — detailed setup was covered in Chapter 1, Section 1.4. This section highlights the X++-specific development features.
+## 8.1 Visual Studio Development Environment
+
+> **Refresher** — detailed setup was covered in Chapter 1, Section 3.1. This section highlights the X++-specific development features.
 
 - **IDE**: Visual Studio 2022 with the `Microsoft.Dynamics.FinOps.ToolsVS2022.vsix` extension
 - **X++ Editor**: Syntax highlighting, IntelliSense for AOT objects, auto-completion for table fields and EDTs
@@ -1664,7 +1678,7 @@ class CsvSalesReportGenerator extends AbstractReportGenerator implements IExport
 - **Debugging**: Set breakpoints in X++ classes, step through code, inspect variables in the Locals/Watch windows
 - **Cross-reference**: SQL Server Express LocalDB tracks object dependencies — right-click any element → **Find References**
 
-## 2.9 Activity — Build a Customer Validation Service
+## 8.2 Activity — Build a Customer Validation Service
 
 > **Activity**: Create a class called `CustValidationService` that validates customer records before they are saved. The service must:
 > 1. Accept a `CustTable` record in its constructor
@@ -1691,9 +1705,10 @@ class CsvSalesReportGenerator extends AbstractReportGenerator implements IExport
 ---
 ---
 
-# Chapter 3 — Tables, Fields, and Data Integrity
 
-## 3.1 Table Design — Foundational Principles
+# Chapter 9: Table Design & EDTs
+
+## 9.1 Table Design — Foundational Principles
 
 Every table in D365 F&O maps to a physical SQL table. Designing tables properly is the single most impactful decision you'll make — bad table design compounds into poor performance, upgrade conflicts, and data integrity issues.
 
@@ -1731,7 +1746,7 @@ Indexes determine how fast `select`, `join`, and `exists` operations run. Every 
 3. **Use `AllowDuplicates = No`** on alternate uniqueness indexes — this enforces data integrity at the database level, not just at the application level
 4. **`CacheLookup` matters** — tables with `CacheLookup = Found` or `FoundAndEmpty` allow SQL Server to cache lookups and skip disk reads; use this for lookup tables (e.g., `ItemGroup`, `CustGroup`)
 
-## 3.2 Extended Data Types (EDTs) — Never Use Base Types Directly
+## 9.2 Extended Data Types (EDTs) — Never Use Base Types Directly
 
 An EDT is a type alias that wraps a base type (string, int, real, etc.) with additional properties. **Why EDTs matter:**
 
@@ -1766,7 +1781,7 @@ HelpText: Customer account number
 
 When you use `CustAccount` as a field type on any table, and then build a form with that table as a data source, the `AccountNum` field automatically gets a **lookup** to find and select existing customer records — this is entirely driven by the EDT metadata.
 
-## 3.3 Field Groups
+## 9.3 Field Groups
 
 Field groups are **named sets of fields** defined at the table level. They provide:
 
@@ -1785,7 +1800,7 @@ Field groups are **named sets of fields** defined at the table level. They provi
 
 When a form's data source references a table with field groups, you can drag the **entire field group** onto a form design node — all fields in the group appear automatically with their labels and EDT properties.
 
-## 3.4 Table Extensions — The Modern Extension Pattern
+## 9.4 Table Extensions — The Modern Extension Pattern
 
 **Note:** *Table inheritance* (using `SupportInheritance`/`Extends` properties with a discriminator field like `InstanceRelationType`) and *table extension* (using `[ExtensionOf(tableStr(...))]`) are **two distinct mechanisms** in D365 F&O. This section covers **table extension**, which is the recommended approach for upgrade-safe customizations. For table inheritance (a separate feature for hierarchical table relationships), see [Table inheritance overview](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/table-inheritance).
 
@@ -1819,7 +1834,7 @@ final class VendTable_Extension
 - **Cannot change table properties** — you cannot change `AllowDuplicate`, `CacheLookup`, etc. on a table via extension
 - **Cannot remove fields** — extension only adds
 
-## 3.5 Table Validation — Where to Validate
+## 9.5 Table Validation — Where to Validate
 
 Data integrity is enforced at three levels, each with a specific role:
 
@@ -1858,7 +1873,7 @@ Called when a single field value is being set. Used for field-specific validatio
 
 Business logic that is too complex to fit in table validation — lives in service classes or `RunBase` classes. Called from the UI layer or batch jobs.
 
-## 3.6 Record Lifecycle and the `modifiedField()` Pattern
+## 9.6 Record Lifecycle and the `modifiedField()` Pattern
 
 When a field value changes on a record, `modifiedField(fieldId)` is called automatically by the framework. You can override this to react to specific field changes.
 
@@ -1882,7 +1897,7 @@ public void modifiedField(FieldId _fieldId)
 
 **Critical: `super(_fieldId)` goes LAST in `modifiedField()` — opposite of `validateWrite()` where `super()` goes FIRST.**
 
-## 3.7 `insert_recordset` / `update_recordset` — Set-Based Performance
+## 9.7 `insert_recordset` / `update_recordset` — Set-Based Performance
 
 These operations execute in a single SQL statement rather than looping record-by-record, and are dramatically faster for large data volumes.
 
@@ -1918,7 +1933,7 @@ update_recordset VendInvoiceJour
     && VendInvoiceJour.InvoiceDate < today() - 30;
 ```
 
-## 3.8 Activity — Custom Table Design
+## 9.8 Activity — Custom Table Design
 
 > **Activity**: Design a table called `APCustomsDeclaration` for storing customs compliance declarations that must link to each vendor invoice line. Requirements:
 > 1. The table must store the declaration ID (unique, not auto-generated), declaration date, customs authority reference, and the invoice line `RecId`
@@ -1946,9 +1961,10 @@ The ideal solution:
 ---
 ---
 
-# Chapter 4 — Forms, Controls, and User Experience
 
-## 4.1 Form Architecture
+# Chapter 10: Form Architecture & CoC
+
+## 10.1 Form Architecture
 
 A form in D365 F&O is a UI presentation layer that sits on top of one or more table data sources. The form handles the visual layout (design node), data retrieval (data source nodes), and user interaction (control nodes and their events).
 
@@ -2019,7 +2035,7 @@ public void executeQuery()
 
 **Critical: In `executeQuery()`, always call `super()` LAST** — because `super()` is what actually executes the query. If you call `super()` first, the filters you added after it will be ignored.
 
-## 4.2 Form Controls — Properties and Events
+## 10.2 Form Controls — Properties and Events
 
 ### Key Control Types
 
@@ -2075,7 +2091,7 @@ A popup form (`FrameType = Dialog` or `Popup`) is a modal window used for data e
 #### Workspace Card
 A workspace card is a card-style UI element that can contain multiple form parts — used in the D365 workspace for dashboards and quick actions.
 
-## 4.3 Chain of Command — Deep Dive
+## 10.3 Chain of Command — Deep Dive
 
 Chain of Command (CoC) is the **primary mechanism** for calling and extending standard D365 F&O code. It connects standard menu items to standard classes through a chain of method calls.
 
@@ -2111,7 +2127,7 @@ menuItem.run();  // Opens the form directly
 - **`MenuItemDisplay`**: Opens a form — the most common type for navigation
 - Each has a `Command` property that points to the class to execute
 
-## 4.4 Form vs. Form Extension
+## 10.4 Form vs. Form Extension
 
 ### Form Modification
 A form modification directly edits the standard `Form` node in the AOT. **This is not supported for customer/ISV code** because the next Microsoft update will overwrite your changes.
@@ -2141,7 +2157,7 @@ final class CustTable_FormExtension
 | Add a custom button that triggers new behavior | Form Extension |
 | Change the SQL join type on a data source | Form Extension (override `executeQuery()` of the data source) |
 
-## 4.5 Activity — Multi-Form Solution
+## 10.5 Activity — Multi-Form Solution
 
 > **Activity**: Design a three-form solution for a vendor compliance dashboard:
 > 1. **Form A (List Page)**: Shows all vendors with a compliance status column (computed via EDT display method). Clicking a vendor opens Form B.
@@ -2185,9 +2201,10 @@ The ideal approach combines extensibility with proper architecture:
 ---
 ---
 
-# Chapter 5 — Views, Lookups, and Cross-Table Data Access
 
-## 5.1 Views — What They Are and Why They Matter
+# Chapter 11: Views & Lookups
+
+## 11.1 Views — What They Are and Why They Matter
 
 A view is a **named query** stored in the AOT. It acts like a table but doesn't store data — when you `select` from a view, the AOS translates it into SQL that joins across the underlying tables.
 
@@ -2240,7 +2257,7 @@ VendorContactView (View)
 
 You can extend a standard view using `[ExtensionOf(viewStr(...))]` to add fields from additional tables — this is how you add fields without modifying the standard view. The extension appears as a new data source in the extended view.
 
-## 5.2 Lookups — The User's Gateway to Data
+## 11.2 Lookups — The User's Gateway to Data
 
 A lookup is the mechanism by which a user can find and select a value for a field — typically triggered by clicking the **magnifier button** on a field or pressing **F3**.
 
@@ -2298,7 +2315,7 @@ D365 F&O supports multi-select lookups where the user can select multiple record
 
 You can pass a `Query` object to `SysTableLookup.parmQuery()` to filter the lookup results. This is the most common way to have the lookup show only relevant records based on context (e.g., only customers in the same `CustGroup`).
 
-## 5.3 Multi-Select Lookup Exercise (Production Grade)
+## 11.3 Multi-Select Lookup Exercise (Production Grade)
 
 > **Activity**: Create a lookup for a field on `SalesTable` that allows the user to select multiple sales territories (from `DirTerritory` table) when creating an order. The lookup must:
 > 1. Filter territories based on the user's security role (only show territories assigned to the current user)
@@ -2329,9 +2346,10 @@ You can pass a `Query` object to `SysTableLookup.parmQuery()` to filter the look
 
 # Remaining Chapters — Detailed Outline (Content to follow)
 
-# Chapter 6 — Business Logic & Class Design Patterns
 
-## 6.1 Class Fundamentals — Static vs Instance
+# Chapter 12: Class Fundamentals & RunBase
+
+## 12.1 Class Fundamentals — Static vs Instance
 
 In X++, every class is either **static** (never instantiated, only static methods) or **instance-based** (objects created with `new` or `construct()`). Understanding when to use each is foundational to writing maintainable D365 F&O code.
 
@@ -2476,7 +2494,7 @@ VendComplianceContract contract = new VendComplianceContract()
 
 ---
 
-## 6.2 The `RunBase` Framework — Batch Processing Foundation
+## 12.2 The `RunBase` Framework — Batch Processing Foundation
 
 `RunBase` is the base class for all batch-executable operations in D365 F&O. It provides the infrastructure for:
 
@@ -2687,7 +2705,7 @@ class VendComplianceBatchJob extends RunBase
 
 ---
 
-## 6.3 `RunBaseBatch` — Subclassing RunBase for Batch Jobs
+## 12.3 `RunBaseBatch` — Subclassing RunBase for Batch Jobs
 
 `RunBaseBatch` extends `RunBase` to add **batch job** capabilities — the job runs in the background via the batch framework, not interactively.
 
@@ -2833,7 +2851,7 @@ class VendComplianceBatchJob extends RunBaseBatch
 
 ---
 
-## 6.4 `SysOperationServiceController` — The Modern Service Pattern
+## 12.4 `SysOperationServiceController` — The Modern Service Pattern
 
 `SysOperationServiceController` is the **modern, service-oriented** approach to running business operations. It is the successor pattern to `RunBase` for operations that need to be:
 
@@ -3029,7 +3047,9 @@ class VendComplianceController extends SysOperationServiceController
 
 ---
 
-## 6.5 Event Handlers — Deep Dive
+# Chapter 13: Event Handlers & Command Pattern
+
+## 13.1 Event Handlers — Deep Dive
 
 Event handlers are the **primary extension mechanism** in D365 F&O. They allow you to inject custom logic into standard code execution without modifying the original method.
 
@@ -3136,7 +3156,7 @@ When multiple handlers subscribe to the same event:
 
 ---
 
-## 6.6 The Command Pattern — Menu Item → Class Chain
+## 13.2 The Command Pattern — Menu Item → Class Chain
 
 The Command pattern in D365 F&O connects user actions (menu item clicks) to business logic (class methods) through a chain of objects.
 
@@ -3226,7 +3246,7 @@ public void clicked()
 
 ---
 
-## 6.7 Activity — Full Order-to-Cash Flow Implementation
+## 13.3 Activity — Full Order-to-Cash Flow Implementation
 
 > **Activity**: Implement a complete Order-to-Cash flow for a custom compliance module. The solution must include:
 > 1. A `VendComplianceContract` class (data contract with `parmX()` accessors)
@@ -3571,9 +3591,10 @@ public void clicked()
 
 ### Remaining Chapters — Detailed Outline (Content to follow)
 
-# Chapter 7 — Chain of Command (CoC) The Extension Model
 
-## 7.1 CoC vs. Override vs. Event Handler — When Each Is Appropriate
+# Chapter 14: Extensibility Deep Dive
+
+## 14.1 CoC vs. Override vs. Event Handler — When Each Is Appropriate
 
 D365 F&O provides three distinct mechanisms for extending standard code. Understanding when to use each is one of the most important architectural decisions you'll make.
 
@@ -3601,7 +3622,7 @@ D365 F&O provides three distinct mechanisms for extending standard code. Underst
 
 ---
 
-## 7.2 `next` in CoC — Automatic vs. Explicit Behavior
+## 14.2 `next` in CoC — Automatic vs. Explicit Behavior
 
 The `next` keyword is the mechanism that connects your extension to the standard code chain. Understanding how it works is critical to avoiding bugs.
 
@@ -3692,7 +3713,7 @@ If you accidentally call `next` in a way that creates a circular chain, you get 
 
 ---
 
-## 7.3 `ExtensionOf(...)` — The Extension Syntax
+## 14.3 `ExtensionOf(...)` — The Extension Syntax
 
 The `ExtensionOf` attribute is the mechanism that tells the D365 F&O framework which base class, table, form, or view you are extending.
 
@@ -3782,7 +3803,7 @@ final class VendTable_ComplianceExtension
 
 ---
 
-## 7.4 Overloading vs. Overriding in X++
+## 14.4 Overloading vs. Overriding in X++
 
 Understanding the difference between overloading and overriding is essential for correct CoC implementation.
 
@@ -3844,7 +3865,7 @@ Some standard methods are marked `final` in the D365 F&O codebase, meaning they 
 
 ---
 
-## 7.5 CoC Pitfalls — Common Mistakes and How to Avoid Them
+## 14.5 CoC Pitfalls — Common Mistakes and How to Avoid Them
 
 ### Pitfall 1: Infinite Loops from Forgetting `next`
 
@@ -3969,7 +3990,7 @@ Once an extension class is loaded into the AOS, modifying it requires:
 
 ---
 
-## 7.6 Extension Class Lifecycle — In Detail
+## 14.6 Extension Class Lifecycle — In Detail
 
 ### How Extensions Interact with the Base Class
 
@@ -4029,7 +4050,7 @@ When multiple extensions target the same method, the **highest-layer extension's
 
 ---
 
-## 7.7 Activity — Extend AP Invoice Validation Three Ways
+## 14.7 Activity — Extend AP Invoice Validation Three Ways
 
 > **Activity**: Extend the standard Accounts Payable invoice validation (`VendInvoiceJour.validateWrite()`) using three different extension approaches:
 > 1. **CoC Override** — override `validateWrite()` directly on `VendInvoiceJour`
@@ -4188,7 +4209,7 @@ For this specific scenario (enforcing a business rule at validation time), **App
 - You want to expose the check as a reusable method callable from multiple places
 - You're building a framework or utility class that other developers will use
 
-## 7.8 Extensibility Attributes — Hookable, Wrappable, Replaceable
+## 14.8 Extensibility Attributes — Hookable, Wrappable, Replaceable
 
 Microsoft provides three attributes that control how methods can be extended:
 
@@ -4268,9 +4289,10 @@ class AnyClass3
 
 ### Remaining Chapters — Detailed Outlines
 
-# Chapter 8 — Security Architecture
 
-## 8.1 The Security Hierarchy — Permission → Privilege → Duty → Role → User
+# Chapter 15: Security Model
+
+## 15.1 The Security Hierarchy — Permission → Privilege → Duty → Role → User
 
 D365 F&O uses a **four-tier security hierarchy** that controls every action a user can perform. Understanding this hierarchy is essential for designing secure customizations.
 
@@ -4287,11 +4309,11 @@ Security Role
     │               └── Permission (Table: APComplianceLog, Access: Write)
     │
     ├── Duty 2
-    │       └── Privilege 2.1
+    │       └── Privilege 5.1
     │               └── Permission (Table: VendTable, Access: Edit)
     │
     └── Duty 3
-            └── Privilege 3.1
+            └── Privilege 9.1
                     └── Permission (Table: CustTable, Access: Read)
 ```
 
@@ -4338,7 +4360,7 @@ When you create custom objects in an extension model, the security model must be
 
 ---
 
-## 8.2 Access Levels — See, Create, Edit, Delete
+## 15.2 Access Levels — See, Create, Edit, Delete
 
 Each permission in a privilege specifies an **AccessLevel** that controls what operations are allowed on the table.
 
@@ -4413,7 +4435,7 @@ When you add fields via table extensions, the field-level permissions work diffe
 
 ---
 
-## 8.3 SecurityKey — Scoping Access by Business Context
+## 15.3 SecurityKey — Scoping Access by Business Context
 
 A **SecurityKey** is a mechanism that scopes access to records based on business context. It's used to implement **record-level security** — restricting which records a user can see based on their role, company, or other business dimensions.
 
@@ -4466,7 +4488,7 @@ For custom tables, you can define your own SecurityKey:
 
 ---
 
-## 8.4 Record-Level Security vs. Table-Level Security
+## 15.4 Record-Level Security vs. Table-Level Security
 
 ### Table-Level Security
 
@@ -4529,7 +4551,7 @@ public void executeQuery()
 
 ---
 
-## 8.5 Extensible Data Security (XDS) — Deep Dive
+## 15.5 Extensible Data Security (XDS) — Deep Dive
 
 **Extensible Data Security (XDS)** is the modern mechanism for implementing row-level security in D365 F&O. It replaces the older SecurityKey approach for many scenarios and provides a more flexible, policy-based security model.
 
@@ -4584,7 +4606,7 @@ An XDS policy consists of three parts:
 
 ---
 
-## 8.6 Privilege Assertions — `CodeAccessPermission::assert()` and `CodeAccessPermission::revertAssert()`
+## 15.6 Privilege Assertions — `CodeAccessPermission::assert()` and `CodeAccessPermission::revertAssert()`
 
 Privilege assertions are a powerful but dangerous mechanism that allows code to **temporarily elevate** the current user's permissions to perform an action they wouldn't normally be allowed to do.
 
@@ -4748,7 +4770,7 @@ public VendTable getVendorDataSecure(AccountNum _accountNum)
 
 ---
 
-## 8.7 Security Role Design for Custom Objects
+## 15.7 Security Role Design for Custom Objects
 
 When you create custom tables, forms, and reports, you must design the security model to grant appropriate access.
 
@@ -4865,7 +4887,7 @@ In the **User Administration** form, assign the `ComplianceOfficer` role to comp
 
 ---
 
-## 8.8 Security Model for Extensions
+## 15.8 Security Model for Extensions
 
 When you create extensions that add new functionality, you must consider how the security model applies to your extension code.
 
@@ -4945,7 +4967,7 @@ Extensions need new permissions when they:
 
 ---
 
-## 8.9 Testing Security Roles
+## 15.9 Testing Security Roles
 
 ### The "Run As" Feature
 
@@ -4995,7 +5017,7 @@ Permission simulation lets you test what a user can and cannot do:
 
 ---
 
-## 8.10 Activity — Design the Complete Security Model for a Custom Inventory Reconciliation Module
+## 15.10 Activity — Design the Complete Security Model for a Custom Inventory Reconciliation Module
 
 > **Activity**: Design the complete security model for a custom inventory reconciliation module. The module includes:
 > 1. A custom table `INVReconciliationHeader` (parent) with fields: ReconciliationId, ReconciliationDate, Status, CreatedBy
@@ -5119,7 +5141,7 @@ Permission simulation lets you test what a user can and cannot do:
 
 ---
 
-## 8.11 Activity — Security Audit for an Extension Module
+## 15.11 Activity — Security Audit for an Extension Module
 
 > **Activity**: Perform a security audit for a custom extension module that adds compliance tracking to the vendor management process. The extension includes:
 > 1. A table extension adding `ComplianceCode` to `VendTable`
@@ -5148,9 +5170,10 @@ Permission simulation lets you test what a user can and cannot do:
 
 ### Remaining Chapters — Detailed Outlines
 
-# Chapter 9 — Data Entities & Integration
 
-## 9.1 DataEntity vs Composite Entity vs Derived View — When Each Applies
+# Chapter 16: Data Entities
+
+## 16.1 DataEntity vs Composite Entity vs Derived View — When Each Applies
 
 D365 F&O provides three distinct patterns for exposing data for integration and reporting. Choosing the right pattern is critical for performance, maintainability, and upgradeability.
 
@@ -5226,7 +5249,7 @@ A `Derived View` is a low-level pattern that creates a view in the AOT with cust
 
 ---
 
-## 9.2 Entity Design — IsPublic, Public Entity Name, Public Collection Name, and Staging Tables
+## 16.2 Entity Design — IsPublic, Public Entity Name, Public Collection Name, and Staging Tables
 
 ### OData Exposure and Staging
 
@@ -5276,7 +5299,7 @@ The `Link` property on a DataEntity field specifies the relationship between the
 
 ---
 
-## 9.3 The Staging Pattern — Design, Process, and PostProcess
+## 16.3 The Staging Pattern — Design, Process, and PostProcess
 
 The **staging pattern** is the standard approach for data entities that need to write data back to D365 F&O. It uses a three-step process:
 
@@ -5452,7 +5475,7 @@ public void postProcess()
 
 ---
 
-## 9.4 Entity Mapping — Auto-Mapping vs. Manual Field Mapping
+## 16.4 Entity Mapping — Auto-Mapping vs. Manual Field Mapping
 
 ### Auto-Mapping
 
@@ -5502,7 +5525,7 @@ In Visual Studio, the Data Entity designer provides a **Mappings** node where yo
 
 ---
 
-## 9.5 Data Management Workspace — Import/Export and Package Deployment
+## 16.5 Data Management Workspace — Import/Export and Package Deployment
 
 The **Data Management** workspace is the central hub for importing and exporting data in D365 F&O. It provides a UI-driven interface for data operations without requiring code.
 
@@ -5559,7 +5582,7 @@ A **package** is a deployable unit that contains one or more Data Entities, mapp
 
 ---
 
-## 9.6 REST/OData — DictClass Reflection, Entity Publishing, and HttpClient
+## 16.6 REST/OData — DictClass Reflection, Entity Publishing, and HttpClient
 
 ### Exposing Data via OData
 
@@ -5677,7 +5700,7 @@ Power Automate has built-in connectors for D365 F&O OData endpoints:
 
 ---
 
-## 9.7 Power Platform Integration — Logic Apps and Power Automate
+## 16.7 Power Platform Integration — Logic Apps and Power Automate
 
 ### Logic Apps Connector for D365 F&O
 
@@ -5751,7 +5774,7 @@ Power Automate can be triggered from D365 F&O in several ways:
 
 ---
 
-## 9.8 Activity — Build a Data Entity for HR Employee Data Integration
+## 16.8 Activity — Build a Data Entity for HR Employee Data Integration
 
 > **Activity**: Build a complete data entity for HR employee data integration with the following requirements:
 > 1. Create a Data Entity called `HRPersonnelEntity` that exposes employee data from `DirPerson`, `HCMWorker`, and `HRMPosition` tables
@@ -6018,9 +6041,10 @@ public void postProcess()
 
 ### Remaining Chapters — Detailed Outlines
 
-# Chapter 10 — Reporting (SSRS, Legacy AX Reports, Analytical)
 
-## 10.1 SSRS Report Design in Visual Studio
+# Chapter 17: SSRS & Electronic Reporting
+
+## 17.1 SSRS Report Design in Visual Studio
 
 SQL Server Reporting Services (SSRS) is the primary reporting engine in D365 F&O. Reports are designed in Visual Studio using the **SSRS Report Designer** and deployed as part of the model project.
 
@@ -6063,7 +6087,7 @@ D365 F&O reports use a special data source that connects to the AOS via the repo
 
 ---
 
-## 10.2 `SrsReportDataProvider` — The Bridge
+## 17.2 `SrsReportDataProvider` — The Bridge
 
 `SrsReportDataProvider` is the bridge between the SSRS report layout and the D365 F&O data. It is the most critical class in the reporting architecture.
 
@@ -6253,7 +6277,7 @@ class VendComplianceReportContract
 
 ---
 
-## 10.3 `PrintJobSettings` — Routing Reports
+## 17.3 `PrintJobSettings` — Routing Reports
 
 `PrintJobSettings` controls how reports are routed to their destination — printer, PDF, email, or preview.
 
@@ -6314,7 +6338,7 @@ When a user runs a report from the D365 F&O client, the `PrintJobSettings` dialo
 
 ---
 
-## 10.4 `AutoDesign` vs. Manual RDL Layout
+## 17.4 `AutoDesign` vs. Manual RDL Layout
 
 ### AutoDesign
 
@@ -6367,7 +6391,7 @@ Manual RDL design gives full control over the report layout. You design the repo
 
 ---
 
-## 10.5 `ReportRun` Class — Programmatic Report Execution
+## 17.5 `ReportRun` Class — Programmatic Report Execution
 
 The `ReportRun` class allows you to instantiate and run reports programmatically from X++ code.
 
@@ -6441,7 +6465,7 @@ public void run()
 
 ---
 
-## 10.6 Legacy AX Reports (Pre-SSRS)
+## 17.6 Legacy AX Reports (Pre-SSRS)
 
 Legacy AX Reports (from AX 2012 or earlier) used `.rpt` files and are sometimes still encountered in older codebases and on-premises deployments. While SSRS is the recommended approach for new development, these legacy reports may still exist in some environments.
 
@@ -6478,7 +6502,7 @@ Legacy AX Reports (from AX 2012 or earlier) used `.rpt` files and are sometimes 
 
 ---
 
-## 10.7 Pre-Processing Optimization for Long-Running Reports
+## 17.7 Pre-Processing Optimization for Long-Running Reports
 
 Long-running SSRS reports (>10 minutes) can timeout in D365 F&O. The solution is to use **pre-processing** with TempDB tables instead of InMemory tables.
 
@@ -6588,7 +6612,7 @@ class VendComplianceReportDP extends SrsReportDataProviderPreProcessTempDB
 
 ---
 
-## 10.8 Electronic Reporting (ER)
+## 17.8 Electronic Reporting (ER)
 
 Electronic Reporting (ER) is a format-based reporting engine used for tax reporting, regulatory compliance, and data exchange with external systems. It's the standard mechanism for formats like SAF-T, VAT declarations, and other regulatory reports.
 
@@ -6650,7 +6674,7 @@ You can extend standard ER formats to add custom fields:
 
 ---
 
-## 10.9 Analytical Reports — Deep Dive
+## 17.9 Analytical Reports — Deep Dive
 
 ### Analytical Report Architecture
 
@@ -6734,7 +6758,7 @@ D365 F&O's Analytical Workspace integrates with Power BI for advanced analytics:
 
 ---
 
-## 10.10 Activity — Build an End-to-End SSRS Report
+## 17.10 Activity — Build an End-to-End SSRS Report
 
 > **Activity**: Build an end-to-end SSRS report for the compliance module with the following requirements:
 > 1. **Parameters**: Date range (`fromDate`, `toDate`), vendor group (`CustGroup`), compliance status (`Validated`, `Pending`, `Failed`)
@@ -6945,7 +6969,7 @@ printJobSettings.parmEmailBody('Please find the monthly compliance report attach
 
 ---
 
-## 10.11 Activity — Electronic Reporting Configuration
+## 17.11 Activity — Electronic Reporting Configuration
 
 > **Activity**: Configure an Electronic Reporting format for VAT declarations in a multi-company D365 F&O environment.
 >
@@ -6966,7 +6990,7 @@ printJobSettings.parmEmailBody('Please find the monthly compliance report attach
 
 ---
 
-## 10.12 Activity — Report Performance Optimization
+## 17.12 Activity — Report Performance Optimization
 
 > **Activity**: A compliance report takes 15 minutes to run and times out with 500,000+ records. Diagnose the issue and apply three different optimization strategies with comparisons.
 >
@@ -7009,9 +7033,10 @@ printJobSettings.parmEmailBody('Please find the monthly compliance report attach
 
 ### Remaining Chapters — Detailed Outlines
 
-# Chapter 11 — Job Framework & Batch Processing
 
-## 11.1 Jobs vs. Batch vs. RunBase — Decision Matrix
+# Chapter 18: Batch Processing
+
+## 18.1 Jobs vs. Batch vs. RunBase — Decision Matrix
 
 D365 F&O provides three distinct mechanisms for executing background or scheduled operations. Choosing the right one depends on the complexity, duration, and user interaction requirements of the task.
 
@@ -7073,7 +7098,7 @@ static void Job_QuickVendorUpdate(Args _args)
 
 ---
 
-## 11.2 BatchJob and BatchHistory Tables
+## 18.2 BatchJob and BatchHistory Tables
 
 The batch framework in D365 F&O manages the lifecycle of batch jobs through the **BatchJob** (current state) and **BatchHistory** (execution history) tables.
 
@@ -7143,7 +7168,7 @@ Batch groups control which batch server processes which jobs. This allows you to
 
 ---
 
-## 11.3 `RunBaseBatch` — Dialog UI for Batch Parameters
+## 18.3 `RunBaseBatch` — Dialog UI for Batch Parameters
 
 `RunBaseBatch` extends `RunBase` to add batch job capabilities. It provides the dialog UI for parameter input, batch queuing, and progress reporting.
 
@@ -7304,7 +7329,7 @@ class VendReconciliationBatchJob extends RunBaseBatch
 
 ---
 
-## 11.4 `SysOperationServiceController` — Service-Based Batch Pattern
+## 18.4 `SysOperationServiceController` — Service-Based Batch Pattern
 
 As covered in Chapter 6, `SysOperationServiceController` provides a modern, contract-driven approach to batch operations. It is particularly useful when:
 
@@ -7343,7 +7368,7 @@ class VendReconciliationController extends SysOperationServiceController
 
 ---
 
-## 11.5 Progress Reporting
+## 18.5 Progress Reporting
 
 Progress reporting keeps users informed about the status of long-running batch operations.
 
@@ -7421,7 +7446,7 @@ public void run()
 
 ---
 
-## 11.6 Cancellation — `checkCancel()` in Batch Loops
+## 18.6 Cancellation — `checkCancel()` in Batch Loops
 
 The `checkCancel()` method checks whether the user has requested cancellation of the batch job. It should be called inside long-running loops to allow graceful cancellation.
 
@@ -7494,7 +7519,7 @@ public void run()
 
 ---
 
-## 11.7 Retry Logic — `Global::retry()` and Custom Retry Counters
+## 18.7 Retry Logic — `Global::retry()` and Custom Retry Counters
 
 Retry logic allows a batch job to recover from transient failures (e.g., network timeouts, deadlocks, temporary service unavailability).
 
@@ -7602,7 +7627,7 @@ class VendReconciliationRetryHandler
 
 ---
 
-## 11.8 Activity — Batch Reconciliation Job for 100K+ Records
+## 18.8 Activity — Batch Reconciliation Job for 100K+ Records
 
 > **Activity**: Create a batch reconciliation job for 100K+ vendor records with the following requirements:
 > 1. The job must process vendors in batches of 1,000 records at a time to avoid memory issues
@@ -7886,7 +7911,7 @@ class VendReconciliationBatchJob extends RunBaseBatch
 </ModelManifest>
 ```
 
-## 11.9 Batch Production Guidance
+## 18.9 Batch Production Guidance
 
 ### Idempotent Batch Jobs — `BatchInfo.Idempotent`
 
@@ -8020,9 +8045,10 @@ boolean unpack(container _packedClass)
 
 ### Remaining Chapters — Detailed Outlines
 
-# Chapter 12 — Testing & QA
 
-## 12.1 The `SysTest` Framework
+# Chapter 19: SysTest Framework
+
+## 19.1 The `SysTest` Framework
 
 The `SysTest` framework is D365 F&O's built-in unit testing framework. It enables developers to write automated tests that verify business logic, data integrity, and integration points.
 
@@ -8078,7 +8104,7 @@ class VendComplianceTest extends SysTestCase
 
 ---
 
-## 12.2 `assert` Methods
+## 19.2 `assert` Methods
 
 The `SysTest` framework provides a rich set of assertion methods for verifying test outcomes.
 
@@ -8175,7 +8201,7 @@ public static void testRecordCount()
 
 ---
 
-## 12.3 Test Data Creation Patterns
+## 19.3 Test Data Creation Patterns
 
 Creating test data is one of the most important aspects of writing maintainable tests. The patterns below ensure tests are isolated, repeatable, and easy to understand.
 
@@ -8341,7 +8367,7 @@ public static void testIsolatedSetup()
 
 **Best practice:** Use shared setup for read-only test data. Use per-method setup for tests that modify or delete data.
 
-## 12.4 Test Isolation and Data-Driven Testing
+## 19.4 Test Isolation and Data-Driven Testing
 
 ### `SysTestTransaction` — Test Isolation
 
@@ -8422,7 +8448,7 @@ class VendComplianceTest extends SysTestCase
 
 ---
 
-## 12.4 Test Coverage Metrics in LCS
+## 19.4 Test Coverage Metrics in LCS
 
 LCS provides built-in test coverage metrics that help you understand how much of your code is covered by automated tests.
 
@@ -8467,7 +8493,7 @@ The **Test Cases** view in LCS provides:
 
 ---
 
-## 12.5 Integration Testing with LCS Test Case Management
+## 19.5 Integration Testing with LCS Test Case Management
 
 LCS provides a **Test Case Management** feature that integrates with the `SysTest` framework for end-to-end integration testing.
 
@@ -8530,7 +8556,7 @@ When tests run in the CI/CD pipeline:
 
 ---
 
-## 12.6 Activity — Write a Complete Test Class for Sales Order Discount Calculation
+## 19.6 Activity — Write a Complete Test Class for Sales Order Discount Calculation
 
 > **Activity**: Write a complete test class covering edge cases for sales order discount calculation. The discount calculation has the following rules:
 > 1. Standard discount: 5% for orders over $10,000
@@ -8980,9 +9006,10 @@ class SalesOrderDiscountTest extends SysTestCase
 
 ### Remaining Chapters — Detailed Outlines
 
-# Chapter 13 — Deployment, DevOps & LCS
 
-## 13.1 Lifecycle Services (LCS) — Deep Dive
+# Chapter 20: LCS Deep Dive & CI/CD
+
+## 20.1 Lifecycle Services (LCS) — Deep Dive
 
 Lifecycle Services (LCS) is the central hub for managing the D365 F&O application lifecycle. It's a cloud-based portal that orchestrates everything from environment provisioning to deployment and monitoring.
 
@@ -9049,7 +9076,7 @@ LCS integrates with Azure DevOps for deployment orchestration:
 
 ---
 
-## 13.2 Azure DevOps / GitHub Integration
+## 20.2 Azure DevOps / GitHub Integration
 
 ### Build Pipeline (YAML)
 
@@ -9105,15 +9132,15 @@ steps:
         /p:ReferenceFolder="$(Pipeline.Workspace)\NuGets"
         /p:OutputDirectory="$(Build.BinariesDirectory)"
 
-  # Step 4: Install NuGet 3.3.0 (required for deployable package generation)
+  # Step 4: Install NuGet 9.3.0 (required for deployable package generation)
   - task: NuGetCommand@2
-    displayName: 'Install NuGet 3.3.0'
+    displayName: 'Install NuGet 9.3.0'
     inputs:
       command: 'install'
       feedsToUse: 'config'
       nugetConfigPath: 'nuget.config'
       versioning: 'specific'
-      version: '3.3.0'
+      version: '9.3.0'
 
   # Step 5: Create deployable package
   - task: PowerShell@2
@@ -9225,7 +9252,7 @@ stages:
 
 ---
 
-## 13.3 Model Management
+## 20.3 Model Management
 
 ### Model Manifest (`ModelManifest.xml`)
 
@@ -9315,7 +9342,7 @@ for (int i = 0; i < dependencies->size(); i++)
 
 ---
 
-## 13.4 Configuration Keys
+## 20.4 Configuration Keys
 
 Configuration keys control which features and modules are enabled in the D365 F&O instance. They act as feature flags at the model level.
 
@@ -9373,7 +9400,7 @@ On any custom table, set the **Configuration Key** property to your custom key. 
 
 ---
 
-## 13.5 Hotfix Deployment Strategy
+## 20.5 Hotfix Deployment Strategy
 
 Hotfixes (CUs — Cumulative Updates) are Microsoft's mechanism for delivering fixes and updates to D365 F&O. Understanding how they are applied is critical for maintaining a stable production environment.
 
@@ -9431,7 +9458,7 @@ If a hotfix causes issues:
 
 ---
 
-## 13.6 CI/CD Pipeline Design — Complete Pattern
+## 20.6 CI/CD Pipeline Design — Complete Pattern
 
 ### The Full Pipeline
 
@@ -9451,39 +9478,39 @@ If a hotfix causes issues:
 |---|---|---|
 | 1.1 | Restore NuGet packages | All 5 packages restored successfully |
 | 1.2 | Update model versions | Version incremented to build number |
-| 1.3 | Compile the solution | Zero compilation errors |
-| 1.4 | Run best practice checks | No critical best practice violations |
-| 1.5 | Create deployable package | `.zip` package created and published |
+| 2.1 | Compile the solution | Zero compilation errors |
+| 3.1 | Run best practice checks | No critical best practice violations |
+| 3.2 | Create deployable package | `.zip` package created and published |
 
 #### Stage 2: Test
 
 | Step | Action | Success Criteria |
 |---|---|---|
-| 2.1 | Deploy package to test environment | Deployment successful |
-| 2.2 | Run database sync | No sync errors |
-| 2.3 | Run SysTest unit tests | All tests pass (or acceptable failure rate) |
-| 2.4 | Run regression test suite (RSAT) | No regressions detected |
-| 2.5 | Validate custom functionality | Manual verification of key scenarios |
+| 5.1 | Deploy package to test environment | Deployment successful |
+| 5.2 | Run database sync | No sync errors |
+| 6.1 | Run SysTest unit tests | All tests pass (or acceptable failure rate) |
+| 6.2 | Run regression test suite (RSAT) | No regressions detected |
+| 7.1 | Validate custom functionality | Manual verification of key scenarios |
 
 #### Stage 3: Deploy to Staging
 
 | Step | Action | Success Criteria |
 |---|---|---|
-| 3.1 | Manual approval gate | Approved by release manager |
-| 3.2 | Deploy package to staging | Deployment successful |
-| 3.3 | Run performance tests | Response times within acceptable thresholds |
-| 3.4 | Run user acceptance testing | UAT sign-off obtained |
-| 3.5 | Validate security roles | Permission simulation passes for all roles |
+| 9.1 | Manual approval gate | Approved by release manager |
+| 9.2 | Deploy package to staging | Deployment successful |
+| 9.3 | Run performance tests | Response times within acceptable thresholds |
+| 9.4 | Run user acceptance testing | UAT sign-off obtained |
+| 9.5 | Validate security roles | Permission simulation passes for all roles |
 
 #### Stage 4: Deploy to Production
 
 | Step | Action | Success Criteria |
 |---|---|---|
-| 4.1 | Manual approval gate | Approved by release manager and business owner |
-| 4.2 | Schedule deployment window | Outside business hours |
-| 4.3 | Deploy package to production | Deployment successful |
-| 4.4 | Run database sync | No sync errors |
-| 4.5 | Run post-deployment validation | All health checks pass |
+| 10.1 | Manual approval gate | Approved by release manager and business owner |
+| 10.2 | Schedule deployment window | Outside business hours |
+| 10.3 | Deploy package to production | Deployment successful |
+| 10.4 | Run database sync | No sync errors |
+| 10.5 | Run post-deployment validation | All health checks pass |
 | 4.6 | Monitor for issues | No critical errors in Infolog or LCS |
 
 ### Rollback Strategy
@@ -9519,7 +9546,7 @@ If a hotfix causes issues:
 
 ---
 
-## 13.7 Model Deployment with `AxModelStore`
+## 20.7 Model Deployment with `AxModelStore`
 
 ### Deploying Models Programmatically
 
@@ -9589,7 +9616,7 @@ else
 
 ---
 
-## 13.8 Activity — Complete Deployment Strategy
+## 20.8 Activity — Complete Deployment Strategy
 
 > **Activity**: Design a complete deployment strategy for a D365 F&O project that includes:
 > 1. LCS project setup with environment tiers
@@ -9606,9 +9633,10 @@ else
 
 ---
 
-# Chapter 14 — Performance Tuning & Troubleshooting
 
-## 14.1 SQL Query Optimization
+# Chapter 21: Performance & SQL Tuning
+
+## 21.1 SQL Query Optimization
 
 ### The `exists join` vs `join` Decision
 
@@ -9695,7 +9723,7 @@ while select custTable
 
 ---
 
-## 14.2 AOT Performance Anti-Patterns
+## 21.2 AOT Performance Anti-Patterns
 
 ### Anti-Pattern 1: Heavy `init()` Method
 
@@ -9805,7 +9833,7 @@ select firstonly custTable
 
 ---
 
-## 14.3 Infolog Management Best Practices
+## 21.3 Infolog Management Best Practices
 
 The Infolog is the primary feedback mechanism for users. Managing it well is critical for a good user experience.
 
@@ -9851,7 +9879,7 @@ info(strFmt("Found %1 customers with high credit limits.", highCreditCount));
 
 ---
 
-## 14.4 Diagnosing Slow Forms
+## 21.4 Diagnosing Slow Forms
 
 ### Using `SysPerformance`
 
@@ -9908,7 +9936,7 @@ The AOT provides a call stack view that shows the execution path of X++ code:
 
 ---
 
-## 14.5 Memory Management
+## 21.5 Memory Management
 
 ### Large Recordset `while select` Patterns
 
@@ -9984,7 +10012,7 @@ static void processLargeDataset()
 
 ---
 
-## 14.6 Activity — Diagnose and Optimize a Slow Form
+## 21.6 Activity — Diagnose and Optimize a Slow Form
 
 > **Activity**: A form called `CustomerCreditSummary` takes 45+ seconds to load when there are 50,000+ customer records. Diagnose the root cause and propose three different optimization strategies with comparisons.
 >
@@ -10025,9 +10053,10 @@ static void processLargeDataset()
 
 ---
 
-# Chapter 15 — Capstone: End-to-End Production Scenario
 
-## 15.1 Business Case: Manufacturing Procurement-to-Pay Compliance
+# Chapter 22: Capstone Projects
+
+## 22.1 Business Case: Manufacturing Procurement-to-Pay Compliance
 
 ### Scenario Overview
 
@@ -10083,7 +10112,7 @@ Acme Manufacturing needs a custom compliance tracking system for their procureme
 
 ---
 
-## 15.2 Decision Points
+## 22.2 Decision Points
 
 ### Decision 1: Table Design — Staging Table or Direct Insert?
 
@@ -10171,7 +10200,7 @@ Acme Manufacturing needs a custom compliance tracking system for their procureme
 
 ---
 
-## 15.3 Ideal Solution Walkthrough
+## 22.3 Ideal Solution Walkthrough
 
 ### Step 1: Create the Custom Tables
 
@@ -10421,7 +10450,7 @@ class POComplianceAuditBatch extends RunBaseBatch
 
 ---
 
-## 15.4 Capstone Activity — Full Specification
+## 22.4 Capstone Activity — Full Specification
 
 > **Activity**: Implement the complete procurement-to-pay compliance scenario described in this chapter. You must make the following decisions and document your rationale for each:
 >
@@ -10457,9 +10486,9 @@ class POComplianceAuditBatch extends RunBaseBatch
 ---
 ---
 
-## 15.5 Additional Module-Specific Capstones
+## 22.5 Additional Module-Specific Capstones
 
-The following capstone scenarios extend the core Procurement-to-Pay Compliance capstone (Ch 15.1–15.4) with module-specific implementations. Each capstone builds on the same architectural patterns (CoC, Event Handlers, SysOperation batch, Data Entities, SSRS reports, security model) but applies them to domain-specific business processes.
+The following capstone scenarios extend the core Procurement-to-Pay Compliance capstone (Ch 22.1–22.4) with module-specific implementations. Each capstone builds on the same architectural patterns (CoC, Event Handlers, SysOperation batch, Data Entities, SSRS reports, security model) but applies them to domain-specific business processes.
 
 ---
 
@@ -11399,17 +11428,18 @@ For each capstone you implement, validate:
 - [ ] Deployment pipeline includes `Dynamics365ValidatePackage` task
 - [ ] Performance tested with 100K+ records (batch) / 10K+ concurrent users (forms)
 - [ ] Security tested with "Run as" for each duty/role
-- [ ] Accessibility validated (WCAG 2.1 AA for customer-facing forms)
+- [ ] Accessibility validated (WCAG 5.1 AA for customer-facing forms)
 
 ---
 
 ---
 
-# Chapter 16 — Advanced Data Access: SysDa, RecordInsertList, and Bulk Operations
 
 Beyond the classic `while select`, `insert_recordset`, and `update_recordset` patterns, D365 F&O provides a modern, type-safe data access API through the **SysDa** classes. For a 5-month-experienced intern, these patterns are essential for writing production-grade code that balances readability, performance, and maintainability.
 
-## 16.1 The SysDa Classes — Type-Safe Data Access
+# Chapter 23: Advanced X++ Patterns
+
+## 23.1 The SysDa Classes — Type-Safe Data Access
 
 The SysDa API provides a fluent, strongly-typed way to build queries at runtime. Unlike string-based X++ select statements, SysDa gives you IntelliSense, compile-time checking, and refactoring support. The SysDa APIs are wrappers around the code that the X++ compiler generates, so SysDa adds no overhead (unlike the `QueryRun` object).
 
@@ -11585,9 +11615,9 @@ ttscommit;
 
 ---
 
-## 16.2 RecordInsertList — Typed Bulk Insert
+## 23.2 RecordInsertList — Typed Bulk Insert
 
-## 16.2 RecordInsertList — Typed Bulk Insert
+## 23.2 RecordInsertList — Typed Bulk Insert
 
 `RecordInsertList` is the type-safe alternative to `insert_recordset`. It validates each record before insertion and works with table buffers that have business logic in `validateWrite()`.
 
@@ -11626,7 +11656,7 @@ class VendComplianceBulkInserter
 
 ---
 
-## 16.3 RecordSortedList — Sorted Bulk Insert
+## 23.3 RecordSortedList — Sorted Bulk Insert
 
 `RecordSortedList` extends `RecordInsertList` with automatic sorting before insertion, which can reduce page splits and improve insert performance on tables with clustered indexes.
 
@@ -11640,7 +11670,7 @@ sortedList.insertDatabase();
 
 ---
 
-## 16.4 doInsert / doUpdate / doDelete — The Internal Write Path
+## 23.4 doInsert / doUpdate / doDelete — The Internal Write Path
 
 When you call `insert()`, `update()`, or `delete()` on a table buffer, the framework routes through internal methods:
 
@@ -11670,11 +11700,10 @@ public void doInsert()
 
 ---
 
-# Chapter 17 — Advanced Extensibility & Language Features
 
 For an intern with 5 months of experience, understanding the deeper language features and extensibility patterns is critical for writing upgrade-safe, maintainable code.
 
-## 17.1 Extension Methods — Adding Methods to Existing Types
+## 23.5 Extension Methods — Adding Methods to Existing Types
 
 Extension methods let you add methods to existing classes, tables, views, or maps without modifying the original object. The extension class must be `static`, end with `_Extension`, and every extension method must be `public static` with the target type as the first parameter.
 
@@ -11724,7 +11753,7 @@ str status2 = custTable.getCreditStatus();
 
 ---
 
-## 17.2 Local Functions Inside Methods
+## 23.6 Local Functions Inside Methods
 
 X++ allows you to declare functions inside a method. These are called **local functions** and can access variables declared earlier in the enclosing method.
 
@@ -11767,7 +11796,7 @@ public void processComplianceDeclarations(CustTable _custTable)
 
 ---
 
-## 17.3 The `var` Keyword — Type Inference
+## 23.7 The `var` Keyword — Type Inference
 
 X++ supports the `var` keyword for local variable type inference. The compiler determines the type from the assigned expression.
 
@@ -11787,7 +11816,7 @@ var list = new List(Types::String);              // Type: List
 
 ---
 
-## 17.4 The `orig()` Method — Accessing Original Field Values
+## 23.8 The `orig()` Method — Accessing Original Field Values
 
 Every table buffer has an `orig()` method that returns a buffer containing the original field values (as they were when the record was read from the database). This is essential for change detection in `update()` and `validateWrite()`.
 
@@ -11824,7 +11853,7 @@ public boolean validateWrite()
 
 ---
 
-## 17.5 `prmIsDefault()` — Detecting Parameter Presence
+## 23.9 `prmIsDefault()` — Detecting Parameter Presence
 
 The `prmIsDefault()` function determines whether a parameter was actually passed to a `parmX()` accessor method or whether the default value was used.
 
@@ -11863,7 +11892,7 @@ contract.parmComplianceCode();
 
 ---
 
-## 17.6 Chain of Command Execution Order — Advanced
+## 23.10 Chain of Command Execution Order — Advanced
 
 When multiple CoC extensions target the same method, the execution order follows the model layer hierarchy:
 
@@ -11914,9 +11943,10 @@ If Extension A returns `false`, Extension B's `next validateWrite()` still runs,
 
 ---
 
-# Chapter 18 — Production Hardening & Performance at Scale
 
-## 18.1 SQL Statement Timeouts
+# Chapter 24: Production Debugging
+
+## 24.1 SQL Statement Timeouts
 
 D365 F&O sets different SQL statement timeouts based on session type:
 
@@ -11977,7 +12007,7 @@ queryTimeout(600);  // 10 minutes for this query
 
 ---
 
-## 18.2 `CacheLookup` Deep Dive — Production Considerations
+## 24.2 `CacheLookup` Deep Dive — Production Considerations
 
 `CacheLookup` controls how SQL Server caches table lookups. Choose wisely based on table size and access pattern:
 
@@ -11993,7 +12023,7 @@ queryTimeout(600);  // 10 minutes for this query
 
 ---
 
-## 18.3 Deadlock Resolution in Production
+## 24.3 Deadlock Resolution in Production
 
 Deadlocks occur when two transactions hold locks that the other needs. In D365 F&O, implement retry logic with exponential backoff:
 
@@ -12032,7 +12062,7 @@ static void exercise_deadlockWithBackoff(Args _args)
 
 ---
 
-## 18.4 Indexing Strategy for Production
+## 24.4 Indexing Strategy for Production
 
 | Index Type | When to Use | Production Consideration |
 |---|---|---|
@@ -12048,9 +12078,10 @@ static void exercise_deadlockWithBackoff(Args _args)
 
 ---
 
-# Chapter 19 — Platform Integration: Power Platform, Copilot, Mobile, and Process Automation
 
-## 19.1 Power Platform Integration
+# Chapter 25: Power Platform & Copilot
+
+## 25.1 Power Platform Integration
 
 D365 F&O integrates with the Power Platform through several mechanisms:
 
@@ -12089,7 +12120,7 @@ class VendComplianceController extends SysOperationServiceController
 
 ---
 
-## 19.2 Copilot Capabilities in D365 F&O
+## 25.2 Copilot Capabilities in D365 F&O
 
 Microsoft Copilot is integrated into D365 F&O for AI-assisted development:
 
@@ -12102,7 +12133,7 @@ Microsoft Copilot is integrated into D365 F&O for AI-assisted development:
 
 ---
 
-## 19.3 Mobile Platform
+## 25.3 Mobile Platform
 
 D365 F&O supports mobile access through:
 
@@ -12114,7 +12145,7 @@ Developers should consider mobile form factors when designing forms that mobile 
 
 ---
 
-## 19.4 Process Automation Framework
+## 25.4 Process Automation Framework
 
 The Process Automation Framework enables business process automation. Batch jobs integrated with Process Automation use `SysOperationServiceController`, **not** `RunBaseBatch`:
 - `RunBaseBatch` jobs cannot be returned through the process automation list
@@ -12129,11 +12160,12 @@ Use these for declarative automation; reserve X++ for complex business logic tha
 
 ---
 
-# Chapter 20 — Module Deep Dives: Finance, SCM, HR, Retail/Commerce, and Project Operations
 
 For a 5-month-experienced intern, module specialization means understanding the domain-specific tables, EDTs, and business logic of your target module.
 
-## 20.1 Finance Module Deep Dive
+# Chapter 26: Module Specialization
+
+## 26.1 Finance Module Deep Dive
 
 ### Key Tables
 
@@ -12164,7 +12196,7 @@ For a 5-month-experienced intern, module specialization means understanding the 
 
 ---
 
-## 20.2 Supply Chain Management (SCM) Module Deep Dive
+## 26.2 Supply Chain Management (SCM) Module Deep Dive
 
 ### Key Tables
 
@@ -12198,7 +12230,7 @@ For a 5-month-experienced intern, module specialization means understanding the 
 
 ---
 
-## 20.3 Human Resources (HR) Module Deep Dive
+## 26.3 Human Resources (HR) Module Deep Dive
 
 ### Key Tables
 
@@ -12228,7 +12260,7 @@ For a 5-month-experienced intern, module specialization means understanding the 
 
 ---
 
-## 20.4 Choosing a Module for Specialization
+## 26.4 Choosing a Module for Specialization
 
 | Factor | Finance | SCM | HR | Retail/Commerce | Project Operations |
 |---|---|---|---|---|---|
@@ -12239,9 +12271,10 @@ For a 5-month-experienced intern, module specialization means understanding the 
 
 ---
 
-# Chapter 21 — Advanced DevOps: Continuous Delivery, Package Validation, and Database Movement
 
-## 21.1 Continuous Delivery Pipeline
+# Chapter 27: Advanced DevOps
+
+## 27.1 Continuous Delivery Pipeline
 
 Beyond the basic build → deploy pipeline, mature D365 F&O teams implement:
 
@@ -12272,7 +12305,7 @@ This checks for:
 
 ---
 
-## 21.2 Database Movement Operations
+## 27.2 Database Movement Operations
 
 Move databases between environments for testing with production-like data:
 
@@ -12287,7 +12320,7 @@ Move databases between environments for testing with production-like data:
 
 ---
 
-## 21.3 Build Automation Best Practices
+## 27.3 Build Automation Best Practices
 
 | Practice | Reason |
 |---|---|
@@ -12300,9 +12333,10 @@ Move databases between environments for testing with production-like data:
 
 ---
 
-# Chapter 22 — Compliance & Governance: GDPR, ISV, Financial Tags, and Date Effectivity
 
-## 22.1 GDPR Compliance in Development
+# Chapter 28: Compliance & ISV
+
+## 28.1 GDPR Compliance in Development
 
 The General Data Protection Regulation (GDPR) affects how you handle personal data in D365 F&O:
 
@@ -12323,7 +12357,7 @@ The General Data Protection Regulation (GDPR) affects how you handle personal da
 
 ---
 
-## 22.2 ISV Development Considerations
+## 28.2 ISV Development Considerations
 
 Independent Software Vendors (ISVs) building managed solutions for D365 F&O must follow additional rules:
 
@@ -12337,7 +12371,7 @@ Independent Software Vendors (ISVs) building managed solutions for D365 F&O must
 
 ---
 
-## 22.3 Financial Tags
+## 28.3 Financial Tags
 
 Financial tags classify transactions for reporting and analysis:
 
@@ -12348,7 +12382,7 @@ Financial tags classify transactions for reporting and analysis:
 
 ---
 
-## 22.4 Date Effectivity
+## 28.4 Date Effectivity
 
 Date effectivity allows data to be version-dated — different values apply to different date ranges:
 
@@ -12363,7 +12397,7 @@ Date effectivity allows data to be version-dated — different values apply to d
 
 ---
 
-## 22.5 Security Hardening Checklist
+## 28.5 Security Hardening Checklist
 
 ```
 □ All custom tables have appropriate SaveDataPerCompany settings
@@ -12382,11 +12416,12 @@ Date effectivity allows data to be version-dated — different values apply to d
 ---
 ---
 
-# Chapter 23 — Workflow Framework
 
 D365 F&O provides a built-in workflow framework for routing business documents through approval processes. The VSI Asset Management codebase uses it extensively for asset requests, retirements, and maintenance repairs.
 
-## 23.1 Workflow Architecture Components
+# Chapter 29: Workflow Architecture
+
+## 29.1 Workflow Architecture Components
 
 | Component | Purpose | Base Class / Type |
 |---|---|---|
@@ -12397,7 +12432,7 @@ D365 F&O provides a built-in workflow framework for routing business documents t
 | Event Handler | Reacts to workflow lifecycle events | `WorkflowElementEventHandler`, `WorkflowEventHandler` |
 | Menu Item Action | User action on a work item (Approve, Reject, Delegate, Resubmit) | `WorkflowWorkItemActionManager` |
 
-## 23.2 Workflow Document
+## 29.2 Workflow Document
 
 The workflow document exposes the business record to the workflow framework via a query:
 
@@ -12416,7 +12451,7 @@ class VSIAssetRequestWorkflowDocument extends WorkflowDocument
 - **`getQueryName()`** — Returns the AOT query that supplies workflow context fields.
 - **`getContextTableId()` / `getContextRecId()`** — Used by event handlers to identify the document record.
 
-## 23.3 Workflow Event Handlers
+## 29.3 Workflow Event Handlers
 
 Workflow event handlers implement one or more interfaces:
 
@@ -12515,7 +12550,7 @@ using (VSIDocumentStatusChangeContext context = new VSIDocumentStatusChangeConte
 
 This ensures status changes only happen through the authorized workflow context, not via direct table updates.
 
-## 23.4 Workflow Submit and Action Managers
+## 29.4 Workflow Submit and Action Managers
 
 ### Submit from a Form
 
@@ -12607,7 +12642,7 @@ public static void main(Args _args)
 }
 ```
 
-## 23.5 Workflow-Enabled Forms
+## 29.5 Workflow-Enabled Forms
 
 A form participates in workflow when it sets:
 
@@ -12621,11 +12656,12 @@ The form's action pane typically includes Submit, Approve, Reject, Delegate, Req
 
 ---
 
-# Chapter 24 — Number Sequences
 
 Number sequences generate unique identifiers for records. VSI Asset Management registers its own module and references eight data types.
 
-## 24.1 Registering a Number Sequence Module
+# Chapter 30: Number Sequences
+
+## 30.1 Registering a Number Sequence Module
 
 ```xpp
 public class VSIAssetNumberSeqModule extends NumberSeqApplicationModule
@@ -12664,7 +12700,7 @@ public class VSIAssetNumberSeqModule extends NumberSeqApplicationModule
 | `numberSeqModule()` | Returns the module enum value (`NumberSeqModule::VSIAssetManagement`) |
 | `buildModulesMapSubscriber()` | Subscribes to the global module map delegate so the module appears in the Number Sequences form |
 
-## 24.2 Number Sequence Reference API
+## 30.2 Number Sequence Reference API
 
 ```xpp
 // Find a reference in the current company scope
@@ -12691,7 +12727,7 @@ boolean exists = ref.RecId != 0;
 | `createDataAreaScope(curExt())` | Company-specific sequences (default) |
 | `createGlobalScope()` | Shared across all companies (e.g., VSIWorkerId, VSIVendorId) |
 
-## 24.3 Number Sequence Form Handler in Forms
+## 30.3 Number Sequence Form Handler in Forms
 
 ```xpp
 public class VSIAssetDetails extends FormRun
@@ -12770,7 +12806,7 @@ public class VSIAssetDetails extends FormRun
 | `close()` | `formMethodClose()` | Release any reserved numbers |
 | `linkActive()` | `formMethodDataSourceLinkActive()` | Sync when record changes |
 
-## 24.4 Number Sequence Targets
+## 30.4 Number Sequence Targets
 
 `VSINumberSeqTargets` maps each EDT to the table field it populates:
 
@@ -12789,9 +12825,10 @@ public static Description usedOn(ExtendedTypeId _typeId)
 
 ---
 
-# Chapter 25 — Data Management Framework (DMF)
 
 DMF enables data import/export through staging tables and data entities.
+
+# Chapter 25: Power Platform & Copilot
 
 ## 25.1 Data Entities
 
@@ -12897,9 +12934,10 @@ private static VSIVendorId nextVendorId()
 
 ---
 
-# Chapter 26 — Advanced Form Patterns
 
-## 26.1 List Page Pattern (`ListPage`)
+# Chapter 31: Form Patterns
+
+## 31.1 List Page Pattern (`ListPage`)
 
 Used for `VSIAssetListPage`. Key elements:
 
@@ -12935,7 +12973,7 @@ public void init()
 }
 ```
 
-## 26.2 Simple List Details — Grid Pattern (`SimpleListDetails-Grid`)
+## 31.2 Simple List Details — Grid Pattern (`SimpleListDetails-Grid`)
 
 Used for `VSIAssetMaintenance`. Layout:
 
@@ -12944,7 +12982,7 @@ Used for `VSIAssetMaintenance`. Layout:
 - **Details Header** (`FieldsFieldGroups` pattern).
 - **Details Tab** (`FastTabs` style) with tab pages for Fault, Repair, etc.
 
-## 26.3 FactBox Forms
+## 31.3 FactBox Forms
 
 Two patterns:
 
@@ -12962,7 +13000,7 @@ FactBoxes are referenced from list pages via `AxFormPartReference`:
 </AxFormPartReference>
 ```
 
-## 26.4 Tree Form Pattern (`SimpleListDetails-Tree`)
+## 31.4 Tree Form Pattern (`SimpleListDetails-Tree`)
 
 Used for `VSIFunctionalLocation`. Key mechanics:
 
@@ -13002,7 +13040,7 @@ public void selectionChanged(FormTreeItem _oldItem, FormTreeItem _newItem, FormT
 }
 ```
 
-## 26.5 Dialog Field Overrides
+## 31.5 Dialog Field Overrides
 
 Register override methods in `postRun()` of a UI builder:
 
@@ -13023,7 +13061,7 @@ public boolean checkRequestsModified(FormCheckBoxControl _control)
 }
 ```
 
-## 26.6 MultiSelectionHelper
+## 31.6 MultiSelectionHelper
 
 Used for multi-select ranges on tag label reports:
 
@@ -13038,7 +13076,7 @@ while (asset)
 }
 ```
 
-## 26.7 SysQueryRangeUtil — Advanced Query Ranges
+## 31.7 SysQueryRangeUtil — Advanced Query Ranges
 
 `SysQueryRangeUtil` provides static methods for building complex query ranges, commonly used in VSI reports and batch jobs for date filtering:
 
@@ -13153,7 +13191,7 @@ qbr.value(strFmt('%1..%2',
 
 ---
 
-## 26.8 Activity — Build a Report with Dynamic Ranges
+## 31.8 Activity — Build a Report with Dynamic Ranges
 
 **Objective:** Create a report data provider that uses `SysQueryRangeUtil` for all filter types.
 
@@ -13207,9 +13245,10 @@ public void processReport()
 
 ---
 
-# Chapter 27 — Notifications & IDisposable Pattern
 
-## 27.1 Action Center Notifications
+# Chapter 32: VSI Patterns
+
+## 32.1 Action Center Notifications
 
 `VSIAssetNotificationHelper` sends notifications to asset administrators via `SystemNotificationsManager`:
 
@@ -13274,7 +13313,7 @@ public static List assetAdministratorUserIds()
 }
 ```
 
-## 27.2 IDisposable Status Change Context
+## 32.2 IDisposable Status Change Context
 
 `VSIAssetStatusChangeContext` and `VSIDocumentStatusChangeContext` enforce that status changes only occur within an authorized scope:
 
@@ -13330,7 +13369,7 @@ VSIAssetStatusHistory::log(...);
 
 This pattern ensures status transitions are auditable and cannot be bypassed by direct table updates.
 
-## 27.3 VSIAssetStatusHelper — Complete Implementation
+## 32.3 VSIAssetStatusHelper — Complete Implementation
 
 The `VSIAssetStatusHelper` class encapsulates the full status change workflow including multi-field updates, history logging, and cross-company support:
 
@@ -13462,7 +13501,7 @@ public static void log(
 
 ---
 
-## 27.4 VSIAssetNotificationHelper — Complete Pattern
+## 32.4 VSIAssetNotificationHelper — Complete Pattern
 
 The notification helper demonstrates production-ready patterns for the Action Center:
 
@@ -13598,7 +13637,7 @@ private static str truncate(str _message)
 
 ---
 
-## 27.5 Multi-Company Notification Pattern
+## 32.5 Multi-Company Notification Pattern
 
 For cross-company notifications (e.g., batch jobs running across companies):
 
@@ -13652,7 +13691,7 @@ private static container getAllCompanies()
 
 ---
 
-## 27.6 Activity — Extend Status Change Context
+## 32.6 Activity — Extend Status Change Context
 
 **Objective:** Create a `VSIDocumentStatusChangeContext` that mirrors `VSIAssetStatusChangeContext` but works for any document type (requests, retirements, maintenance).
 
@@ -13734,9 +13773,10 @@ public final class VSIDocumentStatusChangeContext implements System.IDisposable
 
 ---
 
-# Chapter 28 — Advanced Batch & Concurrency
 
-## 28.1 SysOperation Batch Pattern
+# Chapter 33: Advanced Batch
+
+## 33.1 SysOperation Batch Pattern
 
 VSI Asset Management uses `SysOperationServiceController` / `SysOperationServiceBase` for all batch operations:
 
@@ -13772,7 +13812,7 @@ public static void main(Args _args)
 }
 ```
 
-## 28.2 Batch Runtime Tasks
+## 33.2 Batch Runtime Tasks
 
 For large datasets, the service dispatches multiple runtime tasks via `BatchHeader`:
 
@@ -13804,7 +13844,7 @@ public static VSIAssetIntegrityAuditBatchTaskController construct()
 }
 ```
 
-## 28.3 Deadlock & Concurrency Retry
+## 33.3 Deadlock & Concurrency Retry
 
 `VSIAssetServiceHelper::execute` wraps service calls in retry logic:
 
@@ -13830,7 +13870,7 @@ catch (Exception::Deadlock)
 }
 ```
 
-## 28.4 Cross-Company Queries
+## 33.4 Cross-Company Queries
 
 `VSIAssetInquiryService.processWorkerAssets` queries across all companies:
 
@@ -13861,7 +13901,7 @@ private container companies(boolean _allCompanies)
 }
 ```
 
-## 28.5 Batch Constants
+## 33.5 Batch Constants
 
 `VSIBatchConstants` holds shared limits:
 
@@ -13875,7 +13915,7 @@ private container companies(boolean _allCompanies)
 | `MaxNotificationLength` | 1000 | Max notification message length |
 | `MaxDigestLines` | 20 | Max lines in notification digest |
 
-## 28.6 VSIWorker Query Pattern — PlatformUserId Join
+## 33.6 VSIWorker Query Pattern — PlatformUserId Join
 
 A common VSI pattern queries active workers with enabled PlatformUserId for notifications, assignments, and cross-company lookups:
 
@@ -13968,9 +14008,10 @@ private static container getAllCompanies()
 
 ---
 
-# Chapter 29 — Labels, AppChecker & Configuration Keys
 
-## 29.1 Label Files
+# Chapter 34: Localization & Best Practices
+
+## 34.1 Label Files
 
 Labels are stored in `VSIAssetManagmentLabelFile.en-US.label.txt` and referenced via `@VSIAssetManagmentLabelFile:LabelId` syntax in X++ and XML metadata.
 
@@ -13985,7 +14026,7 @@ ActionNotAllowed=Asset %1 can't be used for this action while its status is %2.
 
 `VSIAssetManagmentLabelFile_en-US.xml` maps the label file ID to the `.label.txt` resource file.
 
-## 29.2 AppChecker / Best Practices
+## 34.2 AppChecker / Best Practices
 
 The project file (`VSIAssetManagement.rnrproj`) controls build behavior:
 
@@ -13997,7 +14038,7 @@ The project file (`VSIAssetManagement.rnrproj`) controls build behavior:
 | `GenerateFormAdaptors` | `False` | Disable form adaptor generation |
 | `DBSyncInBuild` | `False` | Disable database sync during build |
 
-## 29.3 Configuration Keys
+## 34.3 Configuration Keys
 
 Configuration keys gate feature visibility. The handbook mentions them in the hardening checklist but the codebase uses them implicitly through security roles and privileges rather than explicit `ConfigurationKey` properties on tables/forms.
 
@@ -14005,9 +14046,10 @@ Configuration keys gate feature visibility. The handbook mentions them in the ha
 
 ---
 
-# Chapter 30 — Custom Services & JSON/CLR Interop
 
-## 30.1 Service Pattern Overview
+# Chapter 35: Service Patterns
+
+## 35.1 Service Pattern Overview
 
 VSI Asset Management exposes two custom services:
 
@@ -14052,7 +14094,7 @@ public final class VSIAssetAssignmentResponseContract implements VSIAssetService
 }
 ```
 
-## 30.2 Shared Service Executor — Complete Implementation
+## 35.2 Shared Service Executor — Complete Implementation
 
 `VSIAssetServiceHelper::execute` provides the common entry point with full retry logic, infolog capture, and cross-company support:
 
@@ -14194,7 +14236,7 @@ private static List stringToList(str _text)
 
 ---
 
-## 30.3 JSON Serialization with CLR Interop — Complete VSIAssetServiceCatalog
+## 35.3 JSON Serialization with CLR Interop — Complete VSIAssetServiceCatalog
 
 `VSIAssetServiceCatalog` provides a comprehensive test harness for service development and debugging:
 
@@ -14485,7 +14527,7 @@ public static str wrapRequest(Object _contract)
 
 ---
 
-## 30.5 Activity — Build a Custom Service End-to-End
+## 35.5 Activity — Build a Custom Service End-to-End
 
 **Objective:** Create a new custom service `VSIAssetTransferService` with operation `transferAsset` that moves an asset between workers.
 
@@ -14558,7 +14600,7 @@ public final class VSIAssetTransferService implements VSIAssetServiceProcessor
 </AxSecurityEntryPointReference>
 ```
 
-## 30.3 JSON Serialization with CLR Interop
+## 35.3 JSON Serialization with CLR Interop
 
 `VSIAssetServiceCatalog` provides a test harness that serializes contracts to/from JSON using `FormJsonSerializer` and `Newtonsoft.Json`:
 
@@ -14609,7 +14651,7 @@ response = assignmentService.assignAsset(
         as VSIAssetAssignRequestContract);
 ```
 
-## 30.4 Service Exposure
+## 35.4 Service Exposure
 
 Services are registered in `AxService` and `AxServiceGroup` metadata:
 
