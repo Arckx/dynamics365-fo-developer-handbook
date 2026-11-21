@@ -498,6 +498,107 @@ Open `ModelManifest.xml` in your project and verify:
 
 ## 1.5 Language Mindset & Foundational Concepts — The X++ Way
 
+D365 F&O comes with its own language mindset that fundamentally changes how you think about software development. Before writing your first line of X++, internalize these foundational concepts:
+
+### 1.5.1 The Three Pillars of X++ Thinking
+
+**Relational-First, Not Object-First**
+
+In traditional object-oriented languages (like Java), you design classes first and then persist them to a database. In D365 F&O, the database is the starting point. Business entities — customers, vendors, invoices, purchase orders — are tables with rows. You think in terms of **relations between data sets** (joins, foreign keys, cascading updates), not just objects. The AOT stores table definitions as metadata, and the AOS executes SQL against those tables. Your code operates on **table buffers** (variables that hold a single row at a time), not on object graphs.
+
+> **Layman's explanation:** Imagine you're building a filing cabinet system. In OOP, you'd design the "File" object first, then figure out how to store it. In D365 F&O, you design the cabinet drawers (tables), the folders inside (rows), and the labels on the folders (fields) first. Your code just pulls out one folder at a time, reads it, maybe changes a label, and puts it back.
+
+**Metadata over Code**
+
+The AOT (Application Object Tree) is not just a file system — it's a **metadata repository**. Every table, field, index, relation, class, form, menu item, security role, and report is stored as structured metadata. The AOS reads this metadata at runtime to build the application. You don't "write code to create a table"; you **define the table in the AOT**, and the system generates the SQL schema, the form, the lookup, and the validation automatically. This is why D365 F&O developers say "configuration is code" — declarative metadata replaces imperative code for most standard patterns.
+
+> **Layman's explanation:** Think of the AOT as a giant spreadsheet where every column is a property (name, type, length, mandatory, label, help text). You fill in the rows (tables, fields, indexes), and the system builds the application from that spreadsheet. You rarely write "CREATE TABLE" SQL or "new Form()" code — you just declare what things *are*, not how to *build* them.
+
+**Extensibility as a Constraint**
+
+Microsoft pushes updates (Cumulative Updates, hotfixes) to the `SYS` layer several times a year. If you modify Microsoft's base tables or classes directly (overlayering), your changes will be **overwritten** and lost during the next update. The extension model (table extensions, class extensions with Chain of Command, event handlers) is not a "nice to have" — it is a **hard requirement** for code that survives upgrades. Every customization you write must ask: "Will this survive the next Microsoft update?"
+
+> **Layman's explanation:** Microsoft owns the foundation of the house (the `SYS` layer). You're building an addition. If you knock down a foundation wall to run a pipe, the next time Microsoft repairs the foundation, your pipe gets buried. Instead, you must run your pipes *alongside* the foundation walls using the approved extension points (CoC, event handlers) so your addition stays intact when the foundation is repaired.
+
+---
+
+### 1.5.2 Foundational Technical Concepts
+
+#### Primitive Data Types & the `real` Type
+X++ has **true primitive types** that map directly to SQL types: `int` (32-bit), `int64` (64-bit, used for `RecId`), `real` (decimal-precision floating point), `str` (Unicode string), `date` (date only), `utcdatetime` (UTC date+time), `timeOfDay` (seconds since midnight as integer), `boolean`, `enum`, `guid`, and `anytype`. Unlike standard IEEE-754 binary floating point used in many languages, X++'s `real` type uses **decimal-like precision** internally. This makes it safe for monetary values — EDTs like `AmountMST` use `real` without the rounding errors you'd see with `double` in other languages.
+
+> **Definition:** A **primitive type** is a built-in scalar type provided by the language runtime — it has no internal structure and represents a single value. In X++, `int`, `real`, `str`, `date`, `utcdatetime`, `enum`, `boolean`, `guid`, `int64`, and `timeOfDay` are primitives. `container` and `array` are composite types. `record` (table buffer) and `class` (object reference) are language constructs, not primitive types.
+
+#### Extended Data Types (EDTs) — Domain-Driven Design in Practice
+An **EDT (Extended Data Type)** is a **type alias** that wraps a primitive type with additional metadata: `StringSize`, `Alignment`, `FormHelp`, `Label`, `HelpText`, **Field Relations** (foreign key to another table), **Enum Values** (for enum-based EDTs), and **Validation Rules**. EDTs enforce consistency — every `CustAccount` field across all tables uses the same EDT, so they all have the same length, label, and lookup behavior. This is domain-driven design: the **business concept** (Customer Account) is defined once as an EDT and reused everywhere.
+
+> **Layman's explanation:** An EDT is like a "field template." Instead of saying "this field is a string of length 20" fifty times, you say "this field is a `CustAccount`." The EDT carries all the rules: max length 20, shows a customer lookup, label is "Customer Account," and it relates to the `CustTable`. Change the EDT once, and every field using it updates automatically.
+
+#### Table Storage Types — Regular, TempDB, InMemory
+Every table in D365 F&O has a `TableType` property with three options:
+
+| Storage Type | Where Data Lives | Lifetime | Use Case |
+|---|---|---|---|
+| **Regular** (default) | SQL Server database | Permanent | Business data — customers, orders, invoices |
+| **TempDB** | SQL Server `tempdb` | Per-session / per-transaction | Large intermediate datasets, staging, batch processing |
+| **InMemory** | AOS memory (RAM) | Per-session | Small lookup tables, session-specific settings, < 1000 rows |
+
+**Key distinction:** `TempDB` tables write to SQL `tempdb` — they support indexes, statistics, and can handle millions of rows. `InMemory` tables live entirely in AOS memory — faster for tiny datasets but no SQL indexes, and they can cause memory pressure if abused.
+
+> **Definition:** **TableType** is a table property that determines physical storage. Regular = persistent SQL table. TempDB = SQL tempdb table (supports indexes, large volumes). InMemory = AOS memory only (no SQL, fast for small data, no indexes).
+
+#### Data Operations — Framework Write Path vs. Bypass Methods
+When you call `table.insert()`, `table.update()`, or `table.delete()`, the **framework write path** executes: `validateWrite()` / `validateDelete()` → database operation → `inserted()` / `updated()` / `deleted()` events → business logic. This is the **correct path** — it enforces validation, fires events, and maintains data integrity.
+
+**Bypass methods** (`doInsert()`, `doUpdate()`, `doDelete()`) skip validation, skip events, and go straight to SQL. Use them **only** in these scenarios:
+- Data migration / initialization scripts where you control the data quality
+- Performance-critical bulk operations inside a transaction where you've already validated
+- Unit test setup/teardown where speed matters more than events
+
+> **Definition:** The **framework write path** is the standard sequence of method calls and events that execute when you use `insert()`, `update()`, `delete()` on a table buffer. **Bypass methods** (`doInsert`, `doUpdate`, `doDelete`) skip this path and execute SQL directly — they are escape hatches, not standard practice.
+
+#### SQL Concepts Every X++ Developer Must Know
+Even though you write X++, the AOS translates it to SQL. Understanding the translation helps you write performant code:
+
+| Concept | What It Means in X++ |
+|---|---|
+| **Inner Join** | `join` keyword in `while select` — only returns rows where both tables have matching records |
+| **Outer Join** | `outer join` — returns all rows from the left table, matching rows from the right (nulls where no match) |
+| **Exists Join** | `exists join` — returns left table rows only if at least one matching right row exists (no right table fields in result) |
+| **Cardinality** | One-to-many (parent → child) is the norm. Many-to-many requires a junction table. |
+| **View** | A virtual table defined by a query — read-only or updatable projection of multiple tables |
+| **Index / Alternate Key** | Non-clustered unique constraint (`AlternateKey` property) — enables fast lookups on non-RecId fields |
+
+> **Layman's explanation:** Every `while select` you write becomes a SQL query. If you write `while select custTable join vendTable`, you're telling SQL "give me customers AND their vendors in one query." If you instead write a `while select custTable` and inside the loop do `select vendTable`, you're making SQL run a separate query for *every customer* — that's the N+1 problem. Always think: "How many round-trips to SQL am I making?"
+
+#### Composite Collections — List, Set, Map, Struct
+X++ provides four collection classes in the `System.Collections` namespace (not containers):
+
+| Collection | Characteristics | When to Use |
+|---|---|---|
+| **List** | Ordered, allows duplicates, index-based access (`get(index)`) | Ordered sequences, stacks, queues |
+| **Set** | Unordered, unique elements only, fast `in()` check | Deduplication, membership testing |
+| **Map** | Key-value pairs, unique keys, fast lookup by key | Caching, dictionaries, lookups by ID |
+| **Struct** | Fixed schema, named fields, like a lightweight record | Passing structured data between methods |
+
+These are **reference types** (class instances) — declare with `List list = new List(Types::Integer);` not `List list;`.
+
+> **Definition:** **Composite collections** are class-based data structures (`List`, `Set`, `Map`, `Struct`) that provide richer behavior than the built-in `container` type. They support type safety, dynamic sizing, and standard algorithms (sort, filter, find). `container` is a lightweight value type; collections are reference types with methods.
+
+---
+
+### 1.5.3 Design Principles Summary
+
+| Principle | What It Means | Why It Matters |
+|---|---|---|
+| **Use EDTs for domain modeling** | Define business concepts once as EDTs, reuse everywhere | Consistency, maintainability, single source of truth |
+| **Avoid bypass methods** | Use `insert()`/`update()`/`delete()` unless you have a specific reason | Validation, events, data integrity, audit trail |
+| **Use TempDB for large temp data** | Large intermediate results go in TempDB tables | SQL indexes, statistics, handles millions of rows |
+| **Think in SQL round-trips** | Every `select` = one round-trip; `while select` = one query, streamed | Performance, scalability, avoid N+1 |
+| **Extensibility first** | Table extensions, CoC, event handlers — never modify `SYS` layer directly | Survives Microsoft updates, supported pattern |
+
+---
+
 ## 1.6 LCS (Lifecycle Services) — The Orchestration Platform
 
 ### 1.6.1 What Is LCS?
@@ -511,7 +612,7 @@ LCS (Lifecycle Services) is a **cloud-based application lifecycle management por
 - **Change tracking** — tracking all model deployments and configuration changes for audit purposes
 - **Reporting** — built-in reports on deployment success/failure, performance, and compliance
 
-### 1.5.2 LCS Environments — Detailed Overview
+### 1.6.2 LCS Environments — Detailed Overview
 
 | Environment | Purpose | Data Source | AOS Tier | Who Has Access | When Updated |
 |---|---|---|---|---|---|
@@ -522,7 +623,7 @@ LCS (Lifecycle Services) is a **cloud-based application lifecycle management por
 | **Preview** (optional) | Preview of upcoming CUs and hotfixes for testing | Standard data with CU applied | Dedicated preview AOS | ITOps, developers, early adopters | When Microsoft releases a CU |
 | **Production** | Live business operations | Live transactional data | Production AOS (high-availability, redundant) | IT Operations, limited developer access during deployments | Only after formal release management approval |
 
-### 1.5.3 Azure DevOps Build Pipeline — The Build Process
+### 1.6.3 Azure DevOps Build Pipeline — The Build Process
 
 The standard build pipeline in D365 F&O development follows this structure (Azure DevOps YAML or classic editor):
 
@@ -585,7 +686,7 @@ steps:
 - Generates `.log` files with any compilation errors or warnings
 - Fails the build if any compilation errors exist — the `.axmodel` is not produced
 
-### 1.5.4 LCS Release Pipeline — Promoting Builds
+### 1.6.4 LCS Release Pipeline — Promoting Builds
 
 The release pipeline in LCS (accessible via the LCS web portal at `lcs.dynamics.com`) manages the movement of your `.axmodel` build artifacts across environments:
 
@@ -598,7 +699,7 @@ The release pipeline in LCS (accessible via the LCS web portal at `lcs.dynamics.
    - The deployment status is reported back to LCS
 4. **Rollback**: If a deployment fails, LCS allows rolling back to the previous model version (stored in the model store as a previous version folder — see `C:\Views` structure above)
 
-### 1.5.5 Hotfix Deployment
+### 1.6.5 Hotfix Deployment
 
 When Microsoft releases a Critical Update (CU) or hotfix:
 1. The update arrives as a `.axupdate` file package in LCS
@@ -609,7 +710,7 @@ When Microsoft releases a Critical Update (CU) or hotfix:
 
 **Critical best practice**: After any hotfix deployment, redeploy your custom model to ensure it is still compatible with the updated standard code. Microsoft may have changed a method signature or behavior that your CoC override or event handler depends on.
 
-### 1.5.6 Configuration Keys
+### 1.6.6 Configuration Keys
 
 A **Configuration Key** is a boolean flag that controls whether a feature in D365 F&O is active or inactive. Configuration keys are defined in the model store and referenced in code.
 
@@ -638,9 +739,9 @@ The `FeatureEnabled::isEnabled()` check uses the `SysFeatureElement` table to de
 
 ---
 
-## 1.6 The Development Lifecycle — Step by Step in Detail
+## 1.7 The Development Lifecycle — Step by Step in Detail
 
-### 1.6.1 Developer Workflow (Day-to-Day)
+### 1.7.1 Developer Workflow (Day-to-Day)
 
 ```
 [1] Open Visual Studio → Connect to LCS Dev/Test environment
@@ -672,7 +773,7 @@ The `FeatureEnabled::isEnabled()` check uses the `SysFeatureElement` table to de
 [10] Promote the build to Test → UAT → Production via the release pipeline
 ```
 
-### 1.6.2 Debugging in D365 F&O
+### 1.7.2 Debugging in D365 F&O
 
 Breakpoint debugging works from Visual Studio when connected to a Dev/Test environment:
 
@@ -689,7 +790,7 @@ Breakpoint debugging works from Visual Studio when connected to a Dev/Test envir
 - Set breakpoints on `init()`, `executeQuery()`, `validateWrite()`, `modified()`, and `run()` methods — these are the most commonly debugged methods in form-based development
 - `Global::info()` output appears in Visual Studio's Debug Output window in addition to the Infolog — this is useful for tracing logic execution flow without cluttering the Infolog
 
-### 1.6.3 The Complete Build → Deploy → Promote Cycle
+### 1.7.3 The Complete Build → Deploy → Promote Cycle
 
 | Step | Environment | Action | Who Triggers |
 |---|---|---|---|
@@ -707,7 +808,7 @@ Breakpoint debugging works from Visual Studio when connected to a Dev/Test envir
 
 ---
 
-## 1.7 Activity — Layer & AOT Decision Exercise
+## 1.8 Activity — Layer & AOT Decision Exercise
 
 > **Scenario**: Acme Manufacturing needs to customize the Accounts Payable invoice approval workflow. The requirements are:
 > 1. Add a new field to `VendTable` for an internal compliance approval code
@@ -943,7 +1044,7 @@ class MyClass
 }
 ```
 
-**Important**: X++ **does** support block-level scoping for variables. A variable declared inside a block (e.g., `if`, `for`, `while`) is only accessible within that block. This is similar to C# or Java.
+**Important**: X++ **does** support block-level scoping for variables. A variable declared inside a block (e.g., `if`, `for`, `while`) is only accessible within that block. This is similar to Java.
 
 ```xpp
 // CORRECT — X++ supports block-scoped variables
@@ -988,7 +1089,7 @@ else
 
 ### Switch
 
-X++ `switch` supports `int`, `str`, and `enum` types. Unlike C#, there is no `case` fall-through — each case must end with `break` or `return`.
+X++ `switch` supports `int`, `str`, and `enum` types. Unlike Java, there is no `case` fall-through — each case must end with `break` or `return`.
 
 ```xpp
 Status orderStatus = Status::Approved;
