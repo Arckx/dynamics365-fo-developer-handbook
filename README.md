@@ -254,32 +254,6 @@ This handbook is a living document. Contributions welcome:
 
 ---
 
-## Sponsors
-
-This handbook is independent, community-funded. Sponsorship buys gratitude and nothing else — all content is free for everyone, forever.
-
-### 🥇 Gold
-
-[Your Logo Here] · [Your Logo Here]
-
-### 🥈 Silver
-
-[Your Logo Here] · [Your Logo Here]
-
-### 🥉 Community
-
-[AutoScout24](https://www.autoscout24.com) · [Nexxion AI](https://nexxion.ai/)
-
-**[Become a Sponsor](https://github.com/sponsors/Arckx)**
-
----
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=Arckx/dynamics365-fo-developer-handbook&type=date&legend=top-left)](https://www.star-history.com/?repos=Arckx%2Fdynamics365-fo-developer-handbook&type=date&legend=top-left)
-
----
-
 ## Contributors
 
 [![Contributors](https://contrib.rocks/image?repo=Arckx/dynamics365-fo-developer-handbook&max=100&columns=20)](https://github.com/Arckx/dynamics365-fo-developer-handbook/graphs/contributors)
