@@ -33,6 +33,7 @@ All notable changes to the D365 F&O Developer Handbook.
 - **d365-erp-comparison.md** — SAP vs Oracle vs NetSuite vs D365 F&O — architecture, licensing, why choose F&O
 - **d365-beginner-faq.md** — 50 common beginner questions — D365 basics, X++, SQL, OOP, workflow
 - **d365-career-paths.md** — Junior → Architect progression — roles, skills, certs, salaries, 12-month plans
+- **d365-production-grade-development.md** — Production-grade development — decision frameworks, trade-off analysis, code structuring principles, mental models for building requirements that survive production
 
 ### Changed
 - **README.md** — Added Foundational Guides (9), Learning Tools & Visual Aids (11) sections; updated curriculum to 35 chapters; linked all new guides

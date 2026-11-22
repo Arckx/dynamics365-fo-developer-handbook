@@ -118,6 +118,7 @@ If you're new to D365 F&O, start here:
 | `d365-security-patterns.md` | Role/privilege design, XDS policies, audit logging, compliance patterns. | Security architecture and review. |
 | `d365-perf-benchmark.md` | Performance benchmarking scripts, SQL queries, load testing, CI/CD gates. | Performance validation and tuning. |
 | `d365-security-audit.md` | Security audit checklist: SoD, XDS coverage, privilege creep, compliance. | Quarterly security audits. |
+| `d365-production-grade-development.md` | **Production-grade development** — decision frameworks, trade-off analysis, code structuring principles, mental models for building requirements that survive production. | **Senior developer reference** — how to think when structuring code for new requirements. |
 
 ### Learning Tools & Visual Aids
 
