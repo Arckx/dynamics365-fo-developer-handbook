@@ -296,7 +296,7 @@ class APCustomsDeclarationEntityHandler
         {
             try
             {
-                ttsbegin;
+                ttsBegin;
 
                 // Step 1: Validate the staging record
                 if (!this.validateStagingRecord(staging))
@@ -304,7 +304,7 @@ class APCustomsDeclarationEntityHandler
                     staging.StagingStatus = APCustomsStagingStatus::Failed;
                     staging.ErrorMessage = 'Validation failed: missing required fields';
                     staging.update();
-                    ttscommit;
+                    ttsCommit;
                     continue;
                 }
 
@@ -314,7 +314,7 @@ class APCustomsDeclarationEntityHandler
                     staging.StagingStatus = APCustomsStagingStatus::Duplicate;
                     staging.ErrorMessage = 'Duplicate declaration ID found in target';
                     staging.update();
-                    ttscommit;
+                    ttsCommit;
                     continue;
                 }
 
@@ -331,11 +331,11 @@ class APCustomsDeclarationEntityHandler
                 staging.StagingStatus = APCustomsStagingStatus::Processed;
                 staging.update();
 
-                ttscommit;
+                ttsCommit;
             }
             catch (Exception::Error)
             {
-                ttsabort;
+                ttsAbort;
                 staging.StagingStatus = APCustomsStagingStatus::Failed;
                 staging.ErrorMessage = 'Unexpected error during processing';
                 staging.update();
@@ -481,7 +481,7 @@ public void process()
         
         try
         {
-            ttsbegin;
+            ttsBegin;
             
             // ... validation and processing logic ...
             
@@ -494,17 +494,17 @@ public void process()
                         ErrorMessage = 'Rollback threshold exceeded: >10% failure rate'
                     where staging.StagingStatus == APCustomsStagingStatus::Ready;
                 
-                ttscommit;
+                ttsCommit;
                 
                 throw error(strFmt('Rollback threshold exceeded at record %1 of %2. Batch aborted.', 
                     processedCount, totalToProcess));
             }
             
-            ttscommit;
+            ttsCommit;
         }
         catch (Exception::Error)
         {
-            ttsabort;
+            ttsAbort;
             failedCount++;
             // ... error handling ...
         }
@@ -1234,7 +1234,7 @@ class HRPersonnelEntityHandler
             
             try
             {
-                ttsbegin;
+                ttsBegin;
 
                 // Update status to Processing
                 staging.StagingStatus = HRPersonnelStagingStatus::Processing;
@@ -1247,7 +1247,7 @@ class HRPersonnelEntityHandler
                 {
                     this.markFailed(staging, 'Missing required fields: PersonNumber, FirstName, LastName, Email, or HireDate');
                     failedCount++;
-                    ttscommit;
+                    ttsCommit;
                     continue;
                 }
 
@@ -1256,7 +1256,7 @@ class HRPersonnelEntityHandler
                 {
                     this.markFailed(staging, 'Invalid email format');
                     failedCount++;
-                    ttscommit;
+                    ttsCommit;
                     continue;
                 }
 
@@ -1266,7 +1266,7 @@ class HRPersonnelEntityHandler
                     this.markDuplicate(staging);
                     duplicateCount++;
                     failedCount++; // Count as failure for rollback threshold
-                    ttscommit;
+                    ttsCommit;
                     continue;
                 }
 
@@ -1277,7 +1277,7 @@ class HRPersonnelEntityHandler
                         strFmt('Rollback threshold exceeded: %1% failure rate at record %2 of %3', 
                             #RollbackThresholdPercent, processedCount, totalToProcess));
                     failedCount++;
-                    ttscommit;
+                    ttsCommit;
                     
                     // Mark all remaining Ready records as BatchFailed
                     this.markRemainingAsBatchFailed(batchId);
@@ -1320,23 +1320,23 @@ class HRPersonnelEntityHandler
                 this.markProcessed(staging);
                 successCount++;
 
-                ttscommit;
+                ttsCommit;
             }
             catch (Exception::Error)
             {
-                ttsabort;
+                ttsAbort;
                 this.markFailed(staging, 'Unexpected error during processing');
                 failedCount++;
             }
             catch (Exception::DuplicateKey)
             {
-                ttsabort;
+                ttsAbort;
                 this.markFailed(staging, 'Duplicate key error - record may have been inserted by another process');
                 failedCount++;
             }
             catch (Exception::Deadlock)
             {
-                ttsabort;
+                ttsAbort;
                 // Deadlocks are handled by the batch framework retry logic
                 // Re-throw to let framework handle retry
                 throw;

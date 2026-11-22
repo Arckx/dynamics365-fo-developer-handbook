@@ -257,11 +257,10 @@ public boolean validateWrite()
 
     ret = super();  // Always call super() first in table methods
 
-    // Custom validation
-    if (this.AccountNum == "")
+    // Custom validation — use checkFailed() not error()
+    if (ret && this.AccountNum == "")
     {
-        ret = false;
-        error("Account number cannot be empty.");
+        ret = checkFailed("Account number cannot be empty.");
     }
 
     return ret;
@@ -277,13 +276,12 @@ final class CustTable_Extension
     {
         boolean ret;
 
-        ret = next validateWrite();  // Call next handler in the chain
+        ret = next validateWrite();  // Call next handler in the chain (CoC `next` keyword)
 
-        // Custom validation
-        if (this.AccountNum == "")
+        // Custom validation — use checkFailed() not error()
+        if (ret && this.AccountNum == "")
         {
-            ret = false;
-            error("Account number cannot be empty.");
+            ret = checkFailed("Account number cannot be empty.");
         }
 
         return ret;

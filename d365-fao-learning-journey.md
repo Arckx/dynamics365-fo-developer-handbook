@@ -141,20 +141,22 @@ User is a Technical Microsoft Dynamics 365 Finance & Operations intern working o
 
 ### Milestone Summary
 
-| Month | Milestone | Status |
-|---|---|---|
-| 1 | First X++ job — read/write data | ⬜ |
-| 2 | Custom table design with EDTs and indexes | ⬜ |
-| 3 | Form with parent-child data sources + business logic class | ⬜ |
-| 4 | CoC + Event Handler + Table/Form Extension | ⬜ |
-| 5 | Security role + data entity integration | ⬜ |
-| 6 | SSRS report + RunBaseBatch job | ⬜ |
-| 7 | 5 SysTest unit tests | ⬜ |
-| 8 | Azure DevOps CI pipeline | ⬜ |
-| 9 | Performance audit with 3+ fixes | ⬜ |
-| 10 | Capstone: end-to-end solution deployed | ⬜ |
-| 11 | Module specialization deep dive | ⬜ |
-| 12 | Advanced patterns & certification prep | ⬜ |
+| Month | Milestone | Status | ✅ Done | 📝 Notes | Est. Hours |
+|---|---|---|---|---|---|
+| 1 | First X++ job — read/write data | ⬜ | ☐ | | 8–12 |
+| 2 | Custom table design with EDTs and indexes | ⬜ | ☐ | | 12–16 |
+| 3 | Form with parent-child data sources + business logic class | ⬜ | ☐ | | 16–20 |
+| 4 | CoC + Event Handler + Table/Form Extension | ⬜ | ☐ | | 16–20 |
+| 5 | Security role + data entity integration | ⬜ | ☐ | | 12–16 |
+| 6 | SSRS report + RunBaseBatch job | ⬜ | ☐ | | 16–20 |
+| 7 | 5 SysTest unit tests | ⬜ | ☐ | | 12–16 |
+| 8 | Azure DevOps CI pipeline | ⬜ | ☐ | | 8–12 |
+| 9 | Performance audit with 3+ fixes | ⬜ | ☐ | | 12–16 |
+| 10 | Capstone: end-to-end solution deployed | ⬜ | ☐ | | 24–32 |
+| 11 | Module specialization deep dive | ⬜ | ☐ | | 16–24 |
+| 12 | Advanced patterns & certification prep | ⬜ | ☐ | | 16–24 |
+
+**Total Estimated Hours:** 168–224 (≈ 4–6 weeks full-time)
 
 **Why:** User explicitly requested a comprehensive PDF document of all D365 F&O technical concepts from official Microsoft documentation to support their learning journey.
 

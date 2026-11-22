@@ -18,6 +18,8 @@ metadata:
 
 ## Exercise 1 — Variable Declaration and Type Casting
 
+> **Difficulty:** ⭐ Beginner | **Prereqs:** Chapter 3 | **Est. Time:** 15 min
+
 ### Problem
 
 Write a method that takes a `container` with three elements (an `int`, a `str`, and a `real`) and prints each element to the Infolog with its type name.
@@ -63,6 +65,8 @@ Element 3: value=3.14, type=real
 
 ## Exercise 2 — While Select with Filtering
 
+> **Difficulty:** ⭐ Beginner | **Prereqs:** Chapter 6 | **Est. Time:** 15 min
+
 ### Problem
 
 Write a job that selects all customers whose `Currency` is "USD" and whose `GroupName` is "CORP", and prints their `AccountNum` and `Name` to the Infolog.
@@ -94,6 +98,8 @@ static void exercise2_usdCorpCustomers(Args _args)
 ---
 
 ## Exercise 3 — Update Recordset (Bulk Update)
+
+> **Difficulty:** ⭐ Beginner | **Prereqs:** Chapter 6 | **Est. Time:** 15 min
 
 ### Problem
 
@@ -129,6 +135,8 @@ static void exercise3_bulkCurrencyUpdate(Args _args)
 ---
 
 ## Exercise 4 — Transaction with Error Handling
+
+> **Difficulty:** ⭐⭐ Intermediate | **Prereqs:** Chapter 6 | **Est. Time:** 20 min
 
 ### Problem
 
@@ -205,10 +213,10 @@ final class CustTable_Extension
         ret = next validateWrite();
 
         // Custom validation: AccountNum must start with "CUST-"
+        // Use checkFailed() not error() — returns false cleanly without throwing
         if (ret && !strStartsWith(this.AccountNum, "CUST-"))
         {
-            ret = false;
-            error(strFmt("Account number '%1' must start with 'CUST-'.", this.AccountNum));
+            ret = checkFailed(strFmt("Account number '%1' must start with 'CUST-'.", this.AccountNum));
         }
 
         return ret;
@@ -219,6 +227,8 @@ final class CustTable_Extension
 ---
 
 ## Exercise 6 — Exception Handling with Deadlock Retry
+
+> **Difficulty:** ⭐⭐ Intermediate | **Prereqs:** Chapter 7 | **Est. Time:** 25 min
 
 ### Problem
 
@@ -287,6 +297,8 @@ static void exercise6_deadlockRetry(str _accountNum)
 ---
 
 ## Exercise 7 — Class with Constructor and Validation Methods
+
+> **Difficulty:** ⭐⭐ Intermediate | **Prereqs:** Chapter 7 | **Est. Time:** 30 min
 
 ### Problem
 
@@ -400,6 +412,8 @@ else
 
 ## Exercise 8 — Inheritance and Polymorphism
 
+> **Difficulty:** ⭐⭐ Intermediate | **Prereqs:** Chapter 7 | **Est. Time:** 25 min
+
 ### Problem
 
 Create a base class `BaseDiscountCalculator` with a method `calculateDiscount(Amount _amount)` that returns a 0% discount. Then create two derived classes:
@@ -469,6 +483,8 @@ Platinum discount on 1000: 200
 
 ## Exercise 9 — Event Handler
 
+> **Difficulty:** ⭐⭐ Intermediate | **Prereqs:** Chapter 13 | **Est. Time:** 30 min
+
 ### Problem
 
 Create an event handler that runs after a `CustTable` record is inserted. The handler should log the new customer's `AccountNum` and `Name` to a custom log table called `CustCreationLog`.
@@ -512,6 +528,8 @@ class CustCreationEventHandler
 ---
 
 ## Exercise 10 — Chain of Command (CoC) Extensibility
+
+> **Difficulty:** ⭐⭐⭐ Advanced | **Prereqs:** Chapter 14 | **Est. Time:** 45 min
 
 ### Problem
 
@@ -594,6 +612,8 @@ Original: 1000.00 — Discounted (with CoC VIP extension): 850.00
 
 ## Exercise 11 — Chain of Command (CoC)
 
+> **Difficulty:** ⭐⭐⭐ Advanced | **Prereqs:** Chapter 14 | **Est. Time:** 45 min
+
 ### Problem
 
 Create two extension classes on `CustTable` that both modify the `validateWrite()` method using Chain of Command. The first extension should check that the `AccountNum` starts with "CUST-". The second extension should check that the `Name` is not empty. Both should call `next` so they work together.
@@ -655,6 +675,8 @@ final class CustTable_NameValidation
 
 ## Exercise 12 — Data Entity Creation
 
+> **Difficulty:** ⭐⭐⭐ Advanced | **Prereqs:** Chapter 16 | **Est. Time:** 60 min
+
 ### Problem
 
 Describe the steps to create a simple data entity that exposes a custom table `VendAPCustomsDecl` (with fields `DeclId`, `DeclDate`, `CustomsRef`) to an external system via OData. List the AOT nodes you need to create and configure.
@@ -697,6 +719,8 @@ Describe the steps to create a simple data entity that exposes a custom table `V
 ---
 
 ## Exercise 13 — SSRS Report Data Provider
+
+> **Difficulty:** ⭐⭐⭐ Advanced | **Prereqs:** Chapter 17 | **Est. Time:** 45 min
 
 ### Problem
 
@@ -783,6 +807,8 @@ class VendCustomerBalanceDP extends SrsReportDataProvider
 ---
 
 ## Exercise 14 — Error Handling Best Practices
+
+> **Difficulty:** ⭐⭐⭐ Advanced | **Prereqs:** Chapters 6, 7 | **Est. Time:** 30 min
 
 ### Problem
 
@@ -899,6 +925,8 @@ catch (Exception::Error)
 
 ## Exercise 15 — Putting It All Together
 
+> **Difficulty:** ⭐⭐⭐⭐ Capstone | **Prereqs:** Chapters 1–21 | **Est. Time:** 90 min
+
 ### Problem
 
 Write a complete X++ job that:
@@ -975,6 +1003,8 @@ static void exercise15_completeJob(Args _args)
 
 ## Exercise 16 — Number Sequence
 
+> **Difficulty:** ⭐⭐ Intermediate | **Prereqs:** Chapter 30 | **Est. Time:** 30 min
+
 ### Problem
 
 Create a custom table `ComplianceLog` with a `ComplianceId` field that uses a number sequence for its value. Write a job that inserts a new `ComplianceLog` record and verifies the number sequence was consumed correctly.
@@ -1036,6 +1066,8 @@ static void exercise16_numberSequence(Args _args)
 ---
 
 ## Exercise 17 — SysOperation Service
+
+> **Difficulty:** ⭐⭐⭐ Advanced | **Prereqs:** Chapter 18 | **Est. Time:** 45 min
 
 ### Problem
 

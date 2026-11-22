@@ -55,7 +55,7 @@ The `CacheLookup` property on a table controls the server-side caching of data.
 Deadlocks occur when two processes hold locks the other needs.
 *   **Identification:** Look for SQL Error 1205 in the event logs.
 *   **Mitigation:** 
-    *   Keep transaction scopes (`ttsbegin`/`ttscommit`) as small as possible.
+    *   Keep transaction scopes (`ttsBegin`/`ttsCommit`) as small as possible.
     *   Access tables in a consistent order throughout the application.
     *   Implement retry logic using a simple retry loop on the `Exception::Deadlock` error.
 
@@ -66,9 +66,9 @@ while (retryCount > 0)
 {
     try
     {
-        ttsbegin;
+        ttsBegin;
         // Operation
-        ttscommit;
+        ttsCommit;
         break;
     }
     catch (Exception::Deadlock)

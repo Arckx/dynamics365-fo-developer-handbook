@@ -1,5 +1,9 @@
 # Dynamics 365 Finance & Operations (D365 F&O) Developer Handbook
 
+![Chapters](https://img.shields.io/badge/Chapters-35-blue)
+![Exercises](https://img.shields.io/badge/Exercises-17-green)
+![Last Updated](https://img.shields.io/badge/Updated-Nov%202026-orange)
+
 > The definitive technical handbook, 35-chapter desktop guide, and 12-month learning journey designed for Microsoft D365 F&O developers, technical interns, and enterprise engineers.
 
 ---
@@ -25,6 +29,17 @@ If you're new to D365 F&O, start here:
 5. **First Data Entity** — [Learning Guide Ch 16](d365-learning-guide.md#16-data-entities) → `IsPublic = Yes`, OData endpoint
 
 > **Tip:** Keep [d365-xpp-quick-reference.md](d365-xpp-quick-reference.md) open while coding — it's your syntax cheat sheet.
+
+---
+
+## 📖 How to Read This Handbook
+
+| Learning Style | Start Here | Path |
+|---|---|---|
+| **New to D365** | 30-Minute Quick Start → Ch 1–3 | Sequential |
+| **X++ Refresher** | [d365-xpp-quick-reference.md](d365-xpp-quick-reference.md) → Exercises 1–4 | Reference-driven |
+| **Certification Prep** | [d365-certification-mapping.md](d365-certification-mapping.md) → Target chapters | Goal-driven |
+| **Architecture Review** | [vsi_gap_analysis.md](vsi_gap_analysis.md) → Chapters 23–35 | Deep-dive |
 
 ---
 
@@ -61,7 +76,6 @@ If you're new to D365 F&O, start here:
 | `d365-fao-interest.md` | Interest tracking and learning objectives. | Personal progress tracking. |
 | `language-mindset-development.md` | Language Mindset development notes. | Philosophy and approach reference. |
 | `d365_combined_guide.md` | Combined guide from previous iterations. | Legacy reference. |
-| `batchprocessingind365forunbasebatchvssysoperation.md` | Batch processing comparison (legacy format). | Legacy reference. |
 
 ---
 

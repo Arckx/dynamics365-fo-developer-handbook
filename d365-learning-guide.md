@@ -52,7 +52,7 @@ User clicks a button on a form (HTML/Windows client)
     ▼
 [AOS Application Tier]  X++ IL code executes
     │   • Security checks (who are you? what can you do?)
-    │   • Transaction management (ttsbegin/ttscommit)
+    │   • Transaction management (ttsBegin/ttsCommit)
     │   • Business logic (your X++ code runs here)
     │   • Cross-layer calls (SYS → ISV → VAR → CUS → USR)
     │
@@ -271,7 +271,8 @@ Every table in D365 F&O inherits from the `Common` class at runtime. This means 
 | `delete()` | Method | Removes the record from the database |
 | `validateWrite()` | Method | Returns `boolean` — returns `true` if the record can be saved, `false` if there is a validation error |
 | `validateField(FieldId)` | Method | Returns `boolean` — validates a single field value |
-| `read()` | Method | Reads the next record from a query result set (used after `select`) |
+| `select()` | Intrinsic function | Executes a query and returns the first record (used with `while select`) |
+| `firstOnly()` | Intrinsic function | Limits query to return only the first matching record |
 | `doInsert()` | Method | Internal — the actual insert; `insert()` calls this after `validateWrite()` |
 | `doUpdate()` | Method | Internal — the actual update; `update()` calls this after `validateWrite()` |
 | `doDelete()` | Method | Internal — the actual delete |
@@ -1379,13 +1380,12 @@ final class CustTable_Extension
     {
         boolean ret;
 
-        ret = next validateWrite();  // Call the next handler in the chain
+        ret = next validateWrite();  // Call the next handler in the chain (CoC `next` keyword)
 
-        // Custom validation
-        if (this.AccountNum == "")
+        // Custom validation — use checkFailed() not error() to return false cleanly
+        if (ret && this.AccountNum == "")
         {
-            ret = false;
-            error("Account number cannot be empty.");
+            ret = checkFailed("Account number cannot be empty.");
         }
 
         return ret;
@@ -1896,6 +1896,8 @@ public void modifiedField(FieldId _fieldId)
 ```
 
 **Critical: `super(_fieldId)` goes LAST in `modifiedField()` — opposite of `validateWrite()` where `super()` goes FIRST.**
+
+> **Why the difference?** `validateWrite()` is a *gate* — base validation must run FIRST to establish baseline validity before custom rules. `modifiedField()` is a *notification* — the base field logic (lookups, derived fields, standard modified behavior) runs first, then your custom reaction runs after.
 
 ## 9.7 `insert_recordset` / `update_recordset` — Set-Based Performance
 
@@ -5370,7 +5372,7 @@ class APCustomsDeclarationEntityHandler
         {
             try
             {
-                ttsbegin;
+                ttsBegin;
 
                 // Validate the staging record
                 if (!this.validateStagingRecord(staging))
@@ -5378,7 +5380,7 @@ class APCustomsDeclarationEntityHandler
                     staging.StagingStatus = APCustomsStagingStatus::Failed;
                     staging.ErrorMessage = 'Validation failed';
                     staging.update();
-                    ttscommit;
+                    ttsCommit;
                     continue;
                 }
 
@@ -5388,7 +5390,7 @@ class APCustomsDeclarationEntityHandler
                     staging.StagingStatus = APCustomsStagingStatus::Duplicate;
                     staging.ErrorMessage = 'Duplicate declaration ID';
                     staging.update();
-                    ttscommit;
+                    ttsCommit;
                     continue;
                 }
 
@@ -5405,11 +5407,11 @@ class APCustomsDeclarationEntityHandler
                 staging.StagingStatus = APCustomsStagingStatus::Processed;
                 staging.update();
 
-                ttscommit;
+                ttsCommit;
             }
             catch (Exception::Error)
             {
-                ttsabort;
+                ttsAbort;
                 staging.StagingStatus = APCustomsStagingStatus::Failed;
                 staging.ErrorMessage = 'Unexpected error during processing';
                 staging.update();
@@ -5887,14 +5889,14 @@ class HRPersonnelEntityHandler
         {
             try
             {
-                ttsbegin;
+                ttsBegin;
 
                 // Validate email format
                 if (!this.validateEmail(staging.Email))
                 {
                     this.markFailed(staging, 'Invalid email format');
                     totalFailed++;
-                    ttscommit;
+                    ttsCommit;
                     continue;
                 }
 
@@ -5903,7 +5905,7 @@ class HRPersonnelEntityHandler
                 {
                     this.markDuplicate(staging);
                     totalFailed++;
-                    ttscommit;
+                    ttsCommit;
                     continue;
                 }
 
@@ -5912,7 +5914,7 @@ class HRPersonnelEntityHandler
                 {
                     this.markBatchFailed(staging, 'Rollback threshold exceeded: >10% failures');
                     totalFailed++;
-                    ttscommit;
+                    ttsCommit;
                     break;  // Stop processing
                 }
 
@@ -5935,11 +5937,11 @@ class HRPersonnelEntityHandler
                 this.markProcessed(staging);
                 totalSuccess++;
 
-                ttscommit;
+                ttsCommit;
             }
             catch (Exception::Error)
             {
-                ttsabort;
+                ttsAbort;
                 this.markFailed(staging, 'Unexpected error during processing');
                 totalFailed++;
             }
@@ -7256,14 +7258,14 @@ class VendReconciliationBatchJob extends RunBaseBatch
 
             try
             {
-                ttsbegin;
+                ttsBegin;
                 this.reconcileVendor(vendTableLocal);
-                ttscommit;
+                ttsCommit;
                 processedCount++;
             }
             catch (Exception::Error)
             {
-                ttsabort;
+                ttsAbort;
                 failedCount++;
                 warning(strFmt('Failed to reconcile vendor %1.', vendTableLocal.AccountNum));
             }
@@ -7500,22 +7502,22 @@ public void run()
             break;
         }
 
-        ttsbegin;
+        ttsBegin;
         try
         {
             this.processVendor(vendTable);
-            ttscommit;
+            ttsCommit;
         }
         catch (Exception::Error)
         {
-            ttsabort;
+            ttsAbort;
             warning(strFmt('Failed to process vendor %1.', vendTable.AccountNum));
         }
     }
 }
 ```
 
-**Important:** When `checkCancel()` returns `true` inside a `ttsbegin/ttscommit` block, the current transaction is still committed. The cancellation check happens after the transaction completes. This ensures data consistency — partial records are not left in an inconsistent state.
+**Important:** When `checkCancel()` returns `true` inside a `ttsBegin/ttsCommit` block, the current transaction is still committed. The cancellation check happens after the transaction completes. This ensures data consistency — partial records are not left in an inconsistent state.
 
 ---
 
@@ -7808,9 +7810,9 @@ class VendReconciliationBatchJob extends RunBaseBatch
             {
                 if (!dryRun)
                 {
-                    ttsbegin;
+                    ttsBegin;
                     this.reconcileVendor(_vendTable);
-                    ttscommit;
+                    ttsCommit;
                 }
                 success = true;
             }
@@ -11119,7 +11121,7 @@ class RetailFulfillmentPickingService
     
     public static void confirmPick(RetailFulfillmentLine _line, Qty _pickedQty, InventDimId _inventDimId)
     {
-        ttsbegin;
+        ttsBegin;
         
         // Update line
         _line.PickedQty = _pickedQty;
@@ -11142,7 +11144,7 @@ class RetailFulfillmentPickingService
             header.update();
         }
         
-        ttscommit;
+        ttsCommit;
     }
 }
 ```
@@ -11559,9 +11561,9 @@ qe.WhereClause(new SysDaEqualsExpression(
 
 insertObject.query(qe);
 
-ttsbegin;
+ttsBegin;
     new SysDaInsertStatement().insert(insertObject);
-ttscommit;
+ttsCommit;
 ```
 
 ### SysDa Update Example
@@ -11577,9 +11579,9 @@ uo.WhereClause(new SysDaEqualsExpression(
     new SysDaFieldExpression(t, fieldStr(TestTable, IntField)),
     new SysDaValueExpression(50)));
 
-ttsbegin;
+ttsBegin;
     new SysDaUpdateStatement().update(uo);
-ttscommit;
+ttsCommit;
 ```
 
 ### SysDa Delete Example
@@ -11600,9 +11602,9 @@ qe.WhereClause(new SysDaEqualsExpression(
 var ds = new SysDaDeleteStatement();
 var delobj = new SysDaDeleteObject(qe);
 
-ttsbegin;
+ttsBegin;
     ds.delete(delobj);
-ttscommit;
+ttsCommit;
 ```
 
 ### SysDa Best Practices
@@ -12573,7 +12575,7 @@ public static void main(Args _args)
     {
         try
         {
-            ttsbegin;
+            ttsBegin;
             Workflow::activateFromWorkflowType(
                 workflowTypeStr(VSIAssetRequestWorkflow),
                 request.RecId,
@@ -12582,7 +12584,7 @@ public static void main(Args _args)
             VSIAssetRequest::changeStatusByRecId(
                 request.RecId,
                 VSIRequestStatus::PendingApproval);
-            ttscommit;
+            ttsCommit;
             info("@VSIAssetManagmentLabelFile:VSIAssetRequestWorkflowSubmitted");
         }
         catch (Exception::Error)
@@ -12619,7 +12621,7 @@ public static void main(Args _args)
     {
         try
         {
-            ttsbegin;
+            ttsBegin;
             WorkflowWorkItemActionManager::dispatchWorkItemAction(
                 workItem,
                 actionDialog.parmWorkflowComment(),
@@ -12629,7 +12631,7 @@ public static void main(Args _args)
             VSIAssetRequest::changeStatusByRecId(
                 request.RecId,
                 VSIRequestStatus::PendingApproval);
-            ttscommit;
+            ttsCommit;
             info("@VSIAssetManagmentLabelFile:VSIAssetRequestWorkflowResubmitted");
         }
         catch (Exception::Error)
@@ -12766,10 +12768,10 @@ public class VSIAssetDetails extends FormRun
 
     public void write()
     {
-        ttsbegin;
+        ttsBegin;
         super();
         element.numberSeqFormHandler().formMethodDataSourceWrite();
-        ttscommit;
+        ttsCommit;
     }
 
     public boolean validateWrite()
@@ -12781,10 +12783,10 @@ public class VSIAssetDetails extends FormRun
 
     public void delete()
     {
-        ttsbegin;
+        ttsBegin;
         element.numberSeqFormHandler().formMethodDataSourceDelete();
         super();
-        ttscommit;
+        ttsCommit;
     }
 
     public void linkActive()
@@ -13849,9 +13851,9 @@ public static VSIAssetIntegrityAuditBatchTaskController construct()
 `VSIAssetServiceHelper::execute` wraps service calls in retry logic:
 
 ```xpp
-ttsbegin;
+ttsBegin;
 _processor.process(_operation, _request, _response);
-ttscommit;
+ttsCommit;
 ```
 
 Catch blocks handle:
@@ -14126,9 +14128,9 @@ public static void execute(
             {
                 changecompany(company)
                 {
-                    ttsbegin;
+                    ttsBegin;
                     _processor.process(_operation, _request, _response);
-                    ttscommit;
+                    ttsCommit;
                 }
                 success = true;
             }

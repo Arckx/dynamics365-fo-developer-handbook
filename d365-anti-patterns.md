@@ -211,14 +211,14 @@ custTable.update(); // Triggers standard validations and CoC chain
 
 ---
 
-### 2.3 Missing Transaction Management (`ttsbegin` / `ttscommit`)
+### 2.3 Missing Transaction Management (`ttsBegin` / `ttsCommit`)
 
 #### Bad Pattern
 Performing multiple interdependent record modifications without a transactional boundary or holding transactions open during UI/User interaction.
 
 ```xpp
 // BAD: Missing transaction boundary & UI call inside transaction
-ttsbegin;
+ttsBegin;
 salesTable.insert();
 
 // User input requested INSIDE transaction block!
@@ -226,20 +226,20 @@ if (Box::yesNo("Do you want to proceed?", DialogButton::Yes) == DialogButton::Ye
 {
     salesLine.insert();
 }
-ttscommit;
+ttsCommit;
 ```
 
 #### Correct Pattern
-Keep transactions as short as possible, keep user interaction completely outside transaction blocks, and wrap multiple operational units in `ttsbegin` / `ttscommit`.
+Keep transactions as short as possible, keep user interaction completely outside transaction blocks, and wrap multiple operational units in `ttsBegin` / `ttsCommit`.
 
 ```xpp
 // CORRECT: Collect user confirmation FIRST, then run atomic transaction
 if (Box::yesNo("Do you want to proceed?", DialogButton::Yes) == DialogButton::Yes)
 {
-    ttsbegin;
+    ttsBegin;
     salesTable.insert();
     salesLine.insert();
-    ttscommit;
+    ttsCommit;
 }
 ```
 
@@ -451,7 +451,7 @@ public static MyParameters find(boolean _update = false)
 | **SQL** | Missing Indexes | Full Table Scans | Index creation & query plan tuning |
 | **X++** | Hardcoded IDs/Enums | Data Instability & Unportable Code | Use metadata functions (`enumNum`, `tableNum`) |
 | **X++** | Overlayering / Bypassing CoC | Upgrade Failures & Data Corruption | Chain of Command (`ExtensionOf`) & standard methods |
-| **X++** | Open Transactions in UI | Database Deadlocks & Lock Escalation | Short transactions; collect UI input before `ttsbegin` |
+| **X++** | Open Transactions in UI | Database Deadlocks & Lock Escalation | Short transactions; collect UI input before `ttsBegin` |
 | **Architecture** | Monster Forms / God Classes | High Technical Debt & Non-testable code | Separation of Concerns & `SysOperation` framework |
 | **Architecture** | Tightly Coupled Services | Brittle System & Cascade Failures | Interface abstraction & Async integration |
 | **Performance** | InMemory for Large Datasets | AOS OutOfMemory Crashes | Use `TempDB` table type for large temp data |
