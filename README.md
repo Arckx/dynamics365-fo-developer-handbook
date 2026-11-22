@@ -9,17 +9,27 @@
 
 ---
 
-## 🆕 What's New (Nov 2026)
+## Why This Repository Exists
 
-| Category | Additions |
-|----------|-----------|
-| **Chapter 0 Foundations** | 9 new guides: ERP basics, OOP/SQL primers, environment setup, business glossary, role day-in-life, ERP comparison, FAQ, career paths |
-| **Hands-On Practice** | 10 OOP exercises + 10 SQL exercises with practice schema & X++ mappings |
-| **Learning Tools** | 245 quiz MCQs, Anki/Quizlet flashcards, printable 12-month progress tracker |
-| **Collaborative Learning** | 10 pair programming sessions (CoC, SysOperation, batch, security, perf, debugging) |
-| **Career Guidance** | Junior→Architect paths, certifications, salaries, 12-month growth plans |
-| **Visual Aids** | 12 Mermaid.js architecture diagrams (pillars, request flow, layers, CoC, security, batch, entities) |
-| **Total Reference Files** | **51 markdown files** across 8 organized categories |
+This handbook bridges the gap between **generic programming knowledge** and **production-ready D365 F&O development**. Most developers arrive with C#/Java/SQL experience but struggle with D365 F&O's unique paradigms: metadata-driven architecture, Chain of Command extensibility, the AOT, and the relational-first mindset. This repo provides a structured path from "what is ERP?" to production-ready developer.
+
+---
+
+## How This Repository Is Organized (And Why)
+
+The repository is organized by **learning progression** and **use case**, not by file type. Each section serves a distinct purpose in the developer journey:
+
+| Section | Purpose | When to Use |
+|---------|---------|-------------|
+| **[Foundational Guides (Chapter 0)](#foundational-guides-chapter-0--start-here-if-new)** | Prerequisites: ERP concepts, OOP/SQL primers, environment setup, business context | **Before Chapter 1** — if you're new to ERP, OOP, SQL, or cloud |
+| **[Core Handbook](#core-handbook-files)** | The 35-chapter curriculum with code, tables, exercises | **Daily reference** — your primary technical manual |
+| **[Quick Reference](#quick-reference-files)** | Cheatsheets, troubleshooting, code review standards, cookbook | **While coding** — instant lookup without context switching |
+| **[Advanced Guides](#advanced-guides)** | Deep-dives: migration, Copilot, testing, observability, security, performance | **When you hit a wall** — specialized problems need specialized docs |
+| **[Learning Tools](#learning-tools--visual-aids)** | Diagrams, flashcards, quizzes, progress tracker, pair programming | **To learn effectively** — active recall, visual learning, accountability |
+| **[CI/CD Pipeline Templates](#cicd-pipeline-templates)** | Production-ready Azure DevOps pipelines | **When automating** — build, release, DB sync |
+| **[Reference & Legacy](#reference--legacy-files)** | VSI analysis, historical context | **Context only** — not for daily use |
+
+This structure mirrors how developers actually grow: **prerequisites → core curriculum → quick lookup → specialization → mastery**.
 
 ---
 
