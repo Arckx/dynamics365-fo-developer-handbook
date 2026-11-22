@@ -15,10 +15,20 @@ All notable changes to the D365 F&O Developer Handbook.
 - **d365-perf-benchmark.md** — Performance benchmarking scripts, SQL queries, load testing, CI/CD gates
 - **d365-security-audit.md** — Security audit checklist: SoD, XDS coverage, privilege creep, compliance
 - **d365-cookbook.md** — Copy-paste patterns for tables, queries, forms, services, entities, testing
+- **d365-foundations.md** — **Chapter 0** — ERP concepts, D365 F&O modules, business processes, Azure basics
+- **d365-oop-primer.md** — OOP concepts mapped to X++: classes, inheritance, interfaces, polymorphism, SOLID
+- **d365-sql-primer.md** — SQL basics mapped to X++: SELECT, JOIN, INDEX, transactions, query plans
+- **d365-environment-setup.md** — Step-by-step Tier-1 VM, VS + D365 extension, first project, Git setup
+- **d365-architecture-diagrams.md** — Mermaid.js diagrams for all key architectures
+- **d365-flashcards.md** — Anki/Quizlet flashcard export for glossary + key concepts
+- **d365-study-guide-quizzes.md** — 5-10 MCQs per chapter with explanations (245 total)
+- **d365-capstone-rubric.md** — Grading rubric for Chapter 22 capstone projects
+- **d365-pair-programming-prompts.md** — Driver/navigator exercises for complex topics
+- **d365-video-links.md** — Curated Microsoft Learn + YouTube links with timestamps per chapter
 
 ### Changed
-- **README.md** — Added quick reference files section, updated curriculum to 35 chapters, linked all new guides
-- **memory.md** — Updated index with new reference files
+- **README.md** — Added Foundational Guides, Learning Tools & Visual Aids sections; updated curriculum to 35 chapters; linked all new guides
+- **memory.md** — Updated index with all 26 new reference files
 
 ---
 

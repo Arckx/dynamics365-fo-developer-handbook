@@ -68,6 +68,15 @@ If you're new to D365 F&O, start here:
 | `d365-code-review-checklist.md` | PR review checklist: naming, CoC usage, transactions, SQL patterns, security, tests. | Code review standard for all PRs. |
 | `d365-cookbook.md` | Copy-paste patterns for tables, queries, forms, services, entities, testing. | Daily coding reference. |
 
+### Foundational Guides (Chapter 0 — Start Here if New)
+
+| File | Description | Recommended Use |
+|---|---|---|
+| `d365-foundations.md` | **Chapter 0** — ERP concepts, D365 F&O modules, business processes, Azure basics for absolute beginners. | **Read FIRST** before Chapter 1 if new to ERP/cloud. |
+| `d365-oop-primer.md` | OOP concepts mapped to X++ — classes, inheritance, interfaces, polymorphism, SOLID. | Read alongside Chapter 3 & 7 if new to OOP. |
+| `d365-sql-primer.md` | SQL basics mapped to X++ — SELECT, JOIN, INDEX, transactions, query plans. | Read alongside Chapter 5 & 6 if new to SQL. |
+| `d365-environment-setup.md` | Step-by-step Tier-1 VM, VS + D365 extension, first project, Git setup. | **Do THIS** before any coding. |
+
 ### Advanced Guides
 
 | File | Description | Recommended Use |
@@ -79,6 +88,17 @@ If you're new to D365 F&O, start here:
 | `d365-security-patterns.md` | Role/privilege design, XDS policies, audit logging, compliance patterns. | Security architecture and review. |
 | `d365-perf-benchmark.md` | Performance benchmarking scripts, SQL queries, load testing, CI/CD gates. | Performance validation and tuning. |
 | `d365-security-audit.md` | Security audit checklist: SoD, XDS coverage, privilege creep, compliance. | Quarterly security audits. |
+
+### Learning Tools & Visual Aids
+
+| File | Description | Recommended Use |
+|---|---|---|
+| `d365-architecture-diagrams.md` | Mermaid.js diagrams for all key architectures (pillars, request flow, layers, CoC, security, batch, entities). | Visual learners; embed in docs. |
+| `d365-flashcards.md` | Anki/Quizlet flashcard export for glossary + key concepts (CSV format). | Spaced repetition study. |
+| `d365-study-guide-quizzes.md` | 5-10 MCQs per chapter with explanations (35 chapters × ~7 questions = 245 total). | Self-check after each chapter. |
+| `d365-capstone-rubric.md` | Grading rubric for Chapter 22 projects (architecture, code, tests, security, docs). | Mentor evaluation standard. |
+| `d365-pair-programming-prompts.md` | Driver/navigator exercises for CoC, SysOperation, batch, security, performance, debugging. | Collaborative learning sessions. |
+| `d365-video-links.md` | Curated Microsoft Learn + YouTube links with timestamps per chapter. | Video supplement for each topic. |
 
 ### CI/CD Pipeline Templates
 
