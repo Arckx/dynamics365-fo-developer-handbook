@@ -1,5 +1,5 @@
 #!/bin/bash
-map_file="D:/memory/dynamics365-fo-developer-handbook/renumber_map.txt"
+map_file="D:/memory/dynamics365-fo-developer-handbook/scripts/renumber_map.txt"
 input_file="D:/memory/dynamics365-fo-developer-handbook/d365-learning-guide.md"
 output_file="D:/memory/dynamics365-fo-developer-handbook/d365-learning-guide-new.md"
 

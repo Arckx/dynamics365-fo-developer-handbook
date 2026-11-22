@@ -179,6 +179,14 @@ The curriculum spans **35 chapters** organized into **four foundational quarters
 
 ### Quarter 3 (Months 7–9): Quality, DevOps & Advanced Performance
 | Ch | Topic | Key Skills |
+|---|---|---|
+| 16 | **Data Entities** | OData, staging, composite entities, DMF, Power Platform |
+| 17 | **SSRS & Electronic Reporting** | `SrsReportDataProvider`, RDL, ER, pre-processing |
+| 18 | **Batch Processing** | `RunBaseBatch`, `SysOperation`, progress, retry, cancellation |
+| 19 | **SysTest Framework** | `SysTestCase`, assertions, data fixtures, CI/CD integration |
+| 20 | LCS Deep Dive & CI/CD | Model management, `AxModelStore`, pipeline design |
+| 21 | **Performance & SQL Tuning** | Query plans, `CacheLookup`, deadlock resolution, indexing |
+
 ---
 
 ## Core Learning Outcomes
