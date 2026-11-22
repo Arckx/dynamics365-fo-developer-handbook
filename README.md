@@ -76,6 +76,11 @@ If you're new to D365 F&O, start here:
 | `d365-oop-primer.md` | OOP concepts mapped to X++ — classes, inheritance, interfaces, polymorphism, SOLID. | Read alongside Chapter 3 & 7 if new to OOP. |
 | `d365-sql-primer.md` | SQL basics mapped to X++ — SELECT, JOIN, INDEX, transactions, query plans. | Read alongside Chapter 5 & 6 if new to SQL. |
 | `d365-environment-setup.md` | Step-by-step Tier-1 VM, VS + D365 extension, first project, Git setup. | **Do THIS** before any coding. |
+| `d365-business-glossary.md` | Business terms (P2P, O2C, MRP, BOM, financial, supply chain) — non-technical glossary. | Reference during meetings; pre-chapter reading. |
+| `d365-role-day-in-life.md` | Day-in-life of AP Clerk, Warehouse Worker, Controller, Buyer, Developer — empathy for users. | Understand your users before coding. |
+| `d365-erp-comparison.md` | SAP vs Oracle vs NetSuite vs D365 F&O — architecture, licensing, why choose F&O. | Decision-making; stakeholder conversations. |
+| `d365-beginner-faq.md` | 50 common beginner questions — D365 basics, X++, SQL, OOP, workflow. | Quick answers when stuck. |
+| `d365-career-paths.md` | Junior → Architect progression — roles, skills, certs, salaries, 12-month plans. | Career planning; mentor discussions. |
 
 ### Advanced Guides
 
@@ -99,6 +104,11 @@ If you're new to D365 F&O, start here:
 | `d365-capstone-rubric.md` | Grading rubric for Chapter 22 projects (architecture, code, tests, security, docs). | Mentor evaluation standard. |
 | `d365-pair-programming-prompts.md` | Driver/navigator exercises for CoC, SysOperation, batch, security, performance, debugging. | Collaborative learning sessions. |
 | `d365-video-links.md` | Curated Microsoft Learn + YouTube links with timestamps per chapter. | Video supplement for each topic. |
+| `d365-learning-path-tracker.md` | Printable progress tracker with checkboxes, time estimates, milestones for 12-month journey. | Accountability; mentor check-ins. |
+| `d365-oop-exercises.md` | 10 hands-on OOP exercises with solutions — beginner to intermediate, mapped to X++ patterns. | **Do BEFORE Chapter 7** if new to OOP. |
+| `d365-sql-exercises.md` | 10 hands-on SQL exercises with practice schema, X++ mappings, and solutions. | **Do BEFORE Chapter 6** if new to SQL. |
+| `d365-beginner-faq.md` | 50 common beginner questions — D365 basics, X++, SQL, OOP, workflow. | Quick answers when stuck. |
+| `d365-career-paths.md` | Junior → Architect progression — roles, skills, certs, salaries, 12-month plans. | Career planning; mentor discussions. |
 
 ### CI/CD Pipeline Templates
 

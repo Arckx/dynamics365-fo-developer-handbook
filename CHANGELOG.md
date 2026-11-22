@@ -25,10 +25,18 @@ All notable changes to the D365 F&O Developer Handbook.
 - **d365-capstone-rubric.md** — Grading rubric for Chapter 22 capstone projects
 - **d365-pair-programming-prompts.md** — Driver/navigator exercises for complex topics
 - **d365-video-links.md** — Curated Microsoft Learn + YouTube links with timestamps per chapter
+- **d365-learning-path-tracker.md** — Printable progress tracker with checkboxes, time estimates, milestones for 12-month journey
+- **d365-oop-exercises.md** — 10 hands-on OOP exercises with solutions mapped to X++ patterns
+- **d365-sql-exercises.md** — 10 hands-on SQL exercises with practice schema, X++ mappings, solutions
+- **d365-business-glossary.md** — Business terms (P2P, O2C, MRP, BOM, financial, supply chain)
+- **d365-role-day-in-life.md** — Day-in-life of AP Clerk, Warehouse Worker, Controller, Buyer, Developer
+- **d365-erp-comparison.md** — SAP vs Oracle vs NetSuite vs D365 F&O — architecture, licensing, why choose F&O
+- **d365-beginner-faq.md** — 50 common beginner questions — D365 basics, X++, SQL, OOP, workflow
+- **d365-career-paths.md** — Junior → Architect progression — roles, skills, certs, salaries, 12-month plans
 
 ### Changed
-- **README.md** — Added Foundational Guides, Learning Tools & Visual Aids sections; updated curriculum to 35 chapters; linked all new guides
-- **memory.md** — Updated index with all 26 new reference files
+- **README.md** — Added Foundational Guides (9), Learning Tools & Visual Aids (11) sections; updated curriculum to 35 chapters; linked all new guides
+- **memory.md** — Updated index with all 35 new reference files
 
 ---
 
