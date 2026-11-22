@@ -5173,15 +5173,40 @@ Permission simulation lets you test what a user can and cannot do:
 ### Remaining Chapters — Detailed Outlines
 
 
-# Chapter 16: Data Entities
+# Chapter 16: Data Entities — Integration & Data Management in D365 F&O
 
-## 16.1 DataEntity vs Composite Entity vs Derived View — When Each Applies
+> **Complete reference for building, deploying, and consuming Data Entities in Dynamics 365 Finance & Operations.**
+> Covers entity types, design patterns, staging, OData/REST, Power Platform integration, and a production-ready capstone activity.
+
+---
+
+## Table of Contents
+
+1. [Entity Types: DataEntity vs Composite Entity vs Derived View](#1-entity-types-dataentity-vs-composite-entity-vs-derived-view)
+2. [Entity Design: IsPublic, Public Names, and Staging Tables](#2-entity-design-ispublic-public-names-and-staging-tables)
+3. [The Staging Pattern: Design, Process, and PostProcess](#3-the-staging-pattern-design-process-and-postprocess)
+4. [Entity Mapping: Auto-Mapping vs Manual Field Mapping](#4-entity-mapping-auto-mapping-vs-manual-field-mapping)
+5. [Data Management Workspace: Import/Export and Package Deployment](#5-data-management-workspace-importexport-and-package-deployment)
+6. [REST/OData: DictClass Reflection, Entity Publishing, HttpClient Consumption](#6-restoData-dictclass-reflection-entity-publishing-httpclient-consumption)
+7. [Power Platform Integration: Logic Apps and Power Automate](#7-power-platform-integration-logic-apps-and-power-automate)
+8. [Capstone Activity: Build an HR Employee Data Integration Entity](#8-capstone-activity-build-an-hr-employee-data-integration-entity)
+9. [Definitions: Key Terms with Layman Explanations](#9-definitions-key-terms-with-layman-explanations)
+10. [Comparison Tables](#10-comparison-tables)
+11. [Microsoft Learn References](#11-microsoft-learn-references)
+12. [Common Mistakes to Avoid](#12-common-mistakes-to-avoid)
+
+---
+
+## 1. Entity Types: DataEntity vs Composite Entity vs Derived View
 
 D365 F&O provides three distinct patterns for exposing data for integration and reporting. Choosing the right pattern is critical for performance, maintainability, and upgradeability.
 
-### DataEntity — The Standard Integration Pattern
+### 1.1 DataEntity — The Standard Integration Pattern
 
-A `DataEntity` is the **primary and recommended** pattern for data integration in D365 F&O. It is a read-optimized view that joins multiple tables and exposes the data through the OData/REST service layer.
+A **DataEntity** is the primary and recommended pattern for data integration in D365 F&O. It is a read-optimized view that joins multiple tables and exposes the data through the OData/REST service layer.
+
+| **Layman Definition** | A DataEntity is like a "smart view" that pulls data from multiple tables, packages it neatly, and makes it available through a standard web API (OData) so external systems can read it easily. |
+|---|---|
 
 **When to use a DataEntity:**
 
@@ -5191,43 +5216,63 @@ A `DataEntity` is the **primary and recommended** pattern for data integration i
 | Pushing data to an external ERP or SaaS system | ✅ Yes |
 | Consuming D365 F&O data from a custom .NET application | ✅ Yes |
 | Building a report that joins multiple standard tables | ✅ Yes |
-| Simple single-table read operation | ✅ Yes (overkill but works) |
-| Write-back to D365 F&O | ❌ No — use a Data Entity with a staging pattern instead |
+| Simple single-table read operation | ✅ Yes (works, though slightly over-engineered) |
+| Write-back to D365 F&O | ❌ No — use a Data Entity with the **staging pattern** instead |
 
-**Key characteristics:**
+**Key Characteristics:**
 - Read-only by default (for write-back, use the staging pattern)
 - Exposed via OData/REST automatically when published
-- Supports filtering, sorting, and pagination
-- Can include computed/display fields
-- Uses `IsPublic`, `Public Entity Name`, and `Public Collection Name` properties for OData exposure, with staging fields stored in a separate auto-generated staging table
+- Supports filtering, sorting, and pagination natively
+- Can include computed/display fields (e.g., `FullName = FirstName + ' ' + LastName`)
+- Uses `IsPublic`, `Public Entity Name`, and `Public Collection Name` properties for OData exposure
+- Staging fields stored in a separate auto-generated staging table
 
-### Composite Entity — For Complex Multi-Source Integration
+**Under the hood:**
+```xpp
+// A DataEntity is implemented as a SQL view in the database
+// Example: VendAPComplianceEntity becomes a view in SQL Server
+// The framework also auto-generates a staging table: VendAPComplianceStaging
+```
 
-A `Composite Entity` is used when you need to combine data from **multiple Data Entities** into a single integration endpoint. It's the pattern for scenarios where a single DataEntity isn't sufficient because the data comes from different sources or requires complex joining logic.
+### 1.2 Composite Entity — For Complex Multi-Source Integration
+
+A **Composite Entity** combines data from **multiple Data Entities** into a single integration endpoint. Use it when a single DataEntity isn't sufficient because data comes from different sources or requires complex joining logic that DataEntities can't express.
+
+| **Layman Definition** | A Composite Entity is like a "meta-entity" — it stitches together several DataEntities into one big endpoint. Think of it as a playlist that combines songs from different albums into one continuous stream. |
+|---|---|
 
 **When to use a Composite Entity:**
 
 | Scenario | Use Composite Entity? |
 |---|---|
 | Combining data from two unrelated tables into one endpoint | ✅ Yes |
-| Building a master data export that spans multiple modules | ✅ Yes |
+| Building a master data export that spans multiple modules (e.g., Finance + HR + SCM) | ✅ Yes |
+| Creating a single integration point for a partner who needs "everything about vendors" | ✅ Yes |
 | Simple single-table read | ❌ No — use a DataEntity |
 | Read-only reporting on a single table | ❌ No — use a DataEntity |
+| Need to write back to D365 F&O | ❌ No — use DataEntity with staging pattern |
 
-### Derived View — For Complex SQL Logic
+**Important Limitation:**
+> **Composite entities have no X++ programmatic interface.** You cannot programmatically create, modify, or query composite entities from X++ code. They are only supported from the Data Management platform (UI-driven).
 
-A `Derived View` is a low-level pattern that creates a view in the AOT with custom SQL logic. It's the most flexible but least integrated pattern — it doesn't automatically expose via OData and requires manual configuration for service layer exposure.
+### 1.3 Derived View — For Complex SQL Logic
+
+A **Derived View** is a low-level pattern that creates a view in the AOT with custom SQL logic. It's the most flexible but least integrated pattern — it doesn't automatically expose via OData and requires manual configuration for service layer exposure.
+
+| **Layman Definition** | A Derived View is like writing raw SQL for a view. You get total control over the query, but you lose all the automatic integration features (OData, staging, mapping). It's the "escape hatch" when the framework can't express what you need. |
+|---|---|
 
 **When to use a Derived View:**
 
 | Scenario | Use Derived View? |
 |---|---|
-| Complex SQL that can't be expressed with DataEntity | ✅ Yes |
-| Need custom SQL functions or stored procedure calls | ✅ Yes |
+| Complex SQL that can't be expressed with DataEntity (e.g., window functions, CTEs, custom UDFs) | ✅ Yes |
+| Need to call custom SQL functions or stored procedures | ✅ Yes |
 | Need to expose via OData/REST | ❌ No — use DataEntity (it supports OData natively) |
 | Simple read operation | ❌ No — use DataEntity |
+| Write-back scenarios | ❌ No — use DataEntity with staging |
 
-### Decision Matrix
+### 1.4 Decision Matrix
 
 | Feature | DataEntity | Composite Entity | Derived View |
 |---|---|---|---|
@@ -5239,23 +5284,24 @@ A `Derived View` is a low-level pattern that creates a view in the AOT with cust
 | **Complex SQL logic** | ❌ Limited | ❌ Limited | ✅ Full control |
 | **Upgrade safety** | ✅ High | ✅ High | ⚠️ Medium |
 | **Ease of use** | ✅ Easy | ⚠️ Moderate | ❌ Complex |
+| **X++ programmatic access** | ✅ Full | ❌ None | ✅ Full |
 
-### Important Considerations
+### 1.5 Important Considerations
 
 | Consideration | Guidance |
 |---|---|
-| **Data entities are SQL views** | Entities are created as views in Microsoft SQL Server. Understand the SQL implications — indexed views, indexed columns, and view performance characteristics affect query performance. |
-| **Data entities don't support XDS** | Data entities don't support the Extensible Data Security (XDS) concepts. XDS policies apply to tables, not data entities. If you need row-level security on entity data, apply XDS to the underlying tables instead. |
-| **Composite entities — no X++ interface** | Composite entities are only supported from a data management platform. No programmatic interface for composite entities exists in X++. You cannot programmatically create, modify, or query composite entities from X++ code. |
-| **XDS on backing entities** | XDS policies on backing entities (such as Customers, Vendors, or Operating units) can affect the visibility of entity-backed dimension values. If a user's role is restricted by an XDS policy on the backing entity, the corresponding dimension values may appear blank or missing. |
+| **Data entities are SQL views** | Entities are created as views in Microsoft SQL Server. Understand SQL implications: indexed views, indexed columns, and view performance characteristics affect query performance. |
+| **Data entities don't support XDS** | Data entities don't support Extensible Data Security (XDS). XDS policies apply to tables, not data entities. If you need row-level security on entity data, apply XDS to the underlying tables instead. |
+| **Composite entities — no X++ interface** | Composite entities are only supported from Data Management platform. No programmatic interface for composite entities exists in X++. |
+| **XDS on backing entities** | XDS policies on backing entities (Customers, Vendors, Operating units) can affect visibility of entity-backed dimension values. If a user's role is restricted by XDS on the backing entity, corresponding dimension values may appear blank or missing. |
 
 ---
 
-## 16.2 Entity Design — IsPublic, Public Entity Name, Public Collection Name, and Staging Tables
+## 2. Entity Design: IsPublic, Public Names, and Staging Tables
 
-### OData Exposure and Staging
+### 2.1 OData Exposure and Staging Mechanisms
 
-Every DataEntity controls OData exposure and staging via the following mechanisms:
+Every DataEntity controls OData exposure and staging via these mechanisms:
 
 | Mechanism | Purpose | OData Exposure | Example |
 |---|---|---|---|
@@ -5263,7 +5309,7 @@ Every DataEntity controls OData exposure and staging via the following mechanism
 | **Staging Table** | Auto-generated table (e.g., `EntityNameStaging`) for intermediate processing | ❌ Hidden from OData | `VendAPComplianceStaging` with fields like `StagingStatus`, `ProcessingFlag`, `InternalRef` |
 | **Link** | Connects the entity to its context (parent record) | ✅ Visible in OData | `VendTableRecId` linking to the vendor |
 
-### Entity Design Pattern
+### 2.2 Entity Design Pattern — Visual Breakdown
 
 ```
 DataEntity: VendAPComplianceEntity
@@ -5283,25 +5329,55 @@ DataEntity: VendAPComplianceEntity
     └── VendTableRecId → VendTable.RecId
 ```
 
-### The `Link` Property
+### 2.3 The `Link` Property — Deep Dive
 
-The `Link` property on a DataEntity field specifies the relationship between the entity and its underlying table. This is critical for:
+The `Link` property on a DataEntity field specifies the relationship between the entity and its underlying table. Critical for:
 
 1. **Context filtering** — the framework uses the link to filter data based on the calling context
 2. **Write-back operations** — when pushing data back to D365 F&O, the link identifies which record to update
 3. **OData `$expand`** — linked entities can be expanded in OData queries
 
 ```xpp
-// In the Data Entity design:
+// In the Data Entity designer:
 // Link field: VendTableRecId
 // Linked to: VendTable.RecId
+
 // This allows OData consumers to filter by vendor:
-// GET /dataentity/VendAPComplianceEntity?$filter=VendTableRecId eq 12345
+// GET /data/VendAPComplianceEntity?$filter=VendTableRecId eq 12345
+//
+// Or expand the related vendor:
+// GET /data/VendAPComplianceEntity?$expand=VendTable
+```
+
+### 2.4 Entity Properties Checklist
+
+When creating a new DataEntity, configure these properties:
+
+| Property | Recommended Value | Purpose |
+|---|---|---|
+| **IsPublic** | `Yes` | Enables OData exposure |
+| **Public Entity Name** | Singular (e.g., `HRPersonnelEntity`) | OData entity set name |
+| **Public Collection Name** | Plural (e.g., `HRPersonnelEntities`) | OData collection endpoint name |
+| **Primary Key** | Set to unique identifying field(s) | Required for OData key navigation |
+| **Enable Staging** | `Yes` (for write-back entities) | Auto-generates staging table |
+| **Staging Table Name** | Auto (default) or custom | Name of staging table |
+
+### 2.5 Computed/Display Fields
+
+Fields that don't exist in the database but are calculated at runtime:
+
+```xpp
+// In the Data Entity, add a display method:
+[DataMemberAttribute('FullName'), SysOperationLabelAttribute('Full Name')]
+public str FullName()
+{
+    return strFmt('%1 %2', this.FirstName, this.LastName);
+}
 ```
 
 ---
 
-## 16.3 The Staging Pattern — Design, Process, and PostProcess
+## 3. The Staging Pattern: Design, Process, and PostProcess
 
 The **staging pattern** is the standard approach for data entities that need to write data back to D365 F&O. It uses a three-step process:
 
@@ -5309,24 +5385,27 @@ The **staging pattern** is the standard approach for data entities that need to 
 2. **Processing** — the staging data is validated and transformed
 3. **Post-processing** — the validated data is written to the target table
 
-### Why Staging?
+### 3.1 Why Staging?
 
-| Problem | Staging Solves It |
+| Problem | How Staging Solves It |
 |---|---|
-| Invalid data can't be written directly | Validation happens in staging before target write |
+| Invalid data can't be written directly to target tables | Validation happens in staging before target write |
 | Partial failures need rollback | Staging allows all-or-nothing transaction control |
-| Error logging is needed | Errors are captured in the staging table with context |
-| Deduplication is needed | Staging table can check for duplicates before insert |
-| Audit trail is needed | Staging records capture the import batch and timestamp |
+| Error logging and audit trail needed | Errors captured in staging table with context |
+| Deduplication needed | Staging table can check for duplicates before insert |
+| Import history needed | Staging records capture batch ID and timestamp |
 
-### Staging Table Design
+### 3.2 Staging Table Design — Complete Example
 
 ```xpp
-// Staging table: APCustomsDeclarationStaging
+/// <summary>
+/// Staging table for APCustomsDeclaration entity.
+/// Uses TempDB storage — data is temporary and doesn't persist across sessions.
+/// </summary>
 table 50100 APCustomsDeclarationStaging
 {
     DataClassification = CustomerContent;
-    Storage = TempDB;
+    Storage = TempDB;  // Temporary storage — cleared on session end
 
     fields
     {
@@ -5348,25 +5427,1624 @@ table 50100 APCustomsDeclarationStaging
         key(IX_DeclId; DeclId) { }
     }
 }
+
+/// <summary>
+/// Staging status enumeration.
+/// </summary>
+enum APCustomsStagingStatus
+{
+    Ready = 0,        // Record is ready for processing
+    Processing = 1,   // Currently being processed
+    Processed = 2,    // Successfully written to target
+    Failed = 3,       // Validation or write error
+    Duplicate = 4,    // Duplicate detected
+    BatchFailed = 5   // Batch-level failure (rollback threshold exceeded)
+}
 ```
 
-### The `process()` Method
+### 3.3 The `process()` Method — Core Implementation
 
 The `process()` method is the core of the staging pattern. It reads records from the staging table, validates them, and writes them to the target table.
 
 ```xpp
+/// <summary>
+/// Handler class for APCustomsDeclaration entity staging processing.
+/// Called by the Data Entity framework during import operations.
+/// </summary>
 class APCustomsDeclarationEntityHandler
 {
     /// <summary>
     /// Process staging records and write to target table.
-    /// Called by the Data Entity framework during import.
     /// </summary>
     public void process()
     {
         APCustomsDeclarationStaging staging;
         APCustomsDeclaration target;
 
-        // Set staging status to processing
+        // Process all records marked as Ready
+        while select staging
+            where staging.StagingStatus == APCustomsStagingStatus::Ready
+        {
+            try
+            {
+                ttsBegin;
+
+                // Step 1: Validate the staging record
+                if (!this.validateStagingRecord(staging))
+                {
+                    staging.StagingStatus = APCustomsStagingStatus::Failed;
+                    staging.ErrorMessage = 'Validation failed: missing required fields';
+                    staging.update();
+                    ttsCommit;
+                    continue;
+                }
+
+                // Step 2: Check for duplicates
+                if (this.isDuplicate(staging))
+                {
+                    staging.StagingStatus = APCustomsStagingStatus::Duplicate;
+                    staging.ErrorMessage = 'Duplicate declaration ID found in target';
+                    staging.update();
+                    ttsCommit;
+                    continue;
+                }
+
+                // Step 3: Write to target table
+                target.initValue();
+                target.DeclId = staging.DeclId;
+                target.VendTableRecId = staging.VendTableRecId;
+                target.DeclDate = staging.DeclDate;
+                target.CustomsRef = staging.CustomsRef;
+                target.InvoiceLineRecId = staging.InvoiceLineRecId;
+                target.insert();
+
+                // Step 4: Mark staging as processed
+                staging.StagingStatus = APCustomsStagingStatus::Processed;
+                staging.update();
+
+                ttsCommit;
+            }
+            catch (Exception::Error)
+            {
+                ttsAbort;
+                staging.StagingStatus = APCustomsStagingStatus::Failed;
+                staging.ErrorMessage = 'Unexpected error during processing';
+                staging.update();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Validates required fields on the staging record.
+    /// </summary>
+    private boolean validateStagingRecord(APCustomsDeclarationStaging _staging)
+    {
+        if (_staging.DeclId == '')
+        {
+            return false;
+        }
+        if (_staging.VendTableRecId == 0)
+        {
+            return false;
+        }
+        if (_staging.DeclDate == dateNull())
+        {
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Checks if a declaration with the same DeclId already exists.
+    /// </summary>
+    private boolean isDuplicate(APCustomsDeclarationStaging _staging)
+    {
+        APCustomsDeclaration existing;
+        return exists select firstonly existing
+            where existing.DeclId == _staging.DeclId;
+    }
+}
+```
+
+### 3.4 The `postProcess()` Method — Completion Logic
+
+The `postProcess()` method runs after all staging records have been processed. Used for:
+
+- Sending notifications (email, Infolog messages)
+- Logging summary statistics
+- Triggering downstream processes
+- Cleaning up staging records
+
+```xpp
+/// <summary>
+/// Post-processing logic: summary, notifications, cleanup.
+/// </summary>
+public void postProcess()
+{
+    int processedCount;
+    int failedCount;
+    int duplicateCount;
+    Guid batchId;
+
+    // Get batch ID from context (could be stored in a temp table or config)
+    batchId = this.getCurrentBatchId();
+
+    // Count results
+    processedCount = select count(StagingStatus)
+        from APCustomsDeclarationStaging
+        where StagingStatus == APCustomsStagingStatus::Processed
+           && ImportBatchId == batchId;
+
+    failedCount = select count(StagingStatus)
+        from APCustomsDeclarationStaging
+        where StagingStatus == APCustomsStagingStatus::Failed
+           && ImportBatchId == batchId;
+
+    duplicateCount = select count(StagingStatus)
+        from APCustomsDeclarationStaging
+        where StagingStatus == APCustomsStagingStatus::Duplicate
+           && ImportBatchId == batchId;
+
+    // Log summary to Infolog
+    info(strFmt('Import batch %1 complete: %2 succeeded, %3 failed, %4 duplicates.',
+        batchId, processedCount, failedCount, duplicateCount));
+
+    // Optional: send email notification for failed records
+    if (failedCount > 0 || duplicateCount > 0)
+    {
+        this.sendFailureNotification(batchId, failedCount, duplicateCount);
+    }
+
+    // Optional: clean up processed staging records (if using permanent table)
+    // this.cleanupStagingRecords(batchId);
+}
+
+/// <summary>
+/// Sends email notification via SMTP (requires SMTP configuration in D365).
+/// </summary>
+private void sendFailureNotification(Guid _batchId, int _failedCount, int _duplicateCount)
+{
+    str subject = strFmt('Data Import Failed: Batch %1', _batchId);
+    str body = strFmt(
+        'The data import batch %1 completed with errors.\n\n' +
+        'Failed records: %2\n' +
+        'Duplicate records: %3\n\n' +
+        'Please review the Data Management workspace for details.',
+        _batchId, _failedCount, _duplicateCount);
+
+    try
+    {
+        // Requires: System Administration > Email parameters configured
+        SmtpMail::send(
+            'd365-alerts@company.com',
+            'integration-team@company.com',
+            subject,
+            body);
+    }
+    catch (Exception::Error)
+    {
+        // Log but don't fail the batch
+        warning('Failed to send notification email');
+    }
+}
+```
+
+### 3.5 Advanced: Rollback Threshold Pattern
+
+Abort the entire batch if failure rate exceeds a threshold (e.g., 10%):
+
+```xpp
+public void process()
+{
+    APCustomsDeclarationStaging staging;
+    int totalToProcess;
+    int processedCount = 0;
+    int failedCount = 0;
+
+    // Count total records upfront
+    totalToProcess = select count(RecId) from staging
+        where staging.StagingStatus == APCustomsStagingStatus::Ready;
+
+    while select staging
+        where staging.StagingStatus == APCustomsStagingStatus::Ready
+    {
+        processedCount++;
+        
+        try
+        {
+            ttsBegin;
+            
+            // ... validation and processing logic ...
+            
+            // Check rollback threshold AFTER each record
+            if (failedCount > 0 && (failedCount * 100 / processedCount) > 10)
+            {
+                // Mark all remaining Ready records as BatchFailed
+                update_recordset staging
+                    setting StagingStatus = APCustomsStagingStatus::BatchFailed,
+                        ErrorMessage = 'Rollback threshold exceeded: >10% failure rate'
+                    where staging.StagingStatus == APCustomsStagingStatus::Ready;
+                
+                ttsCommit;
+                
+                throw error(strFmt('Rollback threshold exceeded at record %1 of %2. Batch aborted.', 
+                    processedCount, totalToProcess));
+            }
+            
+            ttsCommit;
+        }
+        catch (Exception::Error)
+        {
+            ttsAbort;
+            failedCount++;
+            // ... error handling ...
+        }
+    }
+}
+```
+
+---
+
+## 4. Entity Mapping: Auto-Mapping vs Manual Field Mapping
+
+### 4.1 Auto-Mapping
+
+Auto-mapping is the default behavior when a DataEntity field has the **same name and compatible type** as the underlying table field. The framework automatically maps the entity field to the table field.
+
+**When auto-mapping works:**
+- Field names match exactly (case-sensitive)
+- Field types are compatible (string ↔ string, int ↔ int, date ↔ date)
+- No transformation is needed
+
+**When auto-mapping fails:**
+- Field names don't match (e.g., entity field `DeclId` maps to table field `DeclarationId`)
+- Field types are incompatible (e.g., entity field is `string` but table field is `int`)
+- Transformation is needed (e.g., concatenating `FirstName + ' ' + LastName` into `FullName`)
+
+### 4.2 Manual Field Mapping
+
+When auto-mapping doesn't work, define manual field mappings in the Data Entity designer:
+
+| Entity Field | Maps to Table Field(s) | Mapping Type | Transformation |
+|---|---|---|---|
+| `DeclId` (string 35) | `DeclarationId` (string 35) | Manual | None (names differ) |
+| `FullName` (string 120) | `FirstName` + `' '` + `LastName` | Manual | Concatenation expression |
+| `StatusDescription` (string 60) | `Status` (enum) | Manual | Enum-to-string lookup |
+| `VendAccountNum` (string 20) | `VendTable.AccountNum` | Manual | Cross-table reference |
+
+### 4.3 Mapping in the Data Entity Designer (Visual Studio)
+
+In Visual Studio, the Data Entity designer provides a **Mappings** node where you can:
+
+1. **Auto Map** — click "Auto Map" to let the framework attempt automatic matching
+2. **Manual Map** — drag and drop entity fields to table fields
+3. **Transform** — define expressions for field transformations
+4. **Skip** — exclude fields from mapping (they exist in entity but aren't mapped to table)
+
+### 4.4 Computed Columns vs Display Methods
+
+| Approach | Use Case | Performance | OData Support |
+|---|---|---|---|
+| **Computed Column** (SQL-level) | Simple expressions, filtering needed | ✅ Best — computed in SQL | ✅ Full |
+| **Display Method** (X++ method) | Complex logic, requires X++ code | ⚠️ Slower — evaluated per row | ✅ Full |
+| **Unmapped Field** (staging only) | Internal processing only | N/A | ❌ Hidden |
+
+**Computed Column Example (in entity query):**
+```xpp
+// In the Data Entity's query, add a computed column:
+// Field: FullName
+// Expression: DirPerson.FirstName + ' ' + DirPerson.LastName
+// This becomes part of the SQL view definition
+```
+
+**Display Method Example (in entity class):**
+```xpp
+[DataMemberAttribute('FullName'), SysOperationLabelAttribute('Full Name')]
+public str FullName()
+{
+    DirPerson person;
+    select firstonly person where person.RecId == this.PersonRecId;
+    return strFmt('%1 %2', person.FirstName, person.LastName);
+}
+```
+
+### 4.5 Best Practices for Entity Mapping
+
+1. **Use consistent naming** — entity field names should match table field names to enable auto-mapping
+2. **Use staging tables for staging fields** — staging fields should never be exposed in OData
+3. **Document manual mappings** — add comments explaining why auto-mapping wasn't possible
+4. **Test mappings with sample data** — always verify data flows correctly from entity to table
+5. **Prefer computed columns over display methods** for simple transformations (better query performance)
+
+---
+
+## 5. Data Management Workspace: Import/Export and Package Deployment
+
+The **Data Management** workspace is the central hub for importing and exporting data in D365 F&O. It provides a UI-driven interface for data operations without requiring code.
+
+### 5.1 Import Operations
+
+| Operation | Description | Use Case |
+|---|---|---|
+| **Import** | Load data from an Excel/CSV file into D365 F&O tables | Bulk data loading, initial setup |
+| **Import from Entity** | Load data using a Data Entity definition | Integration scenarios, staging pattern |
+| **Import Group** | Execute a group of import projects in sequence | Complex multi-table imports |
+
+### 5.2 Export Operations
+
+| Operation | Description | Use Case |
+|---|---|---|
+| **Export** | Export data from D365 F&O tables to Excel/CSV | Reporting, data extraction |
+| **Export to Entity** | Export data using a Data Entity definition | Integration with external systems |
+| **Export to Data Entity** | Export using the staging pattern for write-back scenarios | Data synchronization |
+
+### 5.3 Package Deployment
+
+A **package** is a deployable unit that contains one or more Data Entities, mapping configurations, and import/export settings.
+
+```
+[1] Create a package in the source environment
+    │  - Define the Data Entities to include
+    │  - Configure mapping and transformation rules
+    │  - Set up import/export settings
+    │
+[2] Export the package as an .axdp file
+    │
+[3] Upload the package to LCS
+    │  - LCS stores the package as a build artifact
+    │
+[4] Deploy the package to the target environment
+    │  - LCS copies the package to the target environment's model store
+    │  - The Data Management workspace on the target detects the package
+    │
+[5] Execute the package in the target environment
+    │  - Run the import/export operation
+    │  - Monitor progress and review results
+    │
+[6] Verify the data in the target environment
+    │  - Check the Data Management workspace for execution status
+    │  - Review any error logs
+```
+
+### 5.4 Package Deployment via PowerShell (Automation)
+
+```powershell
+# Deploy a Data Management package via LCS API
+# Requires: LCS API access token, project ID, environment ID
+
+$lcsApiUrl = "https://lcs.dynamics.com/UpdateCloudAsset/UploadPackage"
+$packagePath = "C:\Packages\HRIntegrationPackage.axdp"
+$projectId = "123456"
+$environmentId = "789012"
+
+# Upload package to LCS
+$uploadResponse = Invoke-RestMethod -Uri $lcsApiUrl -Method Post `
+    -Headers @{Authorization = "Bearer $accessToken"} `
+    -Form @{File = Get-Item $packagePath}
+
+# Deploy to environment
+$deployUrl = "https://lcs.dynamics.com/DeployPackage/$projectId/$environmentId"
+Invoke-RestMethod -Uri $deployUrl -Method Post `
+    -Headers @{Authorization = "Bearer $accessToken"} `
+    -Body (@{packageId = $uploadResponse.packageId} | ConvertTo-Json)
+```
+
+### 5.5 Recurring Data Jobs
+
+Configure recurring imports/exports using **Data Management > Recurring Data Jobs**:
+
+| Setting | Description |
+|---|---|
+| **Recurrence** | Daily, Weekly, Monthly, or Custom cron expression |
+| **Time Zone** | Execution time zone |
+| **File Location** | Azure Blob Storage, SharePoint, or Local file |
+| **Processing Options** | Skip errors, stop on error, or continue on error |
+| **Notification** | Email on success/failure |
+
+---
+
+## 6. REST/OData: DictClass Reflection, Entity Publishing, HttpClient Consumption
+
+### 6.1 Exposing Data via OData
+
+D365 F&O automatically exposes Data Entities as OData endpoints when they are published.
+
+**OData endpoint URL format:**
+```
+https://<your-environment>.dynamics.com/data/<EntityName>
+```
+
+**Example:**
+```
+https://usnconeboxax1aos.cloud.onebox.dynamics.com/data/VendAPComplianceEntity
+```
+
+### 6.2 Publishing an Entity via `IsPublic`
+
+A Data Entity is published for OData exposure by setting the **`IsPublic`** property to **Yes** in the entity designer. No code registration is needed — the framework automatically generates the OData endpoint and the staging table when the entity is built and deployed.
+
+| Property | Value | Effect |
+|---|---|---|
+| `IsPublic` | `Yes` | Entity appears in OData service document |
+| `Public Entity Name` | `HRPersonnelEntity` | Single entity endpoint: `/data/HRPersonnelEntity` |
+| `Public Collection Name` | `HRPersonnelEntities` | Collection endpoint: `/data/HRPersonnelEntities` |
+
+### 6.3 OData Query Options
+
+D365 F&O OData endpoints support standard OData query options:
+
+| Option | Example | Description |
+|---|---|---|
+| `$filter` | `$filter=CreditMax gt 500000` | Filter records by condition |
+| `$select` | `$select=AccountNum,Name` | Select specific fields only |
+| `$orderby` | `$orderby=AccountNum asc` | Sort results |
+| `$top` | `$top=100` | Limit to first N records |
+| `$skip` | `$skip=50` | Skip first N records (pagination) |
+| `$expand` | `$expand=VendInvoiceJour` | Include related entities |
+| `$count` | `$count=true` | Include total record count |
+| `$apply` | `$apply=groupby((Status), aggregate(Count as Total))` | Aggregation (limited support) |
+
+### 6.4 `DictClass` — Runtime Entity Metadata
+
+The `DictClass` and `DictMethod` classes provide runtime reflection over X++ objects, including Data Entities. Useful for dynamic entity discovery and metadata-driven integrations.
+
+```xpp
+/// <summary>
+/// Inspect a Data Entity's metadata at runtime.
+/// </summary>
+class EntityMetadataInspector
+{
+    public static void inspectEntity(str _entityName)
+    {
+        DictClass dictClass;
+        DictMethod dictMethod;
+        int i;
+        SysDictMethod sysDictMethod;
+
+        // Get the entity class by name
+        dictClass = new DictClass(className2Id(_entityName));
+        
+        if (!dictClass)
+        {
+            error(strFmt('Entity class %1 not found', _entityName));
+            return;
+        }
+
+        info(strFmt('=== Entity Metadata: %1 ===', _entityName));
+        info(strFmt('Class ID: %1', dictClass.classId()));
+        info(strFmt('Base Class: %1', dictClass.baseClass()));
+        info(strFmt('Is Abstract: %1', dictClass.isAbstract()));
+        info(strFmt('Is Final: %1', dictClass.isFinal()));
+
+        // List all methods
+        info('--- Methods ---');
+        for (i = 1; i <= dictClass.methods(); i++)
+        {
+            dictMethod = dictClass.methodObject(i);
+            info(strFmt('  %1 : returns %2', 
+                dictMethod.name(), 
+                dictMethod.clrReturnType()));
+        }
+
+        // Inspect a specific method
+        if (dictClass.hasMethod(methodStr(VendAPComplianceEntity, process)))
+        {
+            dictMethod = new DictMethod(
+                dictClass.classId(), 
+                methodStr(VendAPComplianceEntity, process));
+            
+            info(strFmt('\nProcess method details:'));
+            info(strFmt('  Return type: %1', dictMethod.clrReturnType()));
+            info(strFmt('  Is Static: %1', dictMethod.isStatic()));
+            info(strFmt('  Is Final: %1', dictMethod.isFinal()));
+            info(strFmt('  Parameter count: %1', dictMethod.parameterCount()));
+        }
+    }
+}
+```
+
+**Practical Use Case: Dynamic Entity Discovery**
+```xpp
+/// <summary>
+/// Dynamically discover all published Data Entities.
+/// </summary>
+public static void listAllPublishedEntities()
+{
+    DictClass dictClass;
+    TreeNode treeNode;
+    TreeNodeIterator iterator;
+    #AOT
+    
+    // Iterate all Data Entity nodes in AOT
+    treeNode = TreeNode::findNode(#DataEntitiesPath);
+    iterator = treeNode.AOTiterator();
+    treeNode = iterator.next();
+    
+    while (treeNode)
+    {
+        // Check if entity is public (IsPublic = Yes)
+        // This requires reading the entity's properties
+        // Typically done via metadata API in modern versions
+        info(treeNode.treeNodeName());
+        treeNode = iterator.next();
+    }
+}
+```
+
+### 6.5 Consuming OData Endpoints via `HttpClient`
+
+D365 F&O provides the `HttpClient` class (from `System.Net.Http`) for consuming external OData endpoints from X++ code.
+
+```xpp
+using System.Net.Http;
+using System.Net.Http.Headers;
+
+/// <summary>
+/// Consumes external OData endpoints from X++.
+/// </summary>
+class ExternalODataConsumer
+{
+    /// <summary>
+    /// Calls an external OData endpoint and processes the response.
+    /// </summary>
+    public static void consumeVendorOData()
+    {
+        HttpClient httpClient;
+        HttpRequestMessage request;
+        HttpResponseMessage response;
+        string responseBody;
+        string odataUrl;
+        string accessToken;
+
+        odataUrl = 'https://external-system.com/api/v1/Vendors';
+        
+        // Get access token (from Azure AD, Key Vault, or config)
+        accessToken = ExternalAuthHelper::getAccessToken();
+
+        try
+        {
+            // Create HTTP client
+            httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add('Accept', 'application/json');
+            
+            // Add authorization header
+            httpClient.DefaultRequestHeaders.Authorization = 
+                new AuthenticationHeaderValue('Bearer', accessToken);
+
+            // Send GET request
+            response = httpClient.GetAsync(odataUrl).GetAwaiter().GetResult();
+
+            if (response.IsSuccessStatusCode)
+            {
+                responseBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                
+                // Parse JSON and process
+                // Use Newtonsoft.Json or System.Text.Json via CLR interop
+                this.processVendorResponse(responseBody);
+            }
+            else
+            {
+                error(strFmt('HTTP request failed: %1 - %2', 
+                    response.StatusCode, response.ReasonPhrase));
+            }
+        }
+        catch (Exception::CLRError)
+        {
+            error('CLR error calling external OData endpoint');
+        }
+    }
+
+    private void processVendorResponse(str _json)
+    {
+        // Parse JSON using CLR interop
+        // Example using Newtonsoft.Json:
+        /*
+        var jObject = Newtonsoft.Json.Linq.JObject.Parse(_json);
+        var vendors = jObject["value"] as Newtonsoft.Json.Linq.JArray;
+        
+        foreach (var vendor in vendors)
+        {
+            string accountNum = vendor["AccountNum"].ToString();
+            string name = vendor["Name"].ToString();
+            // Create/update in D365 via staging entity
+        }
+        */
+    }
+}
+```
+
+### 6.6 Consuming D365 F&O OData from External Systems
+
+**C# Example (External .NET Application):**
+```csharp
+using System;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
+
+public class D365ODataClient
+{
+    private readonly HttpClient _httpClient;
+    private readonly string _baseUrl;
+
+    public D365ODataClient(string baseUrl, string accessToken)
+    {
+        _baseUrl = baseUrl.TrimEnd('/') + "/data/";
+        _httpClient = new HttpClient();
+        _httpClient.DefaultRequestHeaders.Authorization = 
+            new AuthenticationHeaderValue("Bearer", accessToken);
+        _httpClient.DefaultRequestHeaders.Accept.Add(
+            new MediaTypeWithQualityHeaderValue("application/json"));
+    }
+
+    public async Task<JObject> GetEntitiesAsync(string entityName, string filter = null, int top = 100)
+    {
+        var url = $"{_baseUrl}{entityName}";
+        if (!string.IsNullOrEmpty(filter))
+            url += $"?$filter={Uri.EscapeDataString(filter)}";
+        if (top > 0)
+            url += (url.Contains("?") ? "&" : "?") + $"$top={top}";
+
+        var response = await _httpClient.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        
+        var json = await response.Content.ReadAsStringAsync();
+        return JObject.Parse(json);
+    }
+
+    public async Task<JObject> CreateEntityAsync(string entityName, JObject entityData)
+    {
+        var url = $"{_baseUrl}{entityName}";
+        var content = new StringContent(entityData.ToString(), System.Text.Encoding.UTF8, "application/json");
+        
+        var response = await _httpClient.PostAsync(url, content);
+        response.EnsureSuccessStatusCode();
+        
+        var json = await response.Content.ReadAsStringAsync();
+        return JObject.Parse(json);
+    }
+}
+```
+
+---
+
+## 7. Power Platform Integration: Logic Apps and Power Automate
+
+### 7.1 Logic Apps Connector for D365 F&O
+
+Microsoft provides a **Dynamics 365 Finance & Operations** connector in Azure Logic Apps that simplifies integration without writing code.
+
+**Common Logic Apps Operations:**
+
+| Operation | Description |
+|---|---|
+| **List records** | Query a Data Entity and return matching records (supports `$filter`, `$top`, `$skip`) |
+| **Get record** | Retrieve a single record by key |
+| **Create record** | Insert a new record into a Data Entity (uses staging pattern automatically) |
+| **Update record** | Modify an existing record |
+| **Delete record** | Remove a record |
+| **Execute action** | Call a custom action defined on the entity |
+
+### 7.2 Power Automate Triggers
+
+Power Automate can be triggered from D365 F&O in several ways:
+
+| Trigger | How It Works |
+|---|---|
+| **Data Entity import** | A Data Entity import triggers a flow that processes the imported data |
+| **Custom action** | A custom action on a Data Entity triggers a flow |
+| **Event-based** | An event handler in X++ sends a message to Azure Service Bus, which triggers a flow |
+| **Scheduled** | A Logic App or Power Automate flow runs on a schedule and calls D365 F&O OData |
+
+### 7.3 Integration Pattern: D365 F&O → Logic App → External System
+
+```
+[1] Data Entity import is executed in D365 F&O
+    │
+[2] Staging records are processed and written to target tables
+    │
+[3] postProcess() triggers an Azure Service Bus message
+    │  Message contains: batch ID, record count, status
+    │
+[4] Logic App is triggered by the Service Bus message
+    │
+[5] Logic App calls external API (e.g., SAP, Salesforce, custom REST service)
+    │
+[6] External system receives the data and processes it
+    │
+[7] Logic App logs the result back to D365 F&O (optional)
+```
+
+**X++ Code to Send Service Bus Message from `postProcess()`:**
+```xpp
+using Microsoft.Azure.ServiceBus;
+
+public void postProcess()
+{
+    int successCount = this.getSuccessCount();
+    int failedCount = this.getFailedCount();
+    Guid batchId = this.getCurrentBatchId();
+
+    // Send to Service Bus
+    this.sendToServiceBus(batchId, successCount, failedCount);
+}
+
+private void sendToServiceBus(Guid _batchId, int _success, int _failed)
+{
+    var connectionString = Parameters::find('ServiceBusConnectionString').Value;
+    var queueName = 'd365-integration-events';
+    
+    var queueClient = new QueueClient(connectionString, queueName);
+    
+    var messageBody = JsonConvert.SerializeObject(new
+    {
+        BatchId = _batchId.ToString(),
+        SuccessCount = _success,
+        FailedCount = _failed,
+        Timestamp = DateTime.UtcNow,
+        EntityName = 'HRPersonnelEntity'
+    });
+
+    var message = new Message(Encoding.UTF8.GetBytes(messageBody));
+    message.ContentType = "application/json";
+    message.MessageId = Guid.NewGuid().ToString();
+
+    queueClient.SendAsync(message).GetAwaiter().GetResult();
+    queueClient.CloseAsync().GetAwaiter().GetResult();
+}
+```
+
+### 7.4 Integration Pattern: External System → Logic App → D365 F&O
+
+```
+[1] External system sends data to Logic App (HTTP trigger)
+    │
+[2] Logic App transforms the data to match the Data Entity structure
+    │
+[3] Logic App calls D365 F&O OData endpoint to create/update records
+    │
+[4] D365 F&O processes the request through the staging pattern
+    │
+[5] D365 F&O returns the result (success/failure)
+    │
+[6] Logic App logs the result and sends a notification
+```
+
+### 7.5 Power Automate Flow Example: Scheduled Vendor Sync
+
+**Flow Design:**
+1. **Trigger**: Recurrence (Daily at 2:00 AM)
+2. **Action**: HTTP - GET `https://d365-env.dynamics.com/data/Vendors?$filter=ModifiedDateTime ge yesterday`
+3. **Action**: Parse JSON (schema from sample payload)
+4. **Action**: Apply to Each (loop through vendors)
+   - **Action**: HTTP - POST to external system (e.g., SAP Create Vendor)
+   - **Action**: Condition - if success, update D365 `LastSyncedDateTime` via PATCH
+5. **Action**: Send email summary
+
+### 7.6 Best Practices for Power Platform Integration
+
+1. **Use Data Entities as the integration layer** — don't expose tables directly via OData
+2. **Use the staging pattern for write-back** — ensures validation and error handling
+3. **Implement error handling in Logic Apps** — use try/catch patterns and dead-letter queues
+4. **Use batch processing for large data volumes** — don't send thousands of records in a single request
+5. **Secure connections with Managed Identity** — don't store credentials in Logic Apps
+6. **Monitor integration runs** — use Azure Monitor and Logic Apps run history to track failures
+7. **Use pagination (`$top`/`$skip`)** — avoid timeout on large datasets
+8. **Implement idempotency** — use `ImportBatchId` or external IDs to prevent duplicate processing
+
+---
+
+## 8. Capstone Activity: Build an HR Employee Data Integration Entity
+
+> **Objective**: Build a complete, production-ready Data Entity for HR employee data integration.
+
+### 8.1 Requirements
+
+Create a Data Entity called `HRPersonnelEntity` that:
+
+1. **Exposes employee data** from `DirPerson`, `HCMWorker`, and `HRMPosition` tables
+2. **Configures OData exposure**: `IsPublic = Yes`, `Public Entity Name = HRPersonnelEntity`, `Public Collection Name = HRPersonnelEntities`
+3. **Exposed fields**: `PersonNumber`, `FirstName`, `LastName`, `FullName`, `Email`, `Position`, `Department`, `HireDate`, `Status`
+4. **Staging table**: `HRPersonnelStaging` with internal fields: `PersonRecId`, `WorkerRecId`, `PositionRecId`, `StagingStatus`, `ErrorMessage`, `ImportBatchId`
+5. **Link field**: Connects to `DirPerson.RecId`
+6. **`process()` method**: Validation (email format, duplicate detection by `PersonNumber`), error logging
+7. **`postProcess()` method**: Summary statistics, email/Logic App notification for failures
+8. **Auto-mapping** for fields sharing names between entity and table
+9. **Manual mapping** for `FullName` (concatenation of `FirstName + ' ' + LastName`)
+10. **OData exposure** and test with sample Power Automate flow
+11. **Deduplication logic**: Skip records already in target table
+12. **Rollback logic**: Abort entire batch if >10% of records fail validation
+
+---
+
+### 8.2 Entity Design: HRPersonnelEntity
+
+#### Data Sources and Joins
+
+```
+HRPersonnelEntity
+├── Data Source 1: DirPerson (primary)
+│   ├── Fields: RecId, AccountNum (→ PersonNumber), FirstName, LastName, Email
+│
+├── Data Source 2: HCMWorker
+│   ├── Join: InnerJoin on HCMWorker.PersonRecId = DirPerson.RecId
+│   ├── Fields: RecId (→ WorkerRecId), HireDate, Status
+│
+└── Data Source 3: HRMPosition
+    ├── Join: LeftOuterJoin on HRMPosition.WorkerRecId = HCMWorker.RecId
+    ├── Fields: RecId (→ PositionRecId), PositionId (→ Position), DepartmentId (→ Department)
+```
+
+#### Entity Fields (OData-Exposed)
+
+| Entity Field | Source Table | Source Field | Mapping Type | Notes |
+|---|---|---|---|---|
+| `PersonNumber` | DirPerson | AccountNum | Auto | Primary identifier |
+| `FirstName` | DirPerson | FirstName | Auto | |
+| `LastName` | DirPerson | LastName | Auto | |
+| `FullName` | DirPerson | FirstName + LastName | Manual | Computed: `FirstName + ' ' + LastName` |
+| `Email` | DirPerson | Email | Auto | |
+| `Position` | HRMPosition | PositionId | Auto | Via Position join |
+| `Department` | HRMPosition | DepartmentId | Auto | Via Position join |
+| `HireDate` | HCMWorker | HireDate | Auto | |
+| `Status` | HCMWorker | Status | Auto | Enum → String conversion |
+
+#### Link Field
+
+| Property | Value |
+|---|---|
+| **Link Field** | `PersonRecId` |
+| **Linked To** | `DirPerson.RecId` |
+
+---
+
+### 8.3 Staging Table: HRPersonnelStaging
+
+```xpp
+/// <summary>
+/// Staging table for HRPersonnelEntity.
+/// TempDB storage — temporary data, no persistence needed across sessions.
+/// </summary>
+table 50101 HRPersonnelStaging
+{
+    DataClassification = CustomerContent;
+    Storage = TempDB;
+
+    fields
+    {
+        // Primary key
+        field(1; RecId; int64) { }
+
+        // Business fields (match entity fields)
+        field(2; PersonNumber; Code[20]) { }
+        field(3; FirstName; Text[50]) { }
+        field(4; LastName; Text[50]) { }
+        field(5; Email; Text[250]) { }
+        field(6; Position; Text[50]) { }
+        field(7; Department; Text[50]) { }
+        field(8; HireDate; Date) { }
+        field(9; Status; Text[20]) { }
+
+        // Internal tracking fields
+        field(10; PersonRecId; int64) { }
+        field(11; WorkerRecId; int64) { }
+        field(12; PositionRecId; int64) { }
+        field(13; StagingStatus; Enum HRPersonnelStagingStatus) { }
+        field(14; ErrorMessage; Text[250]) { }
+        field(15; ImportBatchId; Guid) { }
+        field(16; CreatedDateTime; DateTime) { }
+    }
+
+    keys
+    {
+        key(PK; RecId) { Clustered = true; }
+        key(IX_PersonNumber; PersonNumber) { }
+        key(IX_BatchId; ImportBatchId) { }
+    }
+}
+
+/// <summary>
+/// Staging status enumeration.
+/// </summary>
+enum HRPersonnelStagingStatus
+{
+    Ready = 0,        // Record is ready for processing
+    Processing = 1,   // Currently being processed
+    Processed = 2,    // Successfully written to target
+    Failed = 3,       // Validation or write error
+    Duplicate = 4,    // Duplicate detected (PersonNumber exists)
+    BatchFailed = 5   // Batch-level failure (rollback threshold exceeded)
+}
+```
+
+---
+
+### 8.4 Complete `process()` Method with Validation, Deduplication, and Rollback
+
+```xpp
+/// <summary>
+/// Handler class for HRPersonnelEntity staging processing.
+/// Implements validation, deduplication, and rollback threshold.
+/// </summary>
+class HRPersonnelEntityHandler
+{
+    #define RollbackThresholdPercent(10)
+    #define.MaxErrorMessageLength(250)
+
+    public void process()
+    {
+        HRPersonnelStaging staging;
+        DirPerson targetPerson;
+        HCMWorker targetWorker;
+        HRMPosition targetPosition;
+        
+        int totalToProcess = 0;
+        int processedCount = 0;
+        int successCount = 0;
+        int failedCount = 0;
+        int duplicateCount = 0;
+        Guid batchId = Guid::newGuid();
+
+        // Count total records to process
+        totalToProcess = select count(RecId) from staging
+            where staging.StagingStatus == HRPersonnelStagingStatus::Ready;
+
+        if (totalToProcess == 0)
+        {
+            info('No records to process.');
+            return;
+        }
+
+        info(strFmt('Starting batch %1: %2 records to process.', batchId, totalToProcess));
+
+        while select staging
+            where staging.StagingStatus == HRPersonnelStagingStatus::Ready
+        {
+            processedCount++;
+            
+            try
+            {
+                ttsBegin;
+
+                // Update status to Processing
+                staging.StagingStatus = HRPersonnelStagingStatus::Processing;
+                staging.update();
+
+                // ---- VALIDATION ----
+                
+                // 1. Validate required fields
+                if (!this.validateRequiredFields(staging))
+                {
+                    this.markFailed(staging, 'Missing required fields: PersonNumber, FirstName, LastName, Email, or HireDate');
+                    failedCount++;
+                    ttsCommit;
+                    continue;
+                }
+
+                // 2. Validate email format
+                if (!this.validateEmail(staging.Email))
+                {
+                    this.markFailed(staging, 'Invalid email format');
+                    failedCount++;
+                    ttsCommit;
+                    continue;
+                }
+
+                // 3. Check for duplicates by PersonNumber
+                if (this.isDuplicatePersonNumber(staging.PersonNumber))
+                {
+                    this.markDuplicate(staging);
+                    duplicateCount++;
+                    failedCount++; // Count as failure for rollback threshold
+                    ttsCommit;
+                    continue;
+                }
+
+                // 4. Check rollback threshold (>10% failures)
+                if (failedCount > 0 && (failedCount * 100 / processedCount) > #RollbackThresholdPercent)
+                {
+                    this.markBatchFailed(staging, 
+                        strFmt('Rollback threshold exceeded: %1% failure rate at record %2 of %3', 
+                            #RollbackThresholdPercent, processedCount, totalToProcess));
+                    failedCount++;
+                    ttsCommit;
+                    
+                    // Mark all remaining Ready records as BatchFailed
+                    this.markRemainingAsBatchFailed(batchId);
+                    break; // Stop processing
+                }
+
+                // ---- WRITE TO TARGET TABLES ----
+                
+                // 1. Create DirPerson record
+                targetPerson.initValue();
+                targetPerson.AccountNum = staging.PersonNumber;
+                targetPerson.FirstName = staging.FirstName;
+                targetPerson.LastName = staging.LastName;
+                targetPerson.Email = staging.Email;
+                targetPerson.insert();
+                
+                // 2. Create HCMWorker record
+                targetWorker.initValue();
+                targetWorker.PersonRecId = targetPerson.RecId;
+                targetWorker.HireDate = staging.HireDate;
+                targetWorker.Status = this.mapStatusStringToEnum(staging.Status);
+                targetWorker.insert();
+
+                // 3. Create HRMPosition record (if position data provided)
+                if (staging.Position != '' || staging.Department != '')
+                {
+                    targetPosition.initValue();
+                    targetPosition.WorkerRecId = targetWorker.RecId;
+                    targetPosition.PositionId = staging.Position;
+                    targetPosition.DepartmentId = staging.Department;
+                    targetPosition.insert();
+                }
+
+                // 4. Update staging with generated RecIds for traceability
+                staging.PersonRecId = targetPerson.RecId;
+                staging.WorkerRecId = targetWorker.RecId;
+                staging.PositionRecId = targetPosition.RecId;
+
+                // 5. Mark staging as processed
+                this.markProcessed(staging);
+                successCount++;
+
+                ttsCommit;
+            }
+            catch (Exception::Error)
+            {
+                ttsAbort;
+                this.markFailed(staging, 'Unexpected error during processing');
+                failedCount++;
+            }
+            catch (Exception::DuplicateKey)
+            {
+                ttsAbort;
+                this.markFailed(staging, 'Duplicate key error - record may have been inserted by another process');
+                failedCount++;
+            }
+            catch (Exception::Deadlock)
+            {
+                ttsAbort;
+                // Deadlocks are handled by the batch framework retry logic
+                // Re-throw to let framework handle retry
+                throw;
+            }
+        }
+
+        // Store summary for postProcess
+        this.storeBatchSummary(batchId, totalToProcess, successCount, failedCount, duplicateCount);
+        
+        info(strFmt('Batch %1 processing complete: %2 succeeded, %3 failed (%4 duplicates).', 
+            batchId, successCount, failedCount, duplicateCount));
+    }
+
+    // ===== VALIDATION METHODS =====
+
+    private boolean validateRequiredFields(HRPersonnelStaging _staging)
+    {
+        return _staging.PersonNumber != ''
+            && _staging.FirstName != ''
+            && _staging.LastName != ''
+            && _staging.Email != ''
+            && _staging.HireDate != dateNull();
+    }
+
+    private boolean validateEmail(str _email)
+    {
+        if (strLen(_email) > 250)
+        {
+            return false;
+        }
+        
+        // Basic email format validation
+        int atPos = strScan(_email, '@', 1, strLen(_email));
+        if (atPos <= 1 || atPos >= strLen(_email))
+        {
+            return false;
+        }
+        
+        int dotPos = strScan(_email, '.', atPos + 1, strLen(_email));
+        return dotPos > atPos + 1 && dotPos < strLen(_email);
+    }
+
+    private boolean isDuplicatePersonNumber(str _personNumber)
+    {
+        DirPerson existing;
+        return exists select firstonly existing
+            where existing.AccountNum == _personNumber;
+    }
+
+    // ===== STATUS MAPPING =====
+
+    private HCMWorkerStatus mapStatusStringToEnum(str _statusStr)
+    {
+        switch (_statusStr.toLower())
+        {
+            case 'active': return HCMWorkerStatus::Active;
+            case 'terminated': return HCMWorkerStatus::Terminated;
+            case 'onleave': return HCMWorkerStatus::OnLeave;
+            case 'pending': return HCMWorkerStatus::Pending;
+            default: return HCMWorkerStatus::Active;
+        }
+    }
+
+    // ===== STAGING STATUS HELPERS =====
+
+    private void markProcessed(HRPersonnelStaging _staging)
+    {
+        _staging.StagingStatus = HRPersonnelStagingStatus::Processed;
+        _staging.ErrorMessage = '';
+        _staging.update();
+    }
+
+    private void markFailed(HRPersonnelStaging _staging, str _error)
+    {
+        _staging.StagingStatus = HRPersonnelStagingStatus::Failed;
+        _staging.ErrorMessage = strLen(_error) > #MaxErrorMessageLength 
+            ? subStr(_error, 1, #MaxErrorMessageLength) 
+            : _error;
+        _staging.update();
+    }
+
+    private void markDuplicate(HRPersonnelStaging _staging)
+    {
+        _staging.StagingStatus = HRPersonnelStagingStatus::Duplicate;
+        _staging.ErrorMessage = 'Duplicate PersonNumber';
+        _staging.update();
+    }
+
+    private void markBatchFailed(HRPersonnelStaging _staging, str _error)
+    {
+        _staging.StagingStatus = HRPersonnelStagingStatus::BatchFailed;
+        _staging.ErrorMessage = strLen(_error) > #MaxErrorMessageLength 
+            ? subStr(_error, 1, #MaxErrorMessageLength) 
+            : _error;
+        _staging.update();
+    }
+
+    private void markRemainingAsBatchFailed(Guid _batchId)
+    {
+        update_recordset staging
+            setting StagingStatus = HRPersonnelStagingStatus::BatchFailed,
+                ErrorMessage = 'Batch aborted: rollback threshold exceeded'
+            where staging.StagingStatus == HRPersonnelStagingStatus::Ready;
+    }
+
+    // ===== BATCH SUMMARY =====
+
+    private void storeBatchSummary(Guid _batchId, int _total, int _success, int _failed, int _duplicates)
+    {
+        // Store in a temporary table or configuration for postProcess to retrieve
+        HRPersonnelBatchSummary summary;
+        
+        summary.clear();
+        summary.BatchId = _batchId;
+        summary.TotalRecords = _total;
+        summary.SuccessCount = _success;
+        summary.FailedCount = _failed;
+        summary.DuplicateCount = _duplicates;
+        summary.ProcessedDateTime = DateTimeUtil::utcNow();
+        summary.insert();
+    }
+
+    private HRPersonnelBatchSummary getBatchSummary(Guid _batchId)
+    {
+        HRPersonnelBatchSummary summary;
+        select firstonly summary where summary.BatchId == _batchId;
+        return summary;
+    }
+}
+
+/// <summary>
+/// Temporary table for storing batch summary between process() and postProcess().
+/// </summary>
+table 50102 HRPersonnelBatchSummary
+{
+    DataClassification = CustomerContent;
+    Storage = TempDB;
+
+    fields
+    {
+        field(1; RecId; int64) { }
+        field(2; BatchId; Guid) { }
+        field(3; TotalRecords; Int) { }
+        field(4; SuccessCount; Int) { }
+        field(5; FailedCount; Int) { }
+        field(6; DuplicateCount; Int) { }
+        field(7; ProcessedDateTime; DateTime) { }
+    }
+
+    keys
+    {
+        key(PK; RecId) { Clustered = true; }
+        key(IX_BatchId; BatchId) { }
+    }
+}
+```
+
+---
+
+### 8.5 `postProcess()` Method with Summary and Notification
+
+```xpp
+public void postProcess()
+{
+    Guid batchId = this.getCurrentBatchId();
+    HRPersonnelBatchSummary summary = this.getBatchSummary(batchId);
+    
+    if (!summary)
+    {
+        warning('No batch summary found for post-processing');
+        return;
+    }
+
+    int successCount = summary.SuccessCount;
+    int failedCount = summary.FailedCount;
+    int duplicateCount = summary.DuplicateCount;
+    int totalCount = summary.TotalRecords;
+
+    // Log summary to Infolog
+    info(strFmt('HR Personnel import complete (Batch: %1):', batchId));
+    info(strFmt('  Total: %1 | Succeeded: %2 | Failed: %3 | Duplicates: %4', 
+        totalCount, successCount, failedCount, duplicateCount));
+
+    // Send notification for failed records
+    if (failedCount > 0 || duplicateCount > 0)
+    {
+        this.sendCompletionNotification(batchId, successCount, failedCount, duplicateCount);
+    }
+
+    // Optional: Clean up batch summary record
+    // summary.delete();
+}
+
+private void sendCompletionNotification(Guid _batchId, int _success, int _failed, int _duplicates)
+{
+    str subject = strFmt('HR Personnel Import Completed - Batch %1', _batchId);
+    str body = strFmt(
+        'HR Personnel data import batch %1 has completed.\n\n' +
+        'Results:\n' +
+        '  ✅ Successful: %2\n' +
+        '  ❌ Failed: %3\n' +
+        '  ⚠️ Duplicates: %4\n\n' +
+        'Timestamp: %5\n\n' +
+        'Review the Data Management workspace for detailed error logs.',
+        _batchId, _success, _failed, _duplicates, DateTimeUtil::toStr(DateTimeUtil::utcNow()));
+
+    // Option 1: Direct email (requires SMTP configuration)
+    /*
+    try
+    {
+        SmtpMail::send(
+            'd365-noreply@company.com',
+            'hr-integration@company.com',
+            subject,
+            body);
+    }
+    catch (Exception::Error)
+    {
+        warning('Failed to send notification email');
+    }
+    */
+
+    // Option 2: Trigger Logic App via Service Bus (RECOMMENDED - decoupled)
+    this.triggerLogicAppNotification(_batchId, _success, _failed, _duplicates);
+}
+
+private void triggerLogicAppNotification(Guid _batchId, int _success, int _failed, int _duplicates)
+{
+    // Send message to Azure Service Bus queue/topic
+    // Logic App triggers on this message and sends formatted notification
+    // (Email, Teams, Slack, etc.)
+    
+    var connectionString = Parameters::find('ServiceBusConnectionString').Value;
+    var topicName = 'hr-integration-events';
+    
+    var topicClient = new TopicClient(connectionString, topicName);
+    
+    var messageBody = JsonConvert.SerializeObject(new
+    {
+        EventType = 'HRPersonnelImportCompleted',
+        BatchId = _batchId.ToString(),
+        SuccessCount = _success,
+        FailedCount = _failed,
+        DuplicateCount = _duplicates,
+        Timestamp = DateTime.UtcNow,
+        EntityName = 'HRPersonnelEntity'
+    });
+
+    var message = new Message(Encoding.UTF8.GetBytes(messageBody));
+    message.ContentType = "application/json";
+    message.MessageId = Guid.NewGuid().ToString();
+    message.Label = 'HRPersonnelImportCompleted';
+
+    topicClient.SendAsync(message).GetAwaiter().GetResult();
+    topicClient.CloseAsync().GetAwaiter().GetResult();
+}
+```
+
+---
+
+### 8.6 Entity Mapping Configuration (Visual Studio Designer)
+
+**Auto-Mapped Fields:**
+| Entity Field | Table Field | Data Source |
+|---|---|---|
+| `PersonNumber` | `AccountNum` | DirPerson |
+| `FirstName` | `FirstName` | DirPerson |
+| `LastName` | `LastName` | DirPerson |
+| `Email` | `Email` | DirPerson |
+| `Position` | `PositionId` | HRMPosition |
+| `Department` | `DepartmentId` | HRMPosition |
+| `HireDate` | `HireDate` | HCMWorker |
+| `Status` | `Status` | HCMWorker |
+
+**Manual Mapping (Computed Column):**
+| Entity Field | Expression | Data Source |
+|---|---|---|
+| `FullName` | `DirPerson.FirstName + ' ' + DirPerson.LastName` | DirPerson |
+
+**Unmapped / Staging-Only Fields:**
+| Field | Purpose |
+|---|---|
+| `PersonRecId` | Internal tracking — not exposed via OData |
+| `WorkerRecId` | Internal tracking — not exposed via OData |
+| `PositionRecId` | Internal tracking — not exposed via OData |
+| `StagingStatus` | Internal — not exposed via OData |
+| `ErrorMessage` | Internal — not exposed via OData |
+| `ImportBatchId` | Internal — not exposed via OData |
+
+---
+
+### 8.7 Model Manifest Dependencies
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<ModelManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Name>AcmeHRIntegration</Name>
+  <Version>1.0.0.0</Version>
+  <Layer>CUS</Layer>
+  <Description>HR Personnel Data Integration Entity</Description>
+  <Publisher>Acme Corporation</Publisher>
+  <References>
+    <ModelReference>
+      <Name>ApplicationSuite</Name>
+      <MinVersion>10.0.0.0</MinVersion>
+    </ModelReference>
+    <ModelReference>
+      <Name>ApplicationFoundation</Name>
+      <MinVersion>10.0.0.0</MinVersion>
+    </ModelReference>
+    <ModelReference>
+      <Name>HcmCore</Name>
+      <MinVersion>10.0.0.0</MinVersion>
+    </ModelReference>
+    <ModelReference>
+      <Name>DirParty</Name>
+      <MinVersion>10.0.0.0</MinVersion>
+    </ModelReference>
+  </References>
+  <ConfigurationKey>AcmeHRIntegrationEnabled</ConfigurationKey>
+</ModelManifest>
+```
+
+---
+
+### 8.8 Testing with Power Automate
+
+**Flow: Daily HR Sync from External HRIS**
+
+1. **Trigger**: Recurrence (Daily 6:00 AM)
+2. **Action**: HTTP - GET external HRIS API `/api/employees?modifiedSince=yesterday`
+3. **Action**: Parse JSON
+4. **Action**: Select - Map external fields to HRPersonnelEntity structure
+5. **Action**: Create CSV table
+6. **Action**: Create file in Azure Blob Storage (staging area)
+7. **Action**: D365 F&O Connector - Import from Entity
+   - Entity: `HRPersonnelEntity`
+   - Source: Azure Blob Storage file
+   - Import mode: Insert/Update
+8. **Action**: Condition - Check import status
+9. **Action (True)**: Send Teams notification "HR Sync Successful"
+10. **Action (False)**: Send Teams notification "HR Sync Failed" with error details
+
+---
+
+## 9. Definitions: Key Terms with Layman Explanations
+
+| Term | Technical Definition | Layman Explanation |
+|---|---|---|
+| **Data Entity** | A D365 F&O object that exposes table data to external systems via OData/REST APIs — consists of a DataEntity node, a Query, and optionally a staging table. | A "smart view" that packages data from multiple tables and serves it through a standard web API so other systems can read it easily. |
+| **Composite Entity** | An entity that combines multiple Data Entities into a single integration endpoint for complex multi-source scenarios. | A "meta-entity" that stitches together several DataEntities into one big endpoint — like a playlist combining songs from different albums. |
+| **Derived View** | A low-level view in the AOT with custom SQL logic that doesn't automatically expose via OData. | Writing raw SQL for a view — total control but you lose all automatic integration features (OData, staging, mapping). |
+| **Staging Table** | An intermediate table (e.g., EntityNameStaging) that holds data temporarily before it's validated and written to target tables. | A "loading dock" where incoming data sits while it's checked for errors before being moved into the real tables. |
+| **IsPublic** | A DataEntity property that controls whether the entity is exposed via OData endpoints. | The "publish" switch — when ON, the entity becomes visible and callable through the web API. |
+| **Public Entity Name** | The singular name used in OData URLs for a single entity instance (e.g., `/data/HRPersonnelEntity`). | The name used when asking for ONE record: "Give me HRPersonnelEntity with ID 123." |
+| **Public Collection Name** | The plural name used in OData URLs for the entity collection (e.g., `/data/HRPersonnelEntities`). | The name used when asking for a LIST: "Give me all HRPersonnelEntities." |
+| **Link Field** | A field on a DataEntity that specifies the relationship to the underlying table's primary key (e.g., PersonRecId → DirPerson.RecId). | The "connector" that tells the system which record in the real table this entity row corresponds to. |
+| **Auto-Mapping** | Automatic field mapping when entity field names and types match the underlying table fields exactly. | The system automatically connects fields with the same name — like matching socks by color. |
+| **Manual Mapping** | Explicit field mapping defined in the Data Entity designer when auto-mapping doesn't work. | Manually telling the system "this entity field connects to THAT table field" when names don't match. |
+| **Process Method** | The X++ method that reads staging records, validates them, and writes to target tables. | The "worker" that picks up each staging record, checks it, and moves it to the real table. |
+| **PostProcess Method** | The X++ method that runs after all staging records are processed — used for summaries and notifications. | The "manager" that reviews how the batch went and sends a report. |
+| **Rollback Threshold** | A percentage limit that aborts the entire batch if failure rate exceeds it (e.g., >10% failures). | A safety switch: "If more than 10% of records fail, stop everything and roll back." |
+| **OData** | Open Data Protocol — a standard RESTful protocol for querying and updating data over HTTP. | A universal language for asking for data over the web — like SQL but for HTTP APIs. |
+| **Logic Apps** | An Azure service for automating workflows and integrating systems without writing code. | A visual flowchart tool in the cloud that connects systems together — drag, drop, connect. |
+| **Power Automate** | A low-code/no-code platform for building automated workflows across applications. | Like Logic Apps but designed for business users — build flows in a browser with point-and-click. |
+| **Data Management Workspace** | The central UI in D365 F&O for importing, exporting, and managing data packages. | The control panel for moving data in and out of D365 — upload Excel, download CSV, run packages. |
+| **Package (.axdp)** | A deployable unit containing Data Entities, mappings, and import/export settings. | A "shipping container" for data integration configuration — move it from dev to test to prod. |
+| **DictClass** | An X++ system class providing runtime reflection over class metadata (methods, attributes, inheritance). | A tool that lets your code inspect other code at runtime — "What methods does this class have?" |
+| **HttpClient** | A .NET class (System.Net.Http) for making HTTP requests from X++ code. | The "web browser" inside X++ — lets your code call external APIs and web services. |
+
+---
+
+## 10. Comparison Tables
+
+### 10.1 Entity Type Selection Guide
+
+| Requirement | Recommended Pattern |
+|---|---|
+| Read-only integration with external system | DataEntity |
+| Write-back / import into D365 F&O | DataEntity + Staging Pattern |
+| Combine 3+ unrelated entities into one endpoint | Composite Entity |
+| Complex SQL (window functions, CTEs, UDFs) | Derived View |
+| Need row-level security (XDS) | Apply XDS to underlying tables, not entity |
+| High-volume recurring integration | DataEntity + Recurring Data Job + Logic Apps |
+| One-time data migration | Data Management Workspace Import |
+| Real-time event-driven integration | Custom Action + Service Bus + Logic Apps |
+
+### 10.2 Staging Table Storage Options
+
+| Storage Type | Use Case | Pros | Cons |
+|---|---|---|---|
+| **TempDB** (Recommended) | Standard staging — data doesn't need to persist | Fast, auto-cleanup, no database bloat | Data lost on session end / AOS restart |
+| **Regular (InMemory)** | Very small datasets, high-frequency | Fastest for tiny datasets | Limited memory, not for large imports |
+| **Regular (Permanent)** | Audit trail required, regulatory compliance | Full history, queryable after import | Requires manual cleanup, storage cost |
+
+### 10.3 OData vs Direct Table Access
+
+| Aspect | DataEntity (OData) | Direct Table Access (Not Recommended) |
+|---|---|---|
+| **Security** | Controlled via entity permissions | Requires table permissions — over-privileged |
+| **Abstraction** | Shields consumers from schema changes | Consumers break when tables change |
+| **Performance** | Optimized views, computed columns | N+1 query problems, no caching |
+| **Write-back** | Staging pattern with validation | Direct writes bypass validation |
+| **Upgrade Safety** | High — entity interface stable | Low — table schema changes break consumers |
+
+### 10.4 Integration Pattern Selection
+
+| Pattern | Latency | Volume | Complexity | Use Case |
+|---|---|---|---|---|
+| **Recurring Data Job** | Hours | High | Low | Daily/weekly bulk sync |
+| **Logic Apps (Scheduled)** | Minutes-Hours | Medium | Low | Periodic pull/push |
+| **Logic Apps (Event-Driven)** | Seconds | Low-Medium | Medium | Near real-time |
+| **Custom Action + Service Bus** | Seconds | Low | High | Real-time, transactional |
+| **OData Direct (HttpClient)** | Milliseconds | Low | Medium | Ad-hoc queries, lookup |
+| **Batch Framework (SysOperation)** | Minutes-Hours | Very High | High | Massive data processing |
+
+---
+
+## 11. Microsoft Learn References
+
+### Core Data Entities Documentation
+- **Data Entities Overview**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/data-entities-intro
+- **Create a Data Entity**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/create-data-entity
+- **Data Entity Properties**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/data-entity-properties
+- **Staging Tables**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/staging-tables
+
+### OData and REST
+- **OData Endpoints**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/odata
+- **OData Query Options**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/odata-query-options
+- **Custom OData Actions**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/custom-odata-actions
+
+### Data Management Framework
+- **Data Management Workspace**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/data-management-workspace
+- **Import/Export Data**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/import-export-data
+- **Recurring Data Jobs**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/recurring-data-jobs
+- **Data Packages**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/data-packages
+
+### Power Platform Integration
+- **Logic Apps Connector**: https://learn.microsoft.com/en-us/connectors/dynamics365financeoperations/
+- **Power Automate Connector**: https://learn.microsoft.com/en-us/connectors/dynamics365financeoperations/
+- **Dual-Write**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/dual-write/dual-write-home-page
+
+### Development References
+- **DictClass Reference**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/dev-ref/xpp-reflection-dictclass
+- **DictMethod Reference**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/dev-ref/xpp-reflection-dictmethod
+- **HttpClient in X++**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/dev-ref/xpp-clr-interop
+- **Service Bus Integration**: https://learn.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dotnet-get-started-with-queues
+
+### Best Practices
+- **Data Entity Best Practices**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/data-entity-best-practices
+- **Performance Tips**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/data-entity-performance
+- **Security**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/data-entity-security
+
+---
+
+## 12. Common Mistakes to Avoid
+
+| # | Mistake | Why It's Wrong | Correct Approach |
+|---|---|---|---|
+| 1 | **Exposing tables directly via OData** | Bypasses validation, security, and abstraction layer | Always use DataEntities as the integration layer |
+| 2 | **Skipping the staging pattern for write-back** | No validation, no error handling, no rollback, no audit trail | Always use staging table + `process()`/`postProcess()` for imports |
+| 3 | **Not setting `IsPublic = Yes`** | Entity won't appear in OData service document | Enable `IsPublic`, set `Public Entity Name` and `Public Collection Name` |
+| 4 | **Using Derived View when DataEntity works** | Loses OData, staging, mapping, security integration | Default to DataEntity; only use Derived View for complex SQL |
+| 5 | **Hardcoding OData URLs in code** | Breaks when environment changes (dev/test/prod) | Use configuration parameters or environment variables |
+| 6 | **Not implementing deduplication** | Creates duplicate records on re-import | Check for existing records by business key before insert |
+| 7 | **No rollback threshold** | One bad record can poison a batch of 10,000 | Implement percentage-based rollback (e.g., >10% failures) |
+| 8 | **Storing credentials in Logic Apps/Power Automate** | Security risk, rotation nightmare | Use Managed Identity or Azure Key Vault references |
+| 9 | **Ignoring pagination (`$top`/`$skip`)** | Timeouts and memory issues on large datasets | Always paginate; use `$top=1000` max per request |
+| 10 | **Not testing with realistic data volumes** | Performance issues only appear in production | Test with production-scale data in Tier-2 environment |
+| 11 | **Using Composite Entity for simple scenarios** | Adds complexity without benefit | Use Composite Entity only when combining multiple entities |
+| 12 | **Forgetting to add `Link` field** | Breaks `$expand`, context filtering, write-back | Always define Link field connecting to primary table RecId |
+| 13 | **Mapping staging fields in OData** | Exposes internal processing fields to consumers | Keep staging fields in staging table only; never expose via OData |
+| 14 | **Not handling deadlocks in `process()`** | Batch fails on transient SQL contention | Implement retry logic or let batch framework handle it |
+| 15 | **Using display methods for computed columns** | Slower — evaluated per row in X++ layer | Use computed columns (SQL-level) for simple expressions |
+
+---
+
+## Appendix: Quick Reference Card
+
+### Data Entity Creation Checklist
+
+```
+☐ Define business requirement and data sources
+☐ Choose entity type: DataEntity (default) / Composite / Derived View
+☐ Create DataEntity in Visual Studio
+☐ Add data sources and joins
+☐ Select fields for OData exposure
+☐ Set IsPublic = Yes
+☐ Set Public Entity Name (singular)
+☐ Set Public Collection Name (plural)
+☐ Define Primary Key field(s)
+☐ Define Link field (RecId of primary table)
+☐ Enable staging (for write-back entities)
+☐ Configure field mappings (auto + manual)
+☐ Add computed columns for derived fields
+☐ Create staging table (if not auto-generated)
+☐ Implement process() method with validation
+☐ Implement postProcess() with notifications
+☐ Add deduplication logic
+☐ Add rollback threshold logic
+☐ Test with Data Management Workspace
+☐ Test OData endpoint with Postman/Power Automate
+☐ Document manual mappings and transformations
+☐ Add to model manifest with correct dependencies
+```
+
+### Key X++ Classes for Data Entities
+
+| Class | Purpose |
+|---|---|
+| `DataEntity` | Base class for all data entities |
+| `DMFEntity` | Data Management Framework entity base |
+| `DMFStagingTable` | Base for staging tables |
+| `DictClass` / `DictMethod` | Runtime reflection |
+| `HttpClient` | External HTTP calls |
+| `SmtpMail` | Email notifications |
+| `ServiceBusClient` | Azure Service Bus messaging |
+| `JsonConvert` (Newtonsoft) | JSON serialization |
+
+### OData URL Patterns
+
+| Operation | URL Pattern |
+|---|---|
+| Get all entities | `GET /data/HRPersonnelEntities` |
+| Get single entity | `GET /data/HRPersonnelEntities(PersonNumber='EMP001')` |
+| Filter | `GET /data/HRPersonnelEntities?$filter=Status eq 'Active'` |
+| Select fields | `GET /data/HRPersonnelEntities?$select=PersonNumber,FirstName,LastName` |
+| Paginate | `GET /data/HRPersonnelEntities?$top=100&$skip=200` |
+| Expand related | `GET /data/HRPersonnelEntities?$expand=Position` |
+| Count | `GET /data/HRPersonnelEntities/$count` |
+| Create | `POST /data/HRPersonnelEntities` |
+| Update | `PATCH /data/HRPersonnelEntities(PersonNumber='EMP001')` |
+| Delete | `DELETE /data/HRPersonnelEntities(PersonNumber='EMP001')` |
+
+---
+
+*End of Chapter 16 — Data Entities*
         while select staging
             where staging.StagingStatus == APCustomsStagingStatus::Ready
         {
@@ -6046,11 +7724,59 @@ public void postProcess()
 
 # Chapter 17: SSRS & Electronic Reporting
 
-## 17.1 SSRS Report Design in Visual Studio
+> **Complete reference for building, deploying, and troubleshooting SSRS reports and Electronic Reporting (ER) in Dynamics 365 Finance & Operations.**
+> Covers report architecture, `SrsReportDataProvider` patterns, data contracts, ER configurations, and a production-ready capstone activity.
 
-SQL Server Reporting Services (SSRS) is the primary reporting engine in D365 F&O. Reports are designed in Visual Studio using the **SSRS Report Designer** and deployed as part of the model project.
+---
 
-### Report Project Structure
+## Table of Contents
+
+1. [SSRS Report Architecture](#1-ssrs-report-architecture)
+2. [SrsReportDataProvider — The Bridge](#2-srsreportdataprovider--the-bridge)
+3. [Data Contracts and Parameters](#3-data-contracts-and-parameters)
+4. [TempDB Pre-Processing Pattern](#4-tempdb-pre-processing-pattern)
+5. [Report Design: RDL Layout and Visual Studio](#5-report-design-rdl-layout-and-visual-studio)
+6. [Electronic Reporting (ER) Overview](#6-electronic-reporting-er-overview)
+7. [ER Configurations and Format Designer](#7-er-configurations-and-format-designer)
+8. [Power BI Integration](#8-power-bi-integration)
+9. [Capstone Activity: Build a Multi-Company Vendor Compliance Report](#9-capstone-activity-build-a-multi-company-vendor-compliance-report)
+10. [Common Mistakes to Avoid](#10-common-mistakes-to-avoid)
+11. [Microsoft Learn References](#11-microsoft-learn-references)
+
+---
+
+## 1. SSRS Report Architecture
+
+### 1.1 The Three-Tier Reporting Model
+
+D365 F&O SSRS reports follow a three-tier architecture that separates concerns:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        CLIENT TIER (Browser)                        │
+│  • User views rendered report (HTML/PDF/Excel)                      │
+│  • Report parameters entered via UI                                 │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │ HTTPS
+                           ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      APPLICATION TIER (AOS)                         │
+│  • SrsReportDataProvider (X++) — Business logic & data retrieval   │
+│  • SrsReportRunController — Orchestration & parameter handling     │
+│  • TempDB — Intermediate data storage for pre-processing           │
+│  • SSRS Report Server — Rendering engine                           │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │ SQL
+                           ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                        DATABASE TIER (Azure SQL)                    │
+│  • Business tables (VendTable, CustTable, etc.)                    │
+│  • Temp tables (ReportTmp) — populated by data provider            │
+│  • System tables (SysReportRun, etc.)                              │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 1.2 Report Project Structure
 
 When you add an SSRS report to a D365 F&O project, Visual Studio creates the following structure:
 
@@ -6065,35 +7791,43 @@ MyModelProject
 └── ModelManifest.xml
 ```
 
-### Dataset Creation
+### 1.3 Report Execution Flow
 
-The dataset is the bridge between the report layout and the data source. In D365 F&O, datasets are created using the **Microsoft.Dynamics.AX.Framework.Reporting** namespace.
+```
+[1] User opens report from menu item
+    │
+[2] SrsReportRunController.main() executes
+    │  - Instantiates data provider
+    │  - Shows parameter dialog (if any)
+    │  - Calls dataProvider.processReport()
+    │
+[3] Data Provider populates TempDB table
+    │  - Runs queries against business tables
+    │  - Inserts records into ReportTmp table
+    │
+[4] SSRS Renderer reads TempDB table
+    │  - Executes RDL layout
+    │  - Formats data (grouping, sorting, calculations)
+    │
+[5] Report rendered to client (HTML/PDF/Excel)
+```
 
-**Steps to create a dataset:**
-1. Open the `.rdl` file in Visual Studio's Report Designer
-2. Right-click **Datasets** in the Report Data pane → **Add Dataset**
-3. Select **Use a dataset embedded in my report**
-4. Choose the data source (typically a `SrsReportDataProvider` class)
-5. Write the query or use the query builder
-6. Add fields from the dataset to the report layout
+### 1.4 Key Report Classes
 
-### Data Source Configuration
-
-D365 F&O reports use a special data source that connects to the AOS via the reporting framework:
-
-| Property | Value | Description |
+| Class | Purpose | Extends |
 |---|---|---|
-| Data Source Type | `Microsoft.Dynamics.AX.Framework.Reporting` | D365 F&O reporting framework |
-| Connection | Uses the connected LCS environment | No manual connection string needed |
-| Authentication | Uses the current user's Azure AD credentials | Seamless SSO |
+| `SrsReportDataProvider` | Standard data provider — query-based | `Object` |
+| `SrsReportDataProviderPreProcessTempDB` | TempDB pre-processing data provider | `SrsReportDataProvider` |
+| `SrsReportRunController` | Controller for report execution | `SrsReportRunController` |
+| `SrsReportDataContract` | Parameter contract for reports | `Object` |
 
 ---
 
-## 17.2 `SrsReportDataProvider` — The Bridge
+## 2. SrsReportDataProvider — The Bridge
 
 `SrsReportDataProvider` is the bridge between the SSRS report layout and the D365 F&O data. It is the most critical class in the reporting architecture.
 
-### The `SrsReportDataProvider` Pattern
+### 2.1 The `SrsReportDataProvider` Pattern
 
 Every SSRS report in D365 F&O requires a data provider class that extends `SrsReportDataProvider`. This class:
 
@@ -6102,7 +7836,7 @@ Every SSRS report in D365 F&O requires a data provider class that extends `SrsRe
 3. Handles report-level logic (grouping, calculations)
 4. Bridges the gap between the AOS and the SSRS renderer
 
-### Key Methods
+### 2.2 Key Methods
 
 | Method | Purpose | Required? |
 |---|---|---|
@@ -6113,7 +7847,7 @@ Every SSRS report in D365 F&O requires a data provider class that extends `SrsRe
 | `parmReportName()` | Gets/sets the report name | Yes |
 | `parmParameters()` | Gets/sets the report parameters | Optional |
 
-### Complete `SrsReportDataProvider` Example
+### 2.3 Complete `SrsReportDataProvider` Example
 
 ```xpp
 [SRSReportQueryAttribute('VendComplianceReport'), SRSReportParameterAttribute(classstr(VendComplianceReportContract))]
@@ -6234,9 +7968,710 @@ class VendComplianceReportDP extends SrsReportDataProvider
 }
 ```
 
-### The Contract Class
+---
+
+## 3. Data Contracts and Parameters
+
+### 3.1 The Contract Class
 
 The contract class defines the report parameters and is passed between the controller and the data provider:
+
+```xpp
+/// <summary>
+/// Data contract for VendComplianceReport parameters.
+/// </summary>
+[DataContractAttribute]
+class VendComplianceReportContract extends SrsReportDataContract
+{
+    VendGroup _vendGroup;
+    FromDate _fromDate;
+    ToDate _toDate;
+    ComplianceStatus _complianceStatus;
+
+    [DataMemberAttribute('VendGroup')]
+    public VendGroup parmVendGroup(VendGroup _vendGroup = _vendGroup)
+    {
+        return _vendGroup;
+    }
+
+    [DataMemberAttribute('FromDate')]
+    public FromDate parmFromDate(FromDate _fromDate = _fromDate)
+    {
+        return _fromDate;
+    }
+
+    [DataMemberAttribute('ToDate')]
+    public ToDate parmToDate(ToDate _toDate = _toDate)
+    {
+        return _toDate;
+    }
+
+    [DataMemberAttribute('ComplianceStatus')]
+    public ComplianceStatus parmComplianceStatus(ComplianceStatus _complianceStatus = _complianceStatus)
+    {
+        return _complianceStatus;
+    }
+}
+```
+
+### 3.2 The Controller Class
+
+The controller orchestrates report execution, shows the parameter dialog, and launches the rendering:
+
+```xpp
+/// <summary>
+/// Controller for VendComplianceReport.
+/// </summary>
+class VendComplianceReportController extends SrsReportRunController
+{
+    /// <summary>
+    /// Main entry point — called from menu item.
+    /// </summary>
+    public static void main(Args _args)
+    {
+        VendComplianceReportController controller = new VendComplianceReportController();
+        
+        controller.parmReportName(ssrsReportStr(VendComplianceReport, Report));
+        controller.parmShowDialog(true);
+        controller.startOperation();
+    }
+
+    /// <summary>
+    /// Pre-run validation.
+    /// </summary>
+    public void preRunValidate()
+    {
+        super();
+        
+        // Validate date range
+        if (this.parmDataContract() is VendComplianceReportContract)
+        {
+            VendComplianceReportContract contract = this.parmDataContract();
+            
+            if (contract.parmFromDate() > contract.parmToDate())
+            {
+                throw error('From Date cannot be after To Date');
+            }
+        }
+    }
+}
+```
+
+### 3.3 Menu Item Configuration
+
+Create a **Display Menu Item** to launch the report:
+
+| Property | Value |
+|---|---|
+| **Name** | `VendComplianceReport` |
+| **Object Type** | `Class` |
+| **Object** | `VendComplianceReportController` |
+| **Label** | `Vendor Compliance Report` |
+
+---
+
+## 4. TempDB Pre-Processing Pattern
+
+### 4.1 Why Use `SrsReportDataProviderPreProcessTempDB`?
+
+For large datasets, the standard `SrsReportDataProvider` can be slow because it executes the query at render time. The **TempDB pre-processing pattern** moves data retrieval to a batch job, populating a TempDB table beforehand. At render time, the report simply reads the pre-populated table — dramatically faster.
+
+### 4.2 `SrsReportDataProviderPreProcessTempDB` Pattern
+
+```xpp
+[SRSReportQueryAttribute('VendComplianceReport'), SRSReportParameterAttribute(classstr(VendComplianceReportContract))]
+class VendComplianceReportDP extends SrsReportDataProviderPreProcessTempDB
+{
+    VendComplianceReportTmp tmpTable;
+
+    /// <summary>
+    /// Called by the batch job to pre-process data.
+    /// Populates the temp table asynchronously.
+    /// </summary>
+    public void processReport()
+    {
+        VendComplianceReportContract contract;
+        Query query;
+
+        contract = this.parmDataContract() as VendComplianceReportContract;
+
+        // Build the same query as the standard pattern
+        query = this.buildQuery(contract);
+
+        // Execute query and populate temp table
+        this.populateTempTable(query, tmpTable);
+    }
+
+    /// <summary>
+    /// Returns the temp table to the report dataset.
+    /// </summary>
+    [SRSReportDataSetAttribute(tableStr(VendComplianceReportTmp))]
+    public VendComplianceReportTmp getVendorComplianceReportTmp()
+    {
+        return tmpTable;
+    }
+
+    private Query buildQuery(VendComplianceReportContract _contract)
+    {
+        Query query = new Query();
+        QueryBuildDataSource qbdVend = query.addDataSource(tableNum(VendTable));
+        qbdVend.relations(true);
+
+        if (_contract.parmVendGroup())
+        {
+            qbdVend.addRange(fieldNum(VendTable, CustGroup))
+                .value(queryValue(_contract.parmVendGroup()));
+        }
+
+        QueryBuildDataSource qbdDecl = qbdVend.addDataSource(tableNum(APCustomsDeclaration));
+        qbdDecl.joinMode(JoinMode::InnerJoin);
+        qbdDecl.relations(true);
+
+        qbdDecl.addRange(fieldNum(APCustomsDeclaration, DeclDate))
+            .value(strfmt('"%1" .. "%2"', _contract.parmFromDate(), _contract.parmToDate()));
+
+        if (_contract.parmComplianceStatus())
+        {
+            qbdDecl.addRange(fieldNum(APCustomsDeclaration, Status))
+                .value(queryValue(_contract.parmComplianceStatus()));
+        }
+
+        return query;
+    }
+
+    private void populateTempTable(Query _query, VendComplianceReportTmp _tmp)
+    {
+        VendTable vendTable;
+        APCustomsDeclaration decl;
+
+        // Clear existing data
+        _tmp.deleteFrom();
+
+        QueryRun queryRun = new QueryRun(_query);
+        while (queryRun.next())
+        {
+            vendTable = queryRun.get(tableNum(VendTable));
+            decl = queryRun.get(tableNum(APCustomsDeclaration));
+
+            _tmp.clear();
+            _tmp.AccountNum = vendTable.AccountNum;
+            _tmp.VendorName = vendTable.Name;
+            _tmp.DeclId = decl.DeclId;
+            _tmp.DeclDate = decl.DeclDate;
+            _tmp.CustomsRef = decl.CustomsRef;
+            _tmp.Status = decl.Status;
+            _tmp.insert();
+        }
+    }
+}
+```
+
+### 4.3 TempDB Table Definition
+
+The temp table must use `Storage = TempDB`:
+
+```xpp
+table VendComplianceReportTmp
+{
+    DataClassification = CustomerContent;
+    Storage = TempDB;  // Critical — uses TempDB, not InMemory
+
+    fields
+    {
+        field(AccountNum; AccountNum) { }
+        field(VendorName; Name) { }
+        field(DeclId; Code[35]) { }
+        field(DeclDate; Date) { }
+        field(CustomsRef; Code[50]) { }
+        field(Status; Text[20]) { }
+    }
+
+    keys
+    {
+        key(PK; RecId) { Clustered = true; }
+        key(IX_AccountNum; AccountNum) { }
+    }
+}
+```
+
+### 4.4 Execution Modes Comparison
+
+| Mode | When Data Is Fetched | Best For |
+|---|---|---|
+| **Standard (`SrsReportDataProvider`)** | At render time (synchronous) | Small datasets (< 10K rows), interactive reports |
+| **TempDB Pre-Process (`SrsReportDataProviderPreProcessTempDB`)** | In batch job (asynchronous) | Large datasets (> 10K rows), scheduled reports, complex queries |
+
+---
+
+## 5. Report Design: RDL Layout and Visual Studio
+
+### 5.1 Visual Studio Report Designer
+
+1. **Open** the `.rdl` file in Visual Studio
+2. **Report Data** pane: Datasets, Parameters, Images
+3. **Design** surface: Tablix, Matrix, Chart, Gauge
+4. **Properties** window: Formatting, visibility, expressions
+
+### 5.2 Dataset Binding
+
+The report dataset binds to the data provider's getter method:
+
+```xpp
+// In RDL, the dataset is bound to:
+// Fields → getVendorComplianceReportTmp()
+// The dataset fields correspond to the temp table fields
+```
+
+### 5.3 Common RDL Patterns
+
+| Pattern | Implementation |
+|---|---|
+| **Grouping** | Row Groups → Add Group → Group By: `AccountNum` |
+| **Page Breaks** | Group Properties → Page Break → Between each instance |
+| **Conditional Formatting** | Text Box Properties → Fill → Expression: `=IIf(Fields!Status.Value = "Failed", "Red", "Green")` |
+| **Running Totals** | `=RunningValue(Fields!Amount.Value, Sum, "DataSet1")` |
+| **Subreports** | Insert → Subreport → Use another report as child |
+
+### 5.4 Performance Tips for RDL
+
+1. **Limit fields in dataset** — only include fields used in layout
+2. **Use server-side grouping** — do grouping in SQL query, not RDL
+3. **Avoid complex expressions** — move calculations to data provider
+4. **Use page breaks sparingly** — each break adds rendering overhead
+
+---
+
+## 6. Electronic Reporting (ER) Overview
+
+### 6.1 What Is Electronic Reporting?
+
+**Electronic Reporting (ER)** is a no-code/low-code framework for generating electronic documents (XML, JSON, Excel, PDF, TXT) from D365 F&O data. Unlike SSRS, ER is designed for **regulatory reporting**, **integration files**, and **document generation** where format changes frequently.
+
+### 6.2 ER vs SSRS Comparison
+
+| Aspect | SSRS | Electronic Reporting |
+|---|---|---|
+| **Primary Use** | Operational reports, dashboards, analytics | Regulatory filings, integration files, document generation |
+| **Design Tool** | Visual Studio (RDL) | Web-based Format Designer |
+| **Code Required** | Yes (`SrsReportDataProvider` X++) | Minimal (formula-based) |
+| **Format Changes** | Requires VS rebuild & deploy | Hot-swappable without code deploy |
+| **Regulatory Updates** | Slow — code change + deploy | Fast — config change in UI |
+| **Output Formats** | PDF, Excel, Word, HTML | XML, JSON, Excel, PDF, TXT, CSV |
+| **Versioning** | Model versioning | Built-in configuration versioning |
+
+### 6.3 ER Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    ER CONFIGURATION HIERARCHY                   │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  MODEL (Root)                                                   │
+│  │                                                              │
+│  ├── DATA MODEL — Defines the data structure (entities, fields) │
+│  │    └── Model Mapping — Maps data model to D365 tables        │
+│  │                                                              │
+│  ├── FORMAT (Child of Model)                                    │
+│  │    └── Format Designer — Visual layout (Excel/JSON/XML)      │
+│  │         └── Format Mapping — Binds format to data model      │
+│  │                                                              │
+│  └── FILE — Actual generated output                             │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 7. ER Configurations and Format Designer
+
+### 7.1 Creating an ER Configuration
+
+**Step 1: Create the Model**
+1. Navigate to **Organization Administration > Electronic Reporting > Configurations**
+2. Click **Create Configuration** → **Model**
+3. Name: `Vendor Compliance Model`
+4. Add data model elements: `Vendor`, `ComplianceDeclaration`, `CustomsReference`
+
+**Step 2: Create Model Mapping**
+1. Select model → **Designer** → **Map model to datasource**
+2. Add data sources:
+   - `VendTable` (Table records)
+   - `APCustomsDeclaration` (Table records)
+3. Bind model fields to table fields
+
+**Step 3: Create the Format**
+1. Click **Create Configuration** → **Format** (based on model)
+2. Name: `Vendor Compliance XML Format`
+3. Open **Format Designer**
+
+### 7.2 Format Designer — Visual Layout
+
+The Format Designer provides a tree-based visual editor:
+
+```
+Format: Vendor Compliance XML
+├── VendorComplianceReport (Root Element)
+│   ├── Header (Sequence)
+│   │   ├── ReportName (String)
+│   │   ├── GeneratedDateTime (DateTime)
+│   │   └── CompanyCode (String)
+│   │
+│   ├── Vendors (Collection)
+│   │   ├── Vendor (Sequence)
+│   │   │   ├── AccountNum (String)
+│   │   │   ├── Name (String)
+│   │   │   └── Group (String)
+│   │   │
+│   │   ├── Declarations (Collection)
+│   │   │   ├── Declaration (Sequence)
+│   │   │   │   ├── DeclId (String)
+│   │   │   │   ├── DeclDate (Date)
+│   │   │   │   ├── CustomsRef (String)
+│   │   │   │   └── Status (String)
+│   │   │   │
+│   │   └── Footer (Sequence)
+│   │       ├── TotalVendors (Integer)
+│   │       └── TotalDeclarations (Integer)
+```
+
+### 7.3 Formula Expressions
+
+ER uses Excel-like formulas for calculations:
+
+| Function | Example | Purpose |
+|---|---|---|
+| `COUNT` | `COUNT(Vendors.Declaration)` | Count child records |
+| `SUM` | `SUM(Vendors.Declaration.Amount)` | Sum numeric field |
+| `CONCATENATE` | `CONCATENATE("COMP-", CompanyInfo::Name())` | Build strings |
+| `FORMAT` | `FORMAT(TODAY(), "yyyy-MM-dd")` | Format dates |
+| `IF` | `IF(Status = "Failed", "ERROR", "OK")` | Conditional logic |
+| `FILTER` | `FILTER(Vendors, Group = "VIP")` | Filter collections |
+
+### 7.4 Running ER Configurations
+
+```xpp
+/// <summary>
+/// Runs an ER configuration programmatically.
+/// </summary>
+class ERRunner
+{
+    public static void runVendorComplianceExport()
+    {
+        ERFormatMappingRun formatRun;
+        ERFormatMapping formatMapping;
+        ERModelMapping modelMapping;
+        
+        // Find the format mapping by name
+        formatMapping = ERFormatMapping::findByName('Vendor Compliance XML Format');
+        
+        if (formatMapping)
+        {
+            formatRun = ERFormatMappingRun::construct(formatMapping);
+            
+            // Set parameters
+            formatRun.parmCompany(CompanyInfo::find().DataArea);
+            formatRun.parmFileName('VendorCompliance_' + DateTimeUtil::toStr(DateTimeUtil::utcNow()) + '.xml');
+            
+            // Execute
+            formatRun.run();
+            
+            info('ER export completed');
+        }
+        else
+        {
+            error('Format mapping not found');
+        }
+    }
+}
+```
+
+---
+
+## 8. Power BI Integration
+
+### 8.1 Power BI and D365 F&O
+
+Power BI can connect to D365 F&O data through:
+1. **OData Feed** — Direct connection to Data Entities
+2. **Azure SQL Database** — Direct database access (read-only replica)
+3. **Entity Store** — Pre-aggregated analytical data (BYOD)
+4. **Composite Data Entities** — For complex analytical models
+
+### 8.2 Connecting Power BI via OData
+
+1. Open Power BI Desktop
+2. **Get Data** → **OData Feed**
+3. URL: `https://<env>.dynamics.com/data/`
+4. Select entities: `Vendors`, `Customers`, `SalesOrders`
+5. **Load** or **Transform Data** (Power Query)
+
+### 8.3 Best Practices for Power BI
+
+| Practice | Reason |
+|---|---|
+| Use **Data Entities** as source | Abstraction, security, performance |
+| Enable **incremental refresh** | Large datasets, scheduled updates |
+| Use **Entity Store** for analytics | Pre-aggregated, optimized for BI |
+| Limit columns in query | Reduce data transfer |
+| Implement **row-level security** | Match D365 security model |
+
+---
+
+## 9. Capstone Activity: Build a Multi-Company Vendor Compliance Report
+
+> **Objective**: Build a production-ready SSRS report with TempDB pre-processing and an ER configuration for XML export.
+
+### 9.1 Requirements
+
+**SSRS Report:**
+1. **Report Name**: `MultiCompanyVendorComplianceReport`
+2. **Parameters**: Company (multi-select), Date Range, Compliance Status
+3. **Data Provider**: `SrsReportDataProviderPreProcessTempDB` (batch pre-processing)
+4. **Layout**: Grouped by Company → Vendor → Declarations
+5. **Output**: PDF for compliance officers, Excel for analysis
+
+**ER Configuration:**
+1. **Format Name**: `MultiCompanyVendorComplianceXML`
+2. **Output**: XML for external audit system
+2. **Fields**: All report fields + Company code
+3. **Delivery**: Logic App triggered from `postProcess()`
+
+---
+
+### 9.2 SSRS Implementation
+
+**TempDB Table:**
+```xpp
+table MultiCompanyVendorComplianceTmp
+{
+    Storage = TempDB;
+    DataClassification = CustomerContent;
+
+    fields
+    {
+        field(CompanyCode; Code[4]) { }
+        field(AccountNum; AccountNum) { }
+        field(VendorName; Name) { }
+        field(DeclId; Code[35]) { }
+        field(DeclDate; Date) { }
+        field(CustomsRef; Code[50]) { }
+        field(Status; Text[20]) { }
+    }
+
+    keys
+    {
+        key(PK; RecId) { Clustered = true; }
+        key(IX_Company; CompanyCode, AccountNum) { }
+    }
+}
+```
+
+**Data Provider:**
+```xpp
+[SRSReportQueryAttribute('MultiCompanyVendorComplianceReport'), 
+ SRSReportParameterAttribute(classstr(MultiCompanyVendorComplianceContract))]
+class MultiCompanyVendorComplianceDP extends SrsReportDataProviderPreProcessTempDB
+{
+    MultiCompanyVendorComplianceTmp tmpTable;
+
+    public void processReport()
+    {
+        MultiCompanyVendorComplianceContract contract;
+        Query query;
+        Container companyList;
+
+        contract = this.parmDataContract() as MultiCompanyVendorComplianceContract;
+        companyList = contract.parmCompanyList();
+
+        query = this.buildQuery(contract, companyList);
+        this.populateTempTable(query, tmpTable);
+    }
+
+    [SRSReportDataSetAttribute(tableStr(MultiCompanyVendorComplianceTmp))]
+    public MultiCompanyVendorComplianceTmp getMultiCompanyVendorComplianceTmp()
+    {
+        return tmpTable;
+    }
+
+    private Query buildQuery(MultiCompanyVendorComplianceContract _contract, Container _companyList)
+    {
+        Query query = new Query();
+        QueryBuildDataSource qbdVend = query.addDataSource(tableNum(VendTable));
+        qbdVend.relations(true);
+
+        // Multi-company filter
+        if (conLen(_companyList) > 0)
+        {
+            qbdVend.addRange(fieldNum(VendTable, DataAreaId))
+                .value(this.buildCompanyRange(_companyList));
+        }
+
+        // Date range on declarations
+        QueryBuildDataSource qbdDecl = qbdVend.addDataSource(tableNum(APCustomsDeclaration));
+        qbdDecl.joinMode(JoinMode::InnerJoin);
+        qbdDecl.relations(true);
+
+        qbdDecl.addRange(fieldNum(APCustomsDeclaration, DeclDate))
+            .value(strfmt('"%1" .. "%2"', _contract.parmFromDate(), _contract.parmToDate()));
+
+        if (_contract.parmComplianceStatus())
+        {
+            qbdDecl.addRange(fieldNum(APCustomsDeclaration, Status))
+                .value(queryValue(_contract.parmComplianceStatus()));
+        }
+
+        return query;
+    }
+
+    private str buildCompanyRange(Container _companyList)
+    {
+        str range = '';
+        int i;
+        for (i = 1; i <= conLen(_companyList); i++)
+        {
+            range += conPeek(_companyList, i);
+            if (i < conLen(_companyList)) { range += ','; }
+        }
+        return range;
+    }
+
+    private void populateTempTable(Query _query, MultiCompanyVendorComplianceTmp _tmp)
+    {
+        VendTable vendTable;
+        APCustomsDeclaration decl;
+
+        _tmp.deleteFrom();
+
+        QueryRun queryRun = new QueryRun(_query);
+        while (queryRun.next())
+        {
+            vendTable = queryRun.get(tableNum(VendTable));
+            decl = queryRun.get(tableNum(APCustomsDeclaration));
+
+            _tmp.clear();
+            _tmp.CompanyCode = vendTable.DataAreaId;
+            _tmp.AccountNum = vendTable.AccountNum;
+            _tmp.VendorName = vendTable.Name;
+            _tmp.DeclId = decl.DeclId;
+            _tmp.DeclDate = decl.DeclDate;
+            _tmp.CustomsRef = decl.CustomsRef;
+            _tmp.Status = decl.Status;
+            _tmp.insert();
+        }
+    }
+}
+```
+
+**Contract:**
+```xpp
+[DataContractAttribute]
+class MultiCompanyVendorComplianceContract extends SrsReportDataContract
+{
+    Container _companyList;
+    FromDate _fromDate;
+    ToDate _toDate;
+    ComplianceStatus _complianceStatus;
+
+    [DataMemberAttribute('CompanyList')]
+    public Container parmCompanyList(Container _companyList = _companyList)
+    {
+        return _companyList;
+    }
+
+    [DataMemberAttribute('FromDate')]
+    public FromDate parmFromDate(FromDate _fromDate = _fromDate)
+    {
+        return _fromDate;
+    }
+
+    [DataMemberAttribute('ToDate')]
+    public ToDate parmToDate(ToDate _toDate = _toDate)
+    {
+        return _toDate;
+    }
+
+    [DataMemberAttribute('ComplianceStatus')]
+    public ComplianceStatus parmComplianceStatus(ComplianceStatus _complianceStatus = _complianceStatus)
+    {
+        return _complianceStatus;
+    }
+}
+```
+
+---
+
+### 9.3 ER Configuration
+
+**Model:** `MultiCompanyVendorComplianceModel`
+**Format:** `MultiCompanyVendorComplianceXML`
+
+**Format Designer Layout:**
+```
+Root: VendorComplianceExport
+├── Header
+│   ├── ExportDateTime = DATETIMEFORMAT(NOW(), "yyyy-MM-ddTHH:mm:ss")
+│   ├── CompanyCount = COUNT(Companies)
+│   └── TotalDeclarations = SUM(Companies.Vendors.Declarations)
+│
+├── Companies (Collection)
+│   ├── CompanyCode = DataAreaId
+│   ├── CompanyName = CompanyInfo::Name()
+│   │
+│   ├── Vendors (Collection)
+│   │   ├── AccountNum
+│   │   ├── Name
+│   │   │
+│   │   ├── Declarations (Collection)
+│   │   │   ├── DeclId
+│   │   │   ├── DeclDate = FORMAT(DeclDate, "yyyy-MM-dd")
+│   │   │   ├── CustomsRef
+│   │   │   └── Status
+│   │
+│   └── CompanySummary
+│       ├── VendorCount = COUNT(Vendors)
+│       └── DeclarationCount = COUNT(Vendors.Declarations)
+```
+
+---
+
+## 10. Common Mistakes to Avoid
+
+| # | Mistake | Why It's Wrong | Correct Approach |
+|---|---|---|---|
+| 1 | **Using `SrsReportDataProvider` for large datasets** | Times out at render time; blocks user session | Use `SrsReportDataProviderPreProcessTempDB` with batch pre-processing |
+| 2 | **TempDB table uses `InMemory` storage** | Memory pressure, data loss on AOS restart | Always use `Storage = TempDB` for report temp tables |
+| 3 | **Complex calculations in RDL expressions** | Slow rendering, hard to debug | Move calculations to data provider X++ code |
+| 4 | **No indexing on temp table** | Slow report rendering on large datasets | Add indexes on grouping/filtering fields |
+| 5 | **Hardcoded company filter** | Report only works in one company | Use `DataAreaId` range from parameter |
+| 6 | **Missing `deleteFrom()` in pre-process** | Duplicate data on re-run | Always clear temp table at start of `processReport()` |
+| 7 | **ER format hardcoded to one company** | Can't generate multi-company output | Use `CompanyInfo::Name()` and `DataAreaId` in format |
+| 8 | **SSRS and ER duplicating logic** | Maintenance nightmare | Use SSRS for operational reports, ER for regulatory/integration |
+| 9 | **No parameter validation in controller** | Invalid dates/ranges cause confusing errors | Validate in `preRunValidate()` |
+| 10 | **Not testing with production data volumes** | Performance issues only appear in prod | Test with Tier-2 data or generated test data |
+
+---
+
+## 11. Microsoft Learn References
+
+### SSRS Reporting
+- **SSRS Reports Overview**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/analytics/ssrs-reporting/
+- **SrsReportDataProvider**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/analytics/ssrs-report-data-provider
+- **Report Design Best Practices**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/analytics/report-design-best-practices
+- **TempDB Pre-Processing**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/analytics/ssrs-tempdb-preprocessing
+
+### Electronic Reporting
+- **ER Overview**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/analytics/electronic-reporting
+- **ER Format Designer**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/analytics/er-format-designer
+- **ER Formula Language**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/analytics/er-formula-language
+- **ER Model Mapping**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/analytics/er-model-mapping
+
+### Power BI
+- **Power BI Integration**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/analytics/power-bi-integration
+- **Entity Store**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/analytics/entity-store
+
+---
+
+*End of Chapter 17 — SSRS & Electronic Reporting*
 
 ```xpp
 [DataContractAttribute]
@@ -7038,143 +9473,249 @@ printJobSettings.parmEmailBody('Please find the monthly compliance report attach
 
 # Chapter 18: Batch Processing
 
-## 18.1 Jobs vs. Batch vs. RunBase — Decision Matrix
+> **Complete reference for designing, implementing, and operating batch jobs in Dynamics 365 Finance & Operations.**
+> Covers RunBaseBatch vs SysOperation frameworks, batch architecture, parallel processing patterns, retry logic, and a production-ready capstone activity.
 
-D365 F&O provides three distinct mechanisms for executing background or scheduled operations. Choosing the right one depends on the complexity, duration, and user interaction requirements of the task.
+---
 
-### The Three Mechanisms
+## Table of Contents
 
-| Mechanism | Description | When to Use |
-|---|---|---|
-| **Job** | A simple X++ script executed ad-hoc for one-time data fixes, reports, or one-off processing | Quick data fixes, ad-hoc reports, one-time data migration |
-| **Batch (RunBaseBatch)** | A scheduled, queued job that runs asynchronously via the batch framework | Long-running operations, nightly processing, operations that should run unattended |
-| **RunBase** | A dialog-based operation with user input, can run synchronously or as a batch | Operations that need user parameters and may or may not need batch queuing |
+1. [Batch Processing Fundamentals — The Restaurant Analogy](#1-batch-processing-fundamentals--the-restaurant-analogy)
+2. [RunBaseBatch vs SysOperation — Framework Comparison](#2-runbasebatch-vs-sysoperation--framework-comparison)
+3. [Batch Architecture at Platform Level](#3-batch-architecture-at-platform-level)
+4. [RunBaseBatch — The Legacy Pattern](#4-runbasebatch--the-legacy-pattern)
+5. [SysOperation Framework — The Modern Pattern](#5-sysoperation-framework--the-modern-pattern)
+6. [Side-by-Side Comparison](#6-side-by-side-comparison)
+7. [Production Environment Behavior](#7-production-environment-behavior)
+8. [Parallel Processing Patterns](#8-parallel-processing-patterns)
+9. [Transaction Design for Batch Jobs](#9-transaction-design-for-batch-jobs)
+10. [Capstone Activity: Nightly Overdue Customer Blocking](#10-capstone-activity-nightly-overdue-customer-blocking)
+11. [Microsoft Learn References](#11-microsoft-learn-references)
 
-### Decision Matrix
+---
 
-| Scenario | Use Job | Use Batch | Use RunBase |
-|---|---|---|---|
-| One-time data fix (e.g., update 100 records) | ✅ Yes | ❌ No | ❌ No |
-| Nightly reconciliation of 100K+ records | ❌ No | ✅ Yes | ❌ No |
-| User needs to input parameters before execution | ❌ No | ✅ Yes (via RunBaseBatch dialog) | ✅ Yes |
-| Operation takes < 5 seconds | ✅ Yes or RunBase | ❌ No | ✅ Yes |
-| Operation takes > 5 minutes | ❌ No | ✅ Yes | ❌ No (use batch) |
-| Operation needs to run unattended | ❌ No | ✅ Yes | ❌ No |
-| Operation needs progress reporting | ❌ No | ✅ Yes | ⚠️ Limited |
-| Operation needs retry on failure | ❌ No | ✅ Yes | ❌ No |
-| Operation needs email notification on completion | ❌ No | ✅ Yes | ❌ No |
+## 1. Batch Processing Fundamentals — The Restaurant Analogy
 
-### Job — Quick Ad-Hoc Execution
+Imagine you're at a restaurant.
 
-A job is the simplest execution mechanism. It's an X++ script that runs immediately when triggered.
+- **Interactive/synchronous work** is you ordering at the counter and waiting right there while the cook makes your sandwich. You can't do anything else until it's in your hand.
+- **Batch processing** is you filling out a to-go order form, dropping it in a box, and walking away. The kitchen picks it up whenever a cook is free, makes it, and you're notified (or you check back later) when it's ready. You didn't have to stand there, and the kitchen can queue up dozens of these orders, prioritize the urgent ones, and retry if something goes wrong with your specific order — without stopping the whole kitchen.
+
+In D365 F&O, the "kitchen" is the **AOS (Application Object Server)**, and the "order form in a box" is a row written to the **`BatchJob`** table, with one or more **`BatchJobTask`** rows underneath it — think of these as the individual line items on the order. A background process on the server, the **batch server**, continuously works through that queue.
+
+So when someone says "make this class batch-able," they mean: *let this piece of code be dropped into that order queue instead of forcing a user to sit and wait for it.*
+
+There are two different **recipes** (frameworks) for writing the code that goes into that order box:
+
+1. **RunBase / RunBaseBatch** — the older recipe, from the AX 2009/2012 era. Still fully supported and still used across a lot of existing D365 F&O standard code.
+2. **SysOperation Framework** — the newer, cleaner recipe, and the one used for all new development.
+
+Both recipes end up producing the exact same kind of order, sitting in the exact same queue, worked by the exact same kitchen staff. The difference is entirely in how the recipe is written — not in how the kitchen processes it.
+
+That's the single most useful idea to carry into both real development work and interviews: **the framework choice is a development-time decision; the production execution engine underneath is shared and identical.**
+
+---
+
+## 2. RunBaseBatch vs SysOperation — Framework Comparison
+
+### 2.1 The One-Person Restaurant (RunBase)
+
+`RunBase` is the base framework class providing the skeleton: *dialog → validate → run → pack/unpack*. `RunBaseBatch` extends `RunBase` and implements the `Batchable` interface — this is what actually allows a class to be submitted as a `BatchJob`. Any job that must be able to run in batch inherits from this class.
+
+**Core lifecycle methods:**
+
+| Method | Purpose |
+|---|---|
+| `dialog()` | Builds the interactive parameter dialog |
+| `getFromDialog()` | Reads dialog values back into member variables |
+| `pack()` | Serializes the object's state into a `container` for storage on the `BatchJob` record |
+| `unpack()` | Deserializes that container back into a fresh object instance when the job actually runs |
+| `run()` | The actual business logic |
+| `canGoBatch()` | Defaults to `false` — must be overridden to return `true` to allow batch submission |
+| `batchInfo()` | Returns the `BatchInfo` object — the API into the batch table for that job |
+
+**The `pack()`/`unpack()` trap:**
+Submitting a RunBase class to batch doesn't keep the object alive in memory. It's serialized via `pack()` into a `container` and stored on the `BatchJob` record. When the batch server later picks it up — possibly after an AOS restart, possibly hours later — it builds a **brand-new object** and calls `unpack()` to restore state, then calls `run()`. The safe pattern uses a version macro so future schema changes don't silently break already-queued jobs:
 
 ```xpp
-static void Job_QuickVendorUpdate(Args _args)
+class MyBatchClass extends RunBaseBatch
 {
-    VendTable vendTable;
+    str myParameter = "Default value";
 
-    // Quick one-time update: set compliance code for vendors without one
-    while select vendTable
-        where vendTable.ComplianceCode == ''
-        && vendTable.CreditMax > 500000
+    #define.CurrentVersion(1)
+    #localmacro.CurrentList
+        myParameter
+    #endmacro
+
+    public container pack()
     {
-        vendTable.ComplianceCode = 'DEFAULT-COMP';
-        vendTable.update();
+        return [#CurrentVersion, #CurrentList];
     }
 
-    info(strFmt('Updated %1 vendors.', vendTable.RecCount));
+    public boolean unpack(container _packedClass)
+    {
+        Integer version = RunBase::getVersion(_packedClass);
+        switch (version)
+        {
+            case #CurrentVersion:
+                [version, #CurrentList] = _packedClass;
+                break;
+            default:
+                return false; // unrecognized version — refuse to run with stale/unknown state
+        }
+        return true;
+    }
+
+    public boolean canGoBatch()
+    {
+        return true; // must explicitly opt in
+    }
 }
 ```
 
-**When to use jobs:**
-- Quick data fixes that need to run once
-- Ad-hoc reporting or data extraction
-- Testing a piece of logic before implementing it as a proper batch
-- One-time data migration during implementation
+If a new member variable is added to the class but not to both `pack()` and `unpack()` (with the version bumped), that value silently disappears the moment the job actually executes in batch — a bug that won't show up in interactive testing, only in production, hours after the developer has moved on.
 
-**When NOT to use jobs:**
-- Operations that need to run on a schedule
-- Operations that need retry logic
-- Operations that need progress reporting
-- Operations that need user input parameters
+**Pros**
+- Fast to stand up for a simple, self-contained job — one class, one file
+- Battle-tested and still fully supported in current D365 F&O
+- Straightforward mental model once internalized: pack → queue → unpack → run
 
----
-
-## 18.2 BatchJob and BatchHistory Tables
-
-The batch framework in D365 F&O manages the lifecycle of batch jobs through the **BatchJob** (current state) and **BatchHistory** (execution history) tables.
-
-### Batch Job Lifecycle Stages
-
-```
-[1] Job Created → BatchJob.STATUS = Waiting
-    │
-[2] Job Queued → BatchJob.STATUS = Waiting (queued for execution)
-    │
-[3] Batch Server picks up job → BatchJob.STATUS = Executing
-    │
-[4] Job executes → run() method executes on the server
-    │
-[5] Job completes → BatchJob.STATUS = Finished (or Error/Canceled)
-    │
-[6] History recorded → BatchHistory captures STARTDATETIME, ENDDATETIME, STATUS
-    │
-[7] User notified via Infolog and/or email
-```
-
-**Source:** [Batch OData API](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/sysadmin/batch-odata-api) | [BatchStatus enum (.NET API)](https://learn.microsoft.com/en-us/dotnet/api/microsoft.dynamics.ax.xpp.batchstatus)
-
-### BatchJob and BatchHistory Tables
-
-The **BatchJob** and **BatchHistory** tables track the state and history of batch jobs:
-
-| Table | Field | Description |
-|---|---|---|
-| **BatchJob** | `BATCHJOBID` | Unique identifier for the batch job |
-| **BatchJob** | `CAPTION` | User-readable description of the job |
-| **BatchJob** | `STATUS` | Current status (Waiting, Executing, Finished, Error, Canceled) |
-| **BatchJob** | `SERVERID` | The batch server processing the job |
-| **BatchHistory** | `BATCHJOBID` | Links to the BatchJob record |
-| **BatchHistory** | `STARTDATETIME` | When the job started executing |
-| **BatchHistory** | `ENDDATETIME` | When the job finished executing |
-| **BatchHistory** | `STATUS` | Final status (Finished, Error, Canceled) |
-
-### BatchStatus Enum Reference
-
-The `BatchStatus` X++ enum defines all possible batch job states. The lifecycle progression follows Waiting → Executing → Finished/Error/Canceled:
-
-| Enum Member | Value | Category | Description |
-|---|---|---|---|
-| `Hold` | 0 | Pre-execution | Job is on hold (stopped by user) |
-| `Waiting` | 1 | Active | Job is queued and waiting to be picked up |
-| `Executing` | 2 | Active | Job is currently running on a batch server |
-| `Error` | 3 | Terminal | Job encountered an error during execution |
-| `Finished` | 4 | Terminal | Job completed successfully |
-| `Ready` | 5 | Active | Job is ready to be scheduled |
-| `NotRun` | 6 | Post-execution | Job has not run (e.g., dependencies failed) |
-| `Cancelling` | 7 | Transition | Job is in the process of being canceled |
-| `Canceled` | 8 | Terminal | Job was canceled by the user |
-| `Scheduled` | 9 | Active | Job is scheduled for a future run time |
-
-> **Note:** The UI label "Ended" for a successfully completed job corresponds to the X++ enum member `Finished` (value 4). See [BatchStatus enum (.NET API)](https://learn.microsoft.com/en-us/dotnet/api/microsoft.dynamics.ax.xpp.batchstatus) for the complete, authoritative list.
-
-### Batch Groups
-
-Batch groups control which batch server processes which jobs. This allows you to prioritize and isolate batch workloads:
-
-| Batch Group | Purpose | Example |
-|---|---|---|
-| `BATCHGROUP1` | Standard batch processing | General reconciliation jobs |
-| `BATCHGROUP2` | High-priority batch processing | Time-sensitive compliance checks |
-| `BATCHGROUP3` | Low-priority batch processing | Nightly reports, data cleanup |
+**Cons**
+- UI (dialog), state (pack/unpack), and logic (run) are all fused into one class — poor separation of concerns
+- `container`-based serialization is untyped and version-fragile; easy to introduce silent data-loss bugs on schema changes
+- Hard to unit test in isolation — dialog and business logic aren't cleanly separable
+- No natural way to reuse the same parameter definition across a UI dialog, an external service call, and a batch job — each has to be solved separately
 
 ---
 
-## 18.3 `RunBaseBatch` — Dialog UI for Batch Parameters
+### 2.2 The Restaurant Becomes a Team (SysOperation)
 
-`RunBaseBatch` extends `RunBase` to add batch job capabilities. It provides the dialog UI for parameter input, batch queuing, and progress reporting.
+SysOperation replaces the RunBase framework as the standard way to build interaction dialogs and integrate with the batch server. It follows an **MVC-style pattern** — Model, View (auto-generated), Controller — which cleanly separates the three concerns that RunBase fuses together.
 
-### The `RunBaseBatch` Class Template
+| Piece | Class shape | Responsibility |
+|---|---|---|
+| **Data Contract** | Plain class, `[DataContractAttribute]` on the class, `[DataMemberAttribute]` on each parm-method | Defines *what* parameters exist — strongly typed, no manual serialization code |
+| **Service** | Plain class with one public method taking the contract as its parameter | Defines *what happens* — pure business logic, unaware of whether it's called interactively, asynchronously, or from batch |
+| **Controller** | Extends `SysOperationServiceController` | Defines *how* it runs — wires the contract to the service, sets the execution mode, and is the entry point from a menu item |
+
+```xpp
+// 1. Data Contract
+[DataContractAttribute]
+class VSICustBlockContract
+{
+    CustAccount custAccount;
+
+    [DataMemberAttribute('CustAccount')]
+    public CustAccount parmCustAccount(CustAccount _custAccount = custAccount)
+    {
+        custAccount = _custAccount;
+        return custAccount;
+    }
+}
+
+// 2. Service — pure logic, framework-agnostic, unit-testable
+class VSICustBlockService extends SysOperationServiceBase
+{
+    public void blockCustomer(VSICustBlockContract _contract)
+    {
+        CustTable custTable = CustTable::find(_contract.parmCustAccount(), true);
+        ttsBegin;
+        custTable.Blocked = CustVendorBlocked::All;
+        custTable.update();
+        ttsCommit;
+    }
+}
+
+// 3. Controller — the entry point a menu item points to
+class VSICustBlockController extends SysOperationServiceController
+{
+    public static void main(Args _args)
+    {
+        VSICustBlockController controller = new VSICustBlockController();
+        controller.parmClassName(classStr(VSICustBlockService));
+        controller.parmMethodName(methodStr(VSICustBlockService, blockCustomer));
+        controller.startOperation();
+    }
+}
+```
+
+Because the service method (`blockCustomer`) never touches dialog code or batch plumbing, the exact same logic can be invoked interactively, from batch, or directly from another X++ class in a unit test — with zero duplication.
+
+**The four execution modes (`SysOperationExecutionMode`):**
+
+| Mode | What actually happens |
+|---|---|
+| `Synchronous` | Runs on the server but **freezes the client** for the duration — the user waits |
+| `Asynchronous` | Runs on the server without blocking the client, but requires the service class to have a Service node in the AOT and be deployed as part of a service group — otherwise it silently falls back to `Synchronous` |
+| `ReliableAsynchronous` | The default mode when none is set. Spins up two threads — one on the batch server doing the work, one on the client polling for the result. Once complete, it remains visible in **Batch Job History** for traceability |
+| `ScheduledBatch` | Submits as a proper, schedulable `BatchJob` — equivalent to checking the batch tab in a RunBase dialog. This is the mode for true unattended, recurring, retryable batch execution |
+
+Worth committing to memory precisely: "SysOperation always runs in batch" is a common misconception. Batch is one of four modes it can run in, selected via `controller.parmExecutionMode(...)`.
+
+**Pros**
+- Clean separation of Contract / Service / Controller — the service class is genuinely unit-testable with no framework dependency
+- Strongly typed `[DataMember]` contracts instead of untyped containers — far safer across upgrades
+- One data contract is reusable across the UI dialog, external service exposure (via `SysEntryPointAttribute`), and batch submission
+- Dialog is auto-generated from the contract's attributes — less boilerplate than a hand-built `dialog()` override
+- Clean fit with F&O's patterns for scaling out to multiple parallel batch tasks
+
+**Cons**
+- More ceremony (three classes instead of one) for genuinely trivial one-off tasks
+- Attribute-driven metadata can feel opaque until you understand what it's generating
+- Slightly steeper initial learning curve than RunBase's single-class model
+
+---
+
+## 3. Batch Architecture at Platform Level
+
+### 3.1 What "Batch" Means at the Platform Level
+
+A class becomes batch-eligible when its execution is represented as a persisted `BatchJob` (parent) and one or more `BatchJobTask` (child) records, picked up and executed by a **batch server** — an AOS instance flagged as "Is batch server" in **System administration > Setup > System > Server configuration**.
+
+Batch processing is the right tool whenever a piece of logic:
+- Shouldn't block a user's session (long-running reports, mass updates, postings)
+- Needs to run unattended on a schedule (nightly jobs, recurring imports)
+- Needs the reliability of being queued, retried, prioritized, and monitored independently of any one user's client session
+
+Both frameworks below are simply two different ways to get a class into that queue.
+
+### 3.2 BatchJob and BatchJobTask Tables
+
+| Table | Key Fields | Purpose |
+|---|---|---|
+| **BatchJob** | `BATCHJOBID`, `CAPTION`, `STATUS`, `SERVERID`, `BATCHGROUP` | Parent job record — metadata, scheduling, status |
+| **BatchJobTask** | `BATCHJOBID`, `TASKID`, `CLASSNAME`, `METHODNAME`, `STATUS` | Child task — actual execution unit, one per parallel worker |
+
+### 3.3 Batch Status Lifecycle
+
+```
+Waiting → Executing → Finished/Error/Canceled
+    │
+    ├── Hold (0) — manually paused
+    ├── Waiting (1) — queued, ready for pickup
+    ├── Executing (2) — running on batch server
+    ├── Error (3) — failed
+    ├── Finished (4) — succeeded
+    ├── Ready (5) — ready to schedule
+    ├── NotRun (6) — dependencies failed
+    ├── Cancelling (7) — user requested cancel
+    ├── Canceled (8) — user canceled
+    └── Scheduled (9) — future run time
+```
+
+### 3.4 Batch Groups and Server Configuration
+
+- **Batch groups** route jobs to specific batch servers
+- **Concurrency** controlled by max threads per batch server
+- **Priority** (Low/Medium/High) affects queue order — not simple FIFO
+- **Recurrence** via `BatchRecurrence` creates next occurrence automatically
+- **Security** — server-bound jobs run under submitting user's permissions via `runsImpersonated()`
+
+---
+
+## 4. RunBaseBatch — The Legacy Pattern
+
+### 4.1 Complete RunBaseBatch Template
 
 ```xpp
 class VendReconciliationBatchJob extends RunBaseBatch
@@ -7209,24 +9750,622 @@ class VendReconciliationBatchJob extends RunBaseBatch
         return dialog;
     }
 
+    // getFromDialog — read dialog values back
+    public void getFromDialog()
+    {
+        super();
+        // Values automatically bound via addFieldValue
+    }
+
     // Pack — serialize for batch
     public container pack()
     {
-        return [vendTable, fromDate, toDate, maxRecords, sendEmail];
+        #define.CurrentVersion(1)
+        #localmacro.CurrentList
+            vendTable, fromDate, toDate, maxRecords, sendEmail
+        #endmacro
+
+        return [#CurrentVersion, #CurrentList];
     }
 
     // Unpack — deserialize from batch
     public boolean unpack(container _packedClass)
     {
-        vendTable = _packedClass.packGet(1);
-        fromDate = _packedClass.packGet(2);
-        toDate = _packedClass.packGet(3);
-        maxRecords = _packedClass.packGet(4);
-        sendEmail = _packedClass.packGet(5);
+        Integer version = RunBase::getVersion(_packedClass);
+        #define.CurrentVersion(1)
+        #localmacro.CurrentList
+            vendTable, fromDate, toDate, maxRecords, sendEmail
+        #endmacro
+
+        switch (version)
+        {
+            case #CurrentVersion:
+                [version, #CurrentList] = _packedClass;
+                break;
+            default:
+                return false;
+        }
         return true;
     }
 
-    // Run on batch tier
+    // Run — the actual business logic
+    public void run()
+    {
+        VendTable vendTableLocal;
+        
+        select vendTableLocal
+            where vendTableLocal.AccountNum == vendTable.AccountNum;
+        
+        if (vendTableLocal)
+        {
+            // Process logic here
+            this.processVendor(vendTableLocal);
+        }
+    }
+
+    // Must override to allow batch
+    public boolean canGoBatch()
+    {
+        return true;
+    }
+
+    private void processVendor(VendTable _vendTable)
+    {
+        // Business logic
+    }
+}
+```
+
+### 4.2 When to Use RunBaseBatch
+
+- Maintaining existing RunBase codebases
+- Simple, self-contained jobs where the ceremony of SysOperation isn't justified
+- Quick prototyping before migrating to SysOperation
+- Jobs that don't need service reuse or unit test isolation
+
+---
+
+## 5. SysOperation Framework — The Modern Pattern
+
+### 5.1 Complete SysOperation Template
+
+```xpp
+// 1. DATA CONTRACT — Strongly typed parameters
+[DataContractAttribute]
+class CustReconciliationContract
+{
+    CustAccount custAccount;
+    FromDate fromDate;
+    ToDate toDate;
+    int maxRecords;
+    boolean sendEmail;
+
+    [DataMemberAttribute('CustAccount')]
+    public CustAccount parmCustAccount(CustAccount _custAccount = custAccount)
+    {
+        custAccount = _custAccount;
+        return custAccount;
+    }
+
+    [DataMemberAttribute('FromDate')]
+    public FromDate parmFromDate(FromDate _fromDate = fromDate)
+    {
+        fromDate = _fromDate;
+        return fromDate;
+    }
+
+    [DataMemberAttribute('ToDate')]
+    public ToDate parmToDate(ToDate _toDate = toDate)
+    {
+        toDate = _toDate;
+        return toDate;
+    }
+
+    [DataMemberAttribute('MaxRecords')]
+    public int parmMaxRecords(int _maxRecords = maxRecords)
+    {
+        maxRecords = _maxRecords;
+        return maxRecords;
+    }
+
+    [DataMemberAttribute('SendEmail')]
+    public boolean parmSendEmail(boolean _sendEmail = sendEmail)
+    {
+        sendEmail = _sendEmail;
+        return sendEmail;
+    }
+}
+
+// 2. SERVICE — Pure business logic, framework-agnostic
+class CustReconciliationService extends SysOperationServiceBase
+{
+    public void processReconciliation(CustReconciliationContract _contract)
+    {
+        CustTable custTable;
+        int processedCount = 0;
+
+        while select custTable
+            where custTable.AccountNum == _contract.parmCustAccount()
+        {
+            // Process each customer
+            this.processCustomer(custTable, _contract);
+            processedCount++;
+
+            // Progress reporting (optional)
+            if (this.parmProgress())
+            {
+                this.parmProgress().setProgress(processedCount, 100);
+            }
+        }
+
+        info(strFmt('Processed %1 customers', processedCount));
+    }
+
+    private void processCustomer(CustTable _custTable, CustReconciliationContract _contract)
+    {
+        // Business logic here
+    }
+}
+
+// 3. CONTROLLER — Entry point and execution mode
+class CustReconciliationController extends SysOperationServiceController
+{
+    public static void main(Args _args)
+    {
+        CustReconciliationController controller = new CustReconciliationController();
+        controller.parmClassName(classStr(CustReconciliationService));
+        controller.parmMethodName(methodStr(CustReconciliationService, processReconciliation));
+        controller.parmExecutionMode(SysOperationExecutionMode::ScheduledBatch); // For true batch
+        controller.startOperation();
+    }
+}
+```
+
+### 5.2 Execution Mode Selection
+
+```xpp
+// In controller or when calling programmatically:
+controller.parmExecutionMode(SysOperationExecutionMode::ScheduledBatch);  // True batch — queued, retryable, schedulable
+controller.parmExecutionMode(SysOperationExecutionMode::ReliableAsynchronous);  // Default — background with polling
+controller.parmExecutionMode(SysOperationExecutionMode::Asynchronous);  // Fire-and-forget (needs service group)
+controller.parmExecutionMode(SysOperationExecutionMode::Synchronous);  // Blocks client — interactive
+```
+
+### 5.3 UI Builder (Optional Customization)
+
+For custom dialogs beyond auto-generated fields:
+
+```xpp
+class CustReconciliationUIBuilder extends SysOperationAutomaticUIBuilder
+{
+    public void postBuild()
+    {
+        super();
+        
+        // Customize dialog: hide fields, add groups, set lookups
+        DialogField dfCustAccount = this.bindInfo().getDialogField(
+            this.dataContractObject(), methodStr(CustReconciliationContract, parmCustAccount));
+        dfCustAccount.lookupButton(true);
+        dfCustAccount.helpText('Select the customer to reconcile');
+    }
+}
+```
+
+Register in controller:
+```xpp
+class CustReconciliationController extends SysOperationServiceController
+{
+    public void new()
+    {
+        super();
+        this.parmUIBuilderClassName(classStr(CustReconciliationUIBuilder));
+    }
+}
+```
+
+---
+
+## 6. Side-by-Side Comparison
+
+| Aspect | RunBase / RunBaseBatch | SysOperation Framework |
+|---|---|---|
+| Era | AX 2009/2012 | AX 2012 R2+ → current standard in D365 F&O |
+| Structure | One monolithic class | Three classes: Contract, Service, Controller |
+| Parameter storage | `pack()`/`unpack()` into untyped `container` | Strongly typed `[DataMember]` attributes on contract |
+| Testability | Poor — logic entangled with dialog code | Strong — service logic is pure and isolatable |
+| Reuse across UI / batch / external service | Manual, duplicated per use case | Native — one contract, many entry points |
+| Getting into batch queue | Override `canGoBatch()` to `true`; user checks Batch tab | Controller sets `parmExecutionMode(ScheduledBatch)` |
+| Parallel/multi-threaded execution | Manual — task-splitting logic built directly against `BatchHeader`/`BatchJobTask` | Fits cleanly with F&O's standard parallel-task-splitting patterns |
+| Current guidance | Legacy, still supported | **Recommended for all new development** |
+| Where it still shows up | Older standard modules (parts of AR/AP, older Trade code) | Most standard batch/service code added since AX 2012 R2 onward |
+
+---
+
+## 7. Production Environment Behavior
+
+Once a job becomes a `BatchJob` row, both frameworks are executed by the identical batch engine. Everything below applies equally regardless of which framework produced the job.
+
+- **Batch groups** — Batch servers are configured to service specific batch groups, so heavy jobs (e.g. a large costing or MRP run) can be routed to a dedicated server and kept from starving lighter, time-sensitive batch work on a shared one.
+- **Threads/concurrency** — Each batch server has a configured maximum number of concurrent threads it can process.
+- **Priority** — Jobs carry a priority (Low/Medium/High); the engine picks the highest-priority *ready* task first, not simple FIFO.
+- **Recurrence** — `BatchRecurrence` automatically creates the next occurrence once a recurring job finishes, identically for both frameworks.
+- **Retry/failure** — An unhandled exception marks the task **Error**; retry behavior is configurable. Neither framework auto-manages transaction boundaries — `ttsBegin`/`ttsCommit` discipline is entirely on the developer, same as any other X++ code. A RunBase class with incomplete `pack()` state is a uniquely legacy-framework risk here; a typed SysOperation contract makes that specific failure mode much harder to introduce.
+- **Security** — Server-bound batch jobs (via `runsImpersonated()` returning `true`) run under the submitting user's permissions and have restricted interaction with the client, making them more secure than non-server-bound execution.
+- **Monitoring** — Both surface identically at **System administration > Inquiries > Batch jobs**, showing status (Waiting/Executing/Ended/Error/Canceled), full history, and the ability to requeue. From the Batch Jobs form alone, there's no way to tell whether the underlying class is RunBase or SysOperation — that distinction is invisible at runtime.
+
+---
+
+## 8. Parallel Processing Patterns
+
+When your batch job becomes large, you start asking questions such as:
+> Who owns this piece of work? Has somebody already processed it? What happens if processing fails? Can we retry it? How do we know what succeeded? What happens if the batch server crashes? How many workers should run simultaneously? Are multiple workers locking the same records? Should everything be inside one transaction?
+
+These are not really RunBase-vs-SysOperation questions anymore. They are **batch architecture questions**.
+
+### 8.1 Three Approaches to Task Splitting
+
+| Approach | Best for | Fit for high-volume scenario |
+|---|---|---|
+| **Individual task modeling** | A handful of items, or items with real dependencies | Works fine for a dozen; at "thousands," batch engine's task-tracking overhead becomes the bottleneck |
+| **Batch bundling** | Evenly distributed, uniform workload, no staging table needed | Reasonable for constant-time work — lacks built-in progress tracking |
+| **Top picking pattern** | Uneven workload at real volume, bounded parallel tasks with shared queue | **The right fit** — same mechanism F&O uses for high-volume journal batch posting |
+
+### 8.2 Top Picking Pattern — The Production Standard
+
+**Mechanism:** A bounded number of `BatchJobTask`s (say, 5 or 10 — not one per customer) are scheduled. Each task runs the same worker loop: inside a short transaction, claim the next `Ready` row from the staging table (mark it `InProgress`, tag it with the task's own identity), commit quickly, then do the actual work outside that claiming transaction, and finally mark the row `Done` (or `Error`).
+
+```xpp
+// Staging/queue table: VSICustBlockQueue
+// Fields: RecId, CustAccount, Status (Ready/InProgress/Done/Error), BatchTaskId, ErrorText
+
+// --- Producer: populates the queue from the contract's criteria ---
+class VSICustBlockSelectorService extends SysOperationServiceBase
+{
+    public void selectOverdueCustomers(VSICustBlockSelectionContract _contract)
+    {
+        CustTable custTable;
+        VSICustBlockQueue queueRecord;
+
+        while select custTable
+            where custTable.overdueDate() <= _contract.parmOverdueSinceDate() // conceptual filter
+        {
+            queueRecord.clear();
+            queueRecord.CustAccount = custTable.AccountNum;
+            queueRecord.Status      = VSICustBlockQueueStatus::Ready;
+            queueRecord.insert();
+        }
+    }
+}
+
+// --- Worker: top-picking loop, run by each parallel batch task ---
+class VSICustBlockWorkerService extends SysOperationServiceBase
+{
+    public void processQueue()
+    {
+        VSICustBlockQueue queueRecord;
+        boolean            hasWork = true;
+
+        while (hasWork)
+        {
+            hasWork = false;
+            ttsBegin;
+            // Claim the next ready row — short, fast transaction
+            select firstOnly forUpdate queueRecord
+                where queueRecord.Status == VSICustBlockQueueStatus::Ready;
+
+            if (queueRecord.RecId)
+            {
+                queueRecord.Status      = VSICustBlockQueueStatus::InProgress;
+                queueRecord.BatchTaskId = this.getCurrentBatchTaskRecId(); // conceptual
+                queueRecord.update();
+                hasWork = true;
+            }
+            ttsCommit;
+
+            if (hasWork)
+            {
+                this.blockOneCustomer(queueRecord.CustAccount, queueRecord);
+            }
+        }
+    }
+
+    private void blockOneCustomer(CustAccount _custAccount, VSICustBlockQueue _queueRecord)
+    {
+        CustTable custTable;
+        try
+        {
+            ttsBegin;
+            custTable = CustTable::find(_custAccount, true);
+            custTable.Blocked = CustVendorBlocked::All;
+            custTable.update();
+
+            _queueRecord.selectForUpdate(true);
+            _queueRecord.Status = VSICustBlockQueueStatus::Done;
+            _queueRecord.update();
+            ttsCommit;
+        }
+        catch (Exception::Error)
+        {
+            ttsBegin;
+            _queueRecord.selectForUpdate(true);
+            _queueRecord.Status    = VSICustBlockQueueStatus::Error;
+            _queueRecord.ErrorText = "Block failed"; // capture real infolog text in practice
+            _queueRecord.update();
+            ttsCommit;
+        }
+    }
+}
+```
+
+---
+
+## 9. Transaction Design for Batch Jobs
+
+### 9.1 Per-Item Transactions — Never One Big Transaction
+
+**Per customer — never one transaction for the whole run.** Two reasons, both load-bearing:
+
+1. **Blast radius of failure.** If customer #4,000 of 10,000 throws (locked record, validation failure, whatever), a single outer transaction rolls back the entire run, including the 3,999 customers already processed successfully. There'd be zero visibility into which ones actually succeeded, and re-running would mean redoing all 4,000 from scratch.
+
+2. **Retry safety requires idempotency, and idempotency requires per-item commit.** With the queue-table design above, a retried or requeued batch task simply resumes: it queries for `Ready` (and optionally `Error`, for auto-retry) rows and picks up exactly where the last run left off. `Done` rows are never touched again. This only works because each customer's block, and its queue-status update, are committed together, atomically, the moment that customer finishes — not deferred until the whole batch completes. The queue table's per-row status *is* the retry-safety mechanism, and it only functions correctly because commits happen at the per-item boundary, not the per-job boundary.
+
+### 9.2 Deadlock Retry Pattern
+
+```xpp
+int retryCount = 0;
+boolean success = false;
+
+while (!success && retryCount < 3)
+{
+    ttsBegin;
+    try
+    {
+        // ... your database operations ...
+        ttsCommit;
+        success = true;
+    }
+    catch (Exception::Deadlock)
+    {
+        ttsAbort;
+        retryCount++;
+        info(strFmt("Deadlock detected — retry %1 of 3", retryCount));
+        sleep(100); // Brief pause
+    }
+    catch (Exception::Error)
+    {
+        ttsAbort;
+        error("A non-deadlock error occurred.");
+        break;
+    }
+}
+```
+
+---
+
+## 10. Capstone Activity: Nightly Overdue Customer Blocking
+
+> **Scenario:** Build a job that blocks a *list* of overdue customers (not just one) for invoicing. It must be schedulable nightly, safely retryable, and — since the list can run into the thousands — ideally process customers in parallel chunks in production.
+
+### 10.1 Requirements
+
+1. **Framework**: SysOperation (modern pattern)
+2. **Parameters**: Overdue date threshold, optional customer group filter
+3. **Execution**: `ScheduledBatch` mode (nightly at 2 AM)
+4. **Parallelism**: Top-picking pattern with 5-10 workers
+5. **Transactions**: Per-customer commits (not one big transaction)
+6. **Retry Safety**: Queue table with status tracking (Ready/InProgress/Done/Error)
+7. **Monitoring**: Batch job history visibility, email/Logic App notification on completion
+8. **Idempotency**: Re-runnable without double-processing
+
+### 10.2 Complete Implementation
+
+**1. Data Contract:**
+```xpp
+[DataContractAttribute]
+class CustOverdueBlockContract
+{
+    Date overdueSinceDate;
+    CustGroup custGroup;
+    int workerCount;
+
+    [DataMemberAttribute('OverdueSinceDate')]
+    public Date parmOverdueSinceDate(Date _overdueSinceDate = overdueSinceDate)
+    {
+        overdueSinceDate = _overdueSinceDate;
+        return overdueSinceDate;
+    }
+
+    [DataMemberAttribute('CustGroup')]
+    public CustGroup parmCustGroup(CustGroup _custGroup = custGroup)
+    {
+        custGroup = _custGroup;
+        return custGroup;
+    }
+
+    [DataMemberAttribute('WorkerCount')]
+    public int parmWorkerCount(int _workerCount = workerCount)
+    {
+        workerCount = _workerCount;
+        return workerCount;
+    }
+}
+```
+
+**2. Staging/Queue Table:**
+```xpp
+table 50103 CustOverdueBlockQueue
+{
+    Storage = TempDB;
+    DataClassification = CustomerContent;
+
+    fields
+    {
+        field(RecId; int64) { }
+        field(CustAccount; CustAccount) { }
+        field(Status; Enum CustOverdueBlockQueueStatus) { }
+        field(BatchTaskId; int64) { }
+        field(ErrorText; Text[250]) { }
+    }
+
+    keys
+    {
+        key(PK; RecId) { Clustered = true; }
+        key(IX_Status; Status) { }
+    }
+}
+
+enum CustOverdueBlockQueueStatus
+{
+    Ready = 0,
+    InProgress = 1,
+    Done = 2,
+    Error = 3
+}
+```
+
+**3. Selector Service (Producer):**
+```xpp
+class CustOverdueBlockSelectorService extends SysOperationServiceBase
+{
+    public void populateQueue(CustOverdueBlockContract _contract)
+    {
+        CustTable custTable;
+        CustOverdueBlockQueue queueRecord;
+        
+        CustOverdueBlockQueue::delete_all(); // Clear previous run
+        
+        while select custTable
+            where custTable.overdueDate() <= _contract.parmOverdueSinceDate()
+               && (_contract.parmCustGroup() == '' || custTable.CustGroup == _contract.parmCustGroup())
+        {
+            queueRecord.clear();
+            queueRecord.CustAccount = custTable.AccountNum;
+            queueRecord.Status      = CustOverdueBlockQueueStatus::Ready;
+            queueRecord.insert();
+        }
+        
+        info(strFmt('Queue populated with %1 customers', 
+            select count(RecId) from CustOverdueBlockQueue where Status == CustOverdueBlockQueueStatus::Ready));
+    }
+}
+```
+
+**4. Worker Service (Consumer — Top Picking):**
+```xpp
+class CustOverdueBlockWorkerService extends SysOperationServiceBase
+{
+    public void processQueue()
+    {
+        CustOverdueBlockQueue queueRecord;
+        boolean hasWork = true;
+        int processedCount = 0;
+        int errorCount = 0;
+
+        while (hasWork)
+        {
+            hasWork = false;
+            ttsBegin;
+            
+            // Claim next ready row — fast, short transaction
+            select firstOnly forUpdate queueRecord
+                where queueRecord.Status == CustOverdueBlockQueueStatus::Ready;
+
+            if (queueRecord.RecId)
+            {
+                queueRecord.Status = CustOverdueBlockQueueStatus::InProgress;
+                queueRecord.update();
+                hasWork = true;
+            }
+            ttsCommit;
+
+            if (hasWork)
+            {
+                try
+                {
+                    this.blockCustomer(queueRecord.CustAccount);
+                    processedCount++;
+                    
+                    // Mark done
+                    ttsBegin;
+                    queueRecord.selectForUpdate(true);
+                    queueRecord.Status = CustOverdueBlockQueueStatus::Done;
+                    queueRecord.update();
+                    ttsCommit;
+                }
+                catch (Exception::Error)
+                {
+                    errorCount++;
+                    ttsBegin;
+                    queueRecord.selectForUpdate(true);
+                    queueRecord.Status = CustOverdueBlockQueueStatus::Error;
+                    queueRecord.ErrorText = "Blocking failed";
+                    queueRecord.update();
+                    ttsCommit;
+                }
+            }
+        }
+        
+        info(strFmt('Worker completed: %1 processed, %2 errors', processedCount, errorCount));
+    }
+
+    private void blockCustomer(CustAccount _custAccount)
+    {
+        CustTable custTable = CustTable::find(_custAccount, true);
+        if (!custTable)
+        {
+            throw error(strFmt('Customer %1 not found', _custAccount));
+        }
+        
+        custTable.Blocked = CustVendorBlocked::All;
+        custTable.update();
+    }
+}
+```
+
+**5. Controller:**
+```xpp
+class CustOverdueBlockController extends SysOperationServiceController
+{
+    public static void main(Args _args)
+    {
+        CustOverdueBlockController controller = new CustOverdueBlockController();
+        controller.parmClassName(classStr(CustOverdueBlockWorkerService));
+        controller.parmMethodName(methodStr(CustOverdueBlockWorkerService, processQueue));
+        controller.parmExecutionMode(SysOperationExecutionMode::ScheduledBatch);
+        controller.startOperation();
+    }
+}
+```
+
+**6. Recurrence Setup (in LCS / Batch Job form):**
+- Recurrence: Daily at 2:00 AM
+- Batch Group: `BATCHGROUP2` (high priority)
+- Max Threads: 5-10 (configured on batch server)
+
+---
+
+## 11. Microsoft Learn References
+
+### Batch Processing
+- **Batch Processing Overview**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/sysadmin/batch-processing-overview
+- **RunBase Framework**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/sysadmin/runbase-framework
+- **SysOperation Framework**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/sysadmin/sysoperation-framework
+- **Batch OData API**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/sysadmin/batch-odata-api
+
+### SysOperation
+- **SysOperation Service Pattern**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/sysadmin/sysoperation-service-pattern
+- **Data Contract Attributes**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/sysadmin/sysoperation-data-contract
+- **UI Builder**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/sysadmin/sysoperation-ui-builder
+- **Execution Modes**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/sysadmin/sysoperation-execution-modes
+
+### Batch Architecture
+- **Batch Groups**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/sysadmin/batch-groups
+- **Batch Server Configuration**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/sysadmin/batch-server-configuration
+- **Batch Retry Logic**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/sysadmin/batch-retry-logic
+
+---
+
+*End of Chapter 18 — Batch Processing*
     public RunOn runOn()
     {
         return RunOn::Batch;
@@ -8048,204 +11187,2251 @@ boolean unpack(container _packedClass)
 ### Remaining Chapters — Detailed Outlines
 
 
-# Chapter 19: SysTest Framework
+# Chapter 19: SysTest Framework — Complete Guide
 
-## 19.1 The `SysTest` Framework
+> **Prerequisites:** Basic X++ knowledge, Visual Studio with D365 F&O tools, access to a D365 F&O development environment  
+> **Time Investment:** 4–6 hours to read, 8–12 hours to practice all examples  
+> **Microsoft Learn References:** [SysTest framework](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/perf-test/sys-test-framework), [Unit testing in D365 F&O](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/perf-test/unit-testing), [Test automation](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/perf-test/test-automation)
 
-The `SysTest` framework is D365 F&O's built-in unit testing framework. It enables developers to write automated tests that verify business logic, data integrity, and integration points.
+---
 
-### Why Unit Testing Matters in D365 F&O
+## Table of Contents
 
-| Benefit | Description |
-|---|---|
-| **Regression prevention** | Tests catch bugs introduced by new code before they reach production |
-| **Confidence in refactoring** | You can safely modify code knowing tests will catch regressions |
-| **Documentation** | Tests serve as living documentation of expected behavior |
-| **LCS quality metrics** | Test coverage is visible in LCS for compliance and audit purposes |
-| **Faster debugging** | Failed tests pinpoint the exact location and nature of bugs |
+1. [The SysTest Framework — Core Components](#1-the-systest-framework--core-components)
+2. [Assert Methods — Complete Reference](#2-assert-methods--complete-reference)
+3. [Test Data Creation Patterns](#3-test-data-creation-patterns)
+4. [Test Isolation and Data-Driven Testing](#4-test-isolation-and-data-driven-testing)
+5. [Test Coverage Metrics in LCS](#5-test-coverage-metrics-in-lcs)
+6. [Integration Testing with LCS Test Case Management](#6-integration-testing-with-lcs-test-case-management)
+7. [Activity: Complete Test Class for Sales Order Discount Calculation](#7-activity-complete-test-class-for-sales-order-discount-calculation)
+8. [Best Practices, Common Mistakes, and CI/CD Integration](#8-best-practices-common-mistakes-and-cicd-integration)
 
-### Test Class Structure
+---
 
-Every test class in D365 F&O follows this structure:
+## 1. The SysTest Framework — Core Components
+
+### 1.1 What Is SysTest? (Layman Explanation)
+
+**SysTest is D365 F&O's built-in unit testing framework.** Think of it as a **quality gate** that runs your code in a controlled environment and tells you whether it behaves as expected. Unlike manual testing where a human clicks through forms, SysTest runs automatically, can be executed hundreds of times per minute, and integrates with your build pipeline so broken code never reaches production.
+
+**Analogy:** If D365 F&O is a factory, SysTest is the automated quality control scanner on the assembly line — it checks every widget (code unit) against specifications before it ships.
+
+### 1.2 Core Classes and Attributes
+
+| Component | Type | Purpose | When It Runs |
+|-----------|------|---------|--------------|
+| `SysTestCase` | Base class | Every test class must extend this | — |
+| `SysTestMethodAttribute` | Attribute | Marks a method as a test method | Per test execution |
+| `setUp()` | Instance method | Creates shared test data for the class | Once before all test methods |
+| `tearDown()` | Instance method | Cleans up shared test data | Once after all test methods |
+| `SysTestTransactionAttribute` | Attribute | Controls transaction isolation level | Per test method |
+
+### 1.3 Test Class Structure — Complete Example
+
+```xpp
+/// <summary>
+/// Test class for vendor compliance validation logic.
+/// Demonstrates the standard SysTest class structure.
+/// </summary>
+class VendComplianceTest extends SysTestCase
+{
+    // ========================================
+    // SHARED SETUP — Runs ONCE before all tests
+    // ========================================
+    public void setUp()
+    {
+        // Create test data that ALL test methods need
+        // Example: reference data, configuration records, lookup values
+        
+        // Create a standard vendor group for tests
+        VendGroup vendGroup;
+        vendGroup.initValue();
+        vendGroup.VendGroup = 'TESTGROUP';
+        vendGroup.Name = 'Test Vendor Group';
+        vendGroup.insert();
+    }
+
+    // ========================================
+    // TEST METHOD — Each is an independent test case
+    // ========================================
+    [SysTestMethodAttribute]
+    public static void testComplianceCodeValidation_FailsForHighCredit()
+    {
+        // AAA Pattern: Arrange → Act → Assert
+        
+        // ARRANGE — Set up test-specific data
+        VendTable vendTable;
+        vendTable.initValue();
+        vendTable.AccountNum = 'HIGHVENDOR01';
+        vendTable.Name = 'High Credit Vendor';
+        vendTable.CreditMax = 600000;  // Above $500K threshold
+        vendTable.VendGroup = 'TESTGROUP';
+        vendTable.insert();
+
+        // ACT — Execute the code under test
+        boolean validationResult = VendComplianceValidator::validate(vendTable, '');
+
+        // ASSERT — Verify the outcome
+        this.assertFalse(validationResult, 'Validation should fail for vendor >$500K without compliance code');
+        
+        // CLEANUP — Remove test-specific data (optional with AutoRollback)
+        vendTable.delete();
+    }
+
+    [SysTestMethodAttribute]
+    public static void testComplianceCodeValidation_PassesForLowCredit()
+    {
+        // ARRANGE
+        VendTable vendTable;
+        vendTable.initValue();
+        vendTable.AccountNum = 'LOWVENDOR01';
+        vendTable.Name = 'Low Credit Vendor';
+        vendTable.CreditMax = 100000;  // Below $500K threshold
+        vendTable.VendGroup = 'TESTGROUP';
+        vendTable.insert();
+
+        // ACT
+        boolean validationResult = VendComplianceValidator::validate(vendTable, '');
+
+        // ASSERT
+        this.assertTrue(validationResult, 'Validation should pass for vendor <$500K without compliance code');
+        
+        // CLEANUP
+        vendTable.delete();
+    }
+
+    // ========================================
+    // SHARED TEARDOWN — Runs ONCE after all tests
+    // ========================================
+    public void tearDown()
+    {
+        // Clean up shared test data created in setUp()
+        VendGroup vendGroup;
+        while select vendGroup
+            where vendGroup.VendGroup == 'TESTGROUP'
+        {
+            vendGroup.delete();
+        }
+    }
+}
+```
+
+### 1.4 Alternative: Test Method Naming Convention
+
+Instead of `[SysTestMethodAttribute]`, you can prefix methods with `test`:
 
 ```xpp
 class VendComplianceTest extends SysTestCase
 {
-    // Shared test data — created once for all test methods in this class
-    public void setUp()
+    // This works the same as [SysTestMethodAttribute]
+    public static void testComplianceCodeValidation_FailsForHighCredit()
     {
-        // Create test data that all test methods need
-        // This runs once before any test method in the class
+        // Test logic
     }
-
-    // Individual test method
-    [SysTestMethodAttribute]
-    public static void testComplianceCodeValidation()
+    
+    // This is NOT a test method (missing "test" prefix)
+    public static void helperMethod()
     {
-        // Arrange — set up test data
-        // Act — execute the code under test
-        // Assert — verify the expected outcome
-    }
-
-    // Cleanup — runs after each test method
-    public void tearDown()
-    {
-        // Clean up test data
+        // Helper logic
     }
 }
 ```
 
-### Key Attributes
+**Best Practice:** Use `[SysTestMethodAttribute]` explicitly — it's clearer, searchable, and allows additional attributes like `[SysTestCategory]`.
 
-| Attribute | Purpose | When to Use |
-|---|---|---|
+### 1.5 Key Differences: `setUp()` vs Per-Method Setup
 
-| `[SysTestMethodAttribute]` | Marks a method as a test method | On every test method |
-
-**Note:** Setup and cleanup are implemented by overriding the `setUp()` and `tearDown()` methods in a class extending `SysTestCase`, not via attributes. Alternatively, test methods can be prefixed with `test` instead of using the `[SysTestMethodAttribute]` attribute.
+| Aspect | `setUp()` (Class-Level) | Per-Method Setup |
+|--------|------------------------|------------------|
+| **Runs** | Once per test class | Before each test method |
+| **Scope** | Shared across all tests | Isolated to one test |
+| **Use For** | Reference data, lookup tables, configuration | Test-specific transactional data |
+| **Cleanup** | In `tearDown()` | In same test method |
 
 ---
 
-## 19.2 `assert` Methods
+## 2. Assert Methods — Complete Reference
 
-The `SysTest` framework provides a rich set of assertion methods for verifying test outcomes.
+### 2.1 Core Assertion Methods (Inherited from `SysTestCase`)
 
-### Core Assertion Methods
+All assertion methods are instance methods on `SysTestCase` — call them with `this.assertXxx()` or just `assertXxx()` within test methods.
 
-| Method | Signature | Purpose | Example |
-|---|---|---|---|
-| `assertEquals` | `assertEquals(expected, actual, message)` | Verifies two values are equal | `assertEquals(5, result, 'Expected 5 records')` |
-| `assertNotEqual` | `assertNotEqual(expected, actual, message)` | Verifies two values are not equal | `assertNotEqual(0, result, 'Result should not be zero')` |
-| `assertGreater` | `assertGreater(actual, expected, message)` | Verifies actual > expected | `assertGreater(count, 0, 'Should have at least 1 record')` |
-| `assertLess` | `assertLess(actual, expected, message)` | Verifies actual < expected | `assertLess(count, 100, 'Should have fewer than 100 records')` |
-| `assertGreaterOrEqual` | `assertGreaterOrEqual(actual, expected, message)` | Verifies actual >= expected | `assertGreaterOrEqual(count, 1, 'Should have at least 1 record')` |
-| `assertLessOrEqual` | `assertLessOrEqual(actual, expected, message)` | Verifies actual <= expected | `assertLessOrEqual(count, 10, 'Should have at most 10 records')` |
-| `assertException` | `assertException(className::methodName, expectedException, message)` | Verifies a method throws an exception | `assertException(classStr(VendComplianceValidator), methodStr(VendComplianceValidator, validate), error::Error)` |
-| `assertNull` | `assertNull(value, message)` | Verifies a value is null | `assertNull(result, 'Result should be null for invalid input')` |
-| `assertNotNull` | `assertNotNull(value, message)` | Verifies a value is not null | `assertNotNull(result, 'Result should not be null')` |
-| `assertTrue` | `assertTrue(condition, message)` | Verifies a boolean is true | `assertTrue(validationPassed, 'Validation should pass')` |
-| `assertFalse` | `assertFalse(condition, message)` | Verifies a boolean is false | `assertFalse(validationPassed, 'Validation should fail')` |
-| `assertError` | `assertError(statement, message)` | Verifies a statement throws an error | `assertError(element.validateWrite(), 'Should fail for empty account')` |
-| `assertWarn` | `assertWarn(statement, message)` | Verifies a statement produces a warning | `assertWarn(element.checkCredit(), 'Should warn for high credit')` |
-| `assertInfo` | `assertInfo(statement, message)` | Verifies a statement produces an info message | `assertInfo(element.process(), 'Processing completed')` |
+| Method | Signature | Purpose | When to Use |
+|--------|-----------|---------|-------------|
+| **Equality** |
+| `assertEquals` | `assertEquals(expected, actual, message)` | Verifies two values are equal | Primary assertion for most tests |
+| `assertNotEquals` | `assertNotEquals(unexpected, actual, message)` | Verifies two values are NOT equal | Negative assertions |
+| **Boolean** |
+| `assertTrue` | `assertTrue(condition, message)` | Verifies condition is true | Boolean results, flags |
+| `assertFalse` | `assertFalse(condition, message)` | Verifies condition is false | Boolean results, flags |
+| **Null Checks** |
+| `assertNull` | `assertNull(value, message)` | Verifies value is null | Return values that should be null |
+| `assertNotNull` | `assertNotNull(value, message)` | Verifies value is NOT null | Return values that must exist |
+| **Numeric Comparisons** |
+| `assertGreater` | `assertGreater(actual, expected, message)` | Verifies actual > expected | Counts, amounts, thresholds |
+| `assertLess` | `assertLess(actual, expected, message)` | Verifies actual < expected | Limits, boundaries |
+| `assertGreaterOrEqual` | `assertGreaterOrEqual(actual, expected, message)` | Verifies actual >= expected | Minimum thresholds |
+| `assertLessOrEqual` | `assertLessOrEqual(actual, expected, message)` | Verifies actual <= expected | Maximum caps |
+| **Exception & Message Validation** |
+| `assertException` | `assertException(className, methodName, expectedException, message)` | Verifies a method throws an exception | Error handling paths |
+| `assertError` | `assertError(statement, message)` | Verifies statement produces an error | Form validation, `validateWrite()` |
+| `assertWarning` | `assertWarning(statement, message)` | Verifies statement produces a warning | Business logic warnings |
+| `assertInfo` | `assertInfo(statement, message)` | Verifies statement produces an info message | Success messages, logging |
 
-### Assertion Examples
+### 2.2 Assertion Examples — Real-World Scenarios
+
+#### 2.2.1 Basic Equality Assertions
 
 ```xpp
 [SysTestMethodAttribute]
-public static void testComplianceCodeValidation()
+public static void testDiscountCalculation_Basic()
 {
-    VendTable vendTable;
-    ComplianceCode complianceCode;
-    boolean validationResult;
+    SalesOrderDiscount discountCalculator;
+    Real discountPercent;
+    
+    // ARRANGE
+    discountCalculator = SalesOrderDiscount::construct();
+    SalesTable salesTable = TestSalesTable::newTest('CUST001', 15000);
+    salesTable.insert();
+    
+    // ACT
+    discountPercent = discountCalculator.calculateDiscount(salesTable);
+    
+    // ASSERT — Exact value comparison
+    this.assertEquals(5.0, discountPercent, 'Standard discount should be 5% for orders over $10K');
+    
+    // ASSERT — Not equal (negative assertion)
+    this.assertNotEquals(0.0, discountPercent, 'Discount should not be zero for qualifying orders');
+    
+    salesTable.delete();
+}
+```
 
-    // Arrange — create a test vendor
-    vendTable.initValue();
-    vendTable.AccountNum = 'TESTVENDOR01';
-    vendTable.Name = 'Test Vendor';
-    vendTable.CreditMax = 600000;
-    vendTable.insert();
+#### 2.2.2 Boolean Assertions
 
-    // Act — validate the compliance code
-    complianceCode = '';  // Empty compliance code
-    validationResult = VendComplianceValidator::validate(vendTable, complianceCode);
+```xpp
+[SysTestMethodAttribute]
+public static void testCustomerValidation_IsValid()
+{
+    CustTable custTable = TestCustTable::constructValid();
+    custTable.insert();
+    
+    // ACT — Returns boolean
+    boolean isValid = CustomerValidator::isEligibleForCredit(custTable);
+    
+    // ASSERT — Boolean checks
+    this.assertTrue(isValid, 'Valid customer should be eligible for credit');
+    
+    // Negative case
+    custTable.Blocked = CustVendorBlocked::All;
+    custTable.update();
+    
+    isValid = CustomerValidator::isEligibleForCredit(custTable);
+    this.assertFalse(isValid, 'Blocked customer should NOT be eligible for credit');
+    
+    custTable.delete();
+}
+```
 
-    // Assert — validation should fail for high-credit vendor without compliance code
-    assertFalse(validationResult, 'Validation should fail for vendor >$500K without compliance code');
+#### 2.2.3 Null Assertions
+
+```xpp
+[SysTestMethodAttribute]
+public static void testFindCustomer_NotFound()
+{
+    // ACT — Try to find non-existent customer
+    CustTable custTable = CustTable::find('NONEXISTENT');
+    
+    // ASSERT — Should return null/empty record
+    this.assertNull(custTable.RecId, 'Non-existent customer should return empty record');
+    this.assertEquals('', custTable.AccountNum, 'AccountNum should be empty for non-existent customer');
 }
 
 [SysTestMethodAttribute]
-public static void testComplianceCodeValidation_PassesForLowCredit()
+public static void testCreateSalesOrder_ReturnsRecord()
 {
-    VendTable vendTable;
-    ComplianceCode complianceCode;
-    boolean validationResult;
+    SalesTable salesTable = SalesOrderService::create('CUST001');
+    
+    // ASSERT — Must return a valid record
+    this.assertNotNull(salesTable.RecId, 'Created sales order should have RecId');
+    this.assertNotEquals('', salesTable.SalesId, 'Created sales order should have SalesId');
+}
+```
 
-    // Arrange — create a test vendor with low credit
-    vendTable.initValue();
-    vendTable.AccountNum = 'TESTVENDOR02';
-    vendTable.Name = 'Test Vendor 2';
-    vendTable.CreditMax = 100000;  // Below $500K threshold
-    vendTable.insert();
+#### 2.2.4 Numeric Comparison Assertions
 
-    // Act — validate with empty compliance code
-    complianceCode = '';
-    validationResult = VendComplianceValidator::validate(vendTable, complianceCode);
+```xpp
+[SysTestMethodAttribute]
+public static void testInventoryReservation_QuantityChecks()
+{
+    InventSum inventSum = InventSum::find('ITEM001', 'WH01');
+    
+    // ARRANGE — Reserve 50 units
+    InventoryReservation::reserve('ITEM001', 'WH01', 50);
+    inventSum.reread();
+    
+    // ASSERT — Numeric thresholds
+    this.assertGreater(inventSum.ReservPhysical, 0, 'Should have physical reservations');
+    this.assertGreaterOrEqual(inventSum.ReservPhysical, 50, 'Should have at least 50 reserved');
+    this.assertLessOrEqual(inventSum.ReservPhysical, inventSum.AvailPhysical, 'Reserved cannot exceed available');
+    
+    // Cleanup
+    InventoryReservation::unreserve('ITEM001', 'WH01', 50);
+}
+```
 
-    // Assert — validation should pass for low-credit vendor
-    assertTrue(validationResult, 'Validation should pass for vendor <$500K without compliance code');
+#### 2.2.5 Exception and Message Validation
+
+```xpp
+[SysTestMethodAttribute]
+public static void testValidateWrite_ThrowsErrorForNegativeAmount()
+{
+    SalesLine salesLine;
+    salesLine.initValue();
+    salesLine.ItemId = 'ITEM001';
+    salesLine.SalesQty = -10;  // Invalid: negative quantity
+    salesLine.LineAmount = -5000;
+    
+    // ASSERT — ValidateWrite should throw an error
+    this.assertError(salesLine.validateWrite(), 'Negative quantity should produce an error');
 }
 
 [SysTestMethodAttribute]
-public static void testExceptionOnInvalidInput()
+public static void testCheckCreditLimit_ProducesWarning()
 {
-    // Assert — calling validate with null vendor should throw an exception
-    assertException(
-        classStr(VendComplianceValidator),
-        methodStr(VendComplianceValidator, validate),
-        error::Error,
-        'Should throw error for null vendor');
+    CustTable custTable = TestCustTable::newTest('CUST001', 100000);  // $100K credit limit
+    custTable.insert();
+    
+    SalesTable salesTable = TestSalesTable::newTest(custTable.AccountNum, 150000);  // $150K order
+    salesTable.insert();
+    
+    // ASSERT — Should produce a warning (not an error) for exceeding credit limit
+    this.assertWarning(CustCreditCheck::check(salesTable), 'Should warn when order exceeds credit limit');
+    
+    salesTable.delete();
+    custTable.delete();
 }
 
 [SysTestMethodAttribute]
-public static void testRecordCount()
+public static void testProcessOrder_ProducesInfoMessage()
 {
-    int recordCount;
-
-    // Act — count compliance records
-    select count(RecId) from recordCount
-        from APCustomsDeclaration;
-
-    // Assert — should have at least 1 record from test setup
-    assertGreater(recordCount, 0, 'Should have at least 1 compliance record');
+    SalesTable salesTable = TestSalesTable::constructConfirmed();
+    salesTable.insert();
+    
+    // ASSERT — Process should produce info message
+    this.assertInfo(SalesOrderProcessor::process(salesTable), 'Processing should log info message');
+    
+    salesTable.delete();
 }
+
+[SysTestMethodAttribute]
+public static void testDivideByZero_ThrowsException()
+{
+    // ASSERT — Static method should throw when dividing by zero
+    this.assertException(
+        classStr(MathHelper),
+        methodStr(MathHelper, divide),
+        error::Error,  // Expected exception type
+        'Division by zero should throw Error exception'
+    );
+}
+```
+
+### 2.3 Assertion Method Signatures — Quick Reference
+
+```xpp
+// All methods accept an optional message parameter as the last argument
+// Message is displayed in test output when assertion fails
+
+// Equality
+void assertEquals(anyType _expected, anyType _actual, str _message = '')
+void assertNotEquals(anyType _expected, anyType _actual, str _message = '')
+
+// Boolean
+void assertTrue(boolean _condition, str _message = '')
+void assertFalse(boolean _condition, str _message = '')
+
+// Null
+void assertNull(anyType _value, str _message = '')
+void assertNotNull(anyType _value, str _message = '')
+
+// Numeric (Real/Int)
+void assertGreater(Real _actual, Real _expected, str _message = '')
+void assertLess(Real _actual, Real _expected, str _message = '')
+void assertGreaterOrEqual(Real _actual, Real _expected, str _message = '')
+void assertLessOrEqual(Real _actual, Real _expected, str _message = '')
+
+// Exception & Messages
+void assertException(str _className, str _methodName, int _expectedException, str _message = '')
+void assertError(boolean _statement, str _message = '')
+void assertWarning(boolean _statement, str _message = '')
+void assertInfo(boolean _statement, str _message = '')
 ```
 
 ---
 
-## 19.3 Test Data Creation Patterns
+## 3. Test Data Creation Patterns
 
-Creating test data is one of the most important aspects of writing maintainable tests. The patterns below ensure tests are isolated, repeatable, and easy to understand.
+### 3.1 Why Test Data Patterns Matter
 
-### Pattern 1: `construct()` Factory Method
+Creating test data is **the most time-consuming part of writing tests**. Good patterns make tests:
+- **Readable** — Intent is clear from the test code
+- **Maintainable** — Changes to table structure only need updates in one place
+- **Isolated** — Tests don't interfere with each other
+- **Fast** — Minimal database operations
 
-The `construct()` factory method creates a test record with sensible defaults, which individual tests can then customize.
+### 3.2 Pattern 1: Factory Class with `construct()` — Recommended
 
 ```xpp
+/// <summary>
+/// Test data factory for VendTable records.
+/// Provides sensible defaults that tests can customize.
+/// </summary>
 class TestVendTable
 {
+    /// <summary>
+    /// Creates a vendor with standard defaults.
+    /// Caller must call insert().
+    /// </summary>
     public static VendTable construct()
     {
         VendTable vendTable;
-
+        
         vendTable.initValue();
-        vendTable.AccountNum = 'TESTVENDOR';
+        vendTable.AccountNum = 'TESTVENDOR';  // Will be overridden if needed
         vendTable.Name = 'Test Vendor';
-        vendTable.CreditMax = 500000;
+        vendTable.CreditMax = 50000;
         vendTable.Currency = 'USD';
-        vendTable.GroupName = 'VENDGROUP1';
+        vendTable.VendGroup = 'VENDGROUP1';
+        vendTable.PaymTermId = 'NET30';
+        vendTable.TaxGroup = 'TAXGROUP1';
+        
+        return vendTable;
+    }
 
+    /// <summary>
+    /// Creates a vendor with specific test parameters.
+    /// </summary>
+    public static VendTable newTest(
+        AccountNum _accountNum, 
+        Currency _currency, 
+        Real _creditMax,
+        VendGroup _vendGroup = 'VENDGROUP1'
+    )
+    {
+        VendTable vendTable = TestVendTable::construct();
+        vendTable.AccountNum = _accountNum;
+        vendTable.Currency = _currency;
+        vendTable.CreditMax = _creditMax;
+        vendTable.VendGroup = _vendGroup;
+        return vendTable;
+    }
+
+    /// <summary>
+    /// Creates a high-credit vendor (>$500K) for compliance testing.
+    /// </summary>
+    public static VendTable newHighCreditVendor(AccountNum _accountNum)
+    {
+        return TestVendTable::newTest(_accountNum, 'USD', 750000);
+    }
+
+    /// <summary>
+    /// Creates a VIP vendor for discount testing.
+    /// </summary>
+    public static VendTable newVIPVendor(AccountNum _accountNum)
+    {
+        VendTable vendTable = TestVendTable::construct();
+        vendTable.AccountNum = _accountNum;
+        vendTable.CustGroup = 'VIP';  // Assuming CustGroup field exists
+        vendTable.CreditMax = 1000000;
         return vendTable;
     }
 }
 ```
 
-**Usage in tests:**
+**Usage in Tests:**
+
 ```xpp
 [SysTestMethodAttribute]
 public static void testWithConstruct()
 {
     VendTable vendTable = TestVendTable::construct();
+    vendTable.AccountNum = 'UNIQUE001';  // Override for uniqueness
     vendTable.insert();
+    
+    // Test logic
+    this.assertEquals('TESTVENDOR', vendTable.AccountNum);
+    
+    vendTable.delete();
+}
 
-    // Test logic using vendTable
-    assertTrue(vendTable.AccountNum == 'TESTVENDOR', 'Account number should match');
+[SysTestMethodAttribute]
+public static void testWithNewTest()
+{
+    VendTable vendTable = TestVendTable::newTest('VEND001', 'EUR', 750000);
+    vendTable.insert();
+    
+    this.assertEquals('EUR', vendTable.Currency);
+    this.assertEquals(750000, vendTable.CreditMax);
+    
+    vendTable.delete();
 }
 ```
 
-### Pattern 2: `newTest()` Factory Method
+### 3.3 Pattern 2: Test Data Builder (Fluent API) — Maximum Flexibility
 
-The `newTest()` method allows passing specific parameters to customize the test record.
+```xpp
+/// <summary>
+/// Fluent builder for creating complex test SalesOrder scenarios.
+/// </summary>
+class TestSalesOrderBuilder
+{
+    SalesTable salesTable;
+    List salesLines;  // List of SalesLine records
+    
+    private void new()
+    {
+        salesTable = SalesTable::construct();
+        salesTable.initValue();
+        salesLines = new List(Types::Record);
+    }
+    
+    public static TestSalesOrderBuilder create()
+    {
+        return new TestSalesOrderBuilder();
+    }
+    
+    public TestSalesOrderBuilder withCustomer(CustAccount _custAccount)
+    {
+        salesTable.CustomerAccount = _custAccount;
+        return this;
+    }
+    
+    public TestSalesOrderBuilder withDate(TransDate _date)
+    {
+        salesTable.SalesDate = _date;
+        return this;
+    }
+    
+    public TestSalesOrderBuilder withSalesId(SalesId _salesId)
+    {
+        salesTable.SalesId = _salesId;
+        return this;
+    }
+    
+    public TestSalesOrderBuilder addLine(
+        ItemId _itemId, 
+        Qty _qty, 
+        Amount _lineAmount,
+        InventDimId _inventDimId = '')
+    {
+        SalesLine salesLine;
+        salesLine.initValue();
+        salesLine.ItemId = _itemId;
+        salesLine.SalesQty = _qty;
+        salesLine.LineAmount = _lineAmount;
+        salesLine.InventDimId = _inventDimId ? _inventDimId : InventDim::findOrCreate('_').InventDimId;
+        salesLines.addEnd(salesLine);
+        return this;
+    }
+    
+    public TestSalesOrderBuilder withPaymentTerms(PaymTermId _paymTermId)
+    {
+        salesTable.PaymTermId = _paymTermId;
+        return this;
+    }
+    
+    public SalesTable build()
+    {
+        // Insert header
+        salesTable.insert();
+        
+        // Insert lines
+        SalesLine salesLine;
+        while select salesLine from salesLines
+        {
+            salesLine.SalesTableId = salesTable.SalesId;
+            salesLine.insert();
+        }
+        
+        return salesTable;
+    }
+    
+    public void cleanup()
+    {
+        SalesLine salesLine;
+        while select salesLine from salesLines
+        {
+            salesLine.delete();
+        }
+        salesTable.delete();
+    }
+}
+```
+
+**Usage:**
+
+```xpp
+[SysTestMethodAttribute]
+public static void testComplexOrderWithBuilder()
+{
+    // Arrange — Fluent, readable test setup
+    SalesTable salesTable = TestSalesOrderBuilder::create()
+        .withCustomer('CUST001')
+        .withDate(today())
+        .addLine('ITEM001', 10, 5000)
+        .addLine('ITEM002', 5, 2500)
+        .withPaymentTerms('NET30')
+        .build();
+    
+    // Act
+    Real discount = SalesOrderDiscount::calculateDiscount(salesTable);
+    
+    // Assert
+    this.assertEquals(5, discount);
+    
+    // Cleanup
+    TestSalesOrderBuilder::create().cleanup();  // Or track builder instance
+}
+```
+
+### 3.4 Pattern 3: Shared Setup with `setUp()` — For Reference Data
+
+```xpp
+class SalesOrderTest extends SysTestCase
+{
+    // Shared reference data — created ONCE for entire test class
+    public void setUp()
+    {
+        // Create standard customers used by multiple tests
+        CustTable custTable;
+        
+        // Standard customer
+        custTable = TestCustTable::newTest('STD001', 'Standard Customer', 'STD');
+        custTable.insert();
+        
+        // VIP customer
+        custTable = TestCustTable::newTest('VIP001', 'VIP Customer', 'VIP');
+        custTable.CustGroup = 'VIP';
+        custTable.insert();
+        
+        // Standard items
+        InventTable inventTable;
+        inventTable = TestInventTable::newTest('ITEM001', 'Test Item 1', 'RAW');
+        inventTable.insert();
+        inventTable = TestInventTable::newTest('ITEM002', 'Test Item 2', 'FG');
+        inventTable.insert();
+        
+        // Standard warehouse
+        InventLocation location;
+        location.initValue();
+        location.InventLocationId = 'TESTWH';
+        location.Name = 'Test Warehouse';
+        location.insert();
+        
+        // Create default InventDim for TESTWH
+        InventDim inventDim;
+        inventDim.initValue();
+        inventDim.InventLocationId = 'TESTWH';
+        InventDim::findOrCreate(inventDim);
+    }
+    
+    public void tearDown()
+    {
+        // Clean up shared data
+        CustTable custTable;
+        while select custTable where custTable.AccountNum like 'STD%' || custTable.AccountNum like 'VIP%'
+        {
+            custTable.delete();
+        }
+        
+        InventTable inventTable;
+        while select inventTable where inventTable.ItemId like 'ITEM%'
+        {
+            inventTable.delete();
+        }
+        
+        InventLocation location;
+        while select location where location.InventLocationId == 'TESTWH'
+        {
+            location.delete();
+        }
+    }
+    
+    [SysTestMethodAttribute]
+    public static void testStandardCustomerOrder()
+    {
+        // Uses shared customer 'STD001' and item 'ITEM001'
+        SalesTable salesTable = TestSalesOrderBuilder::create()
+            .withCustomer('STD001')
+            .addLine('ITEM001', 100, 15000)
+            .build();
+        
+        Real discount = SalesOrderDiscount::calculateDiscount(salesTable);
+        this.assertEquals(5, discount);
+        
+        salesTable.delete();  // Per-test cleanup
+    }
+}
+```
+
+### 3.5 Using Number Sequences for Unique IDs
+
+**Critical:** Never hardcode IDs like `'VEND001'` in parallel test runs — they'll collide. Use number sequences or GUIDs.
+
+```xpp
+class TestDataHelper
+{
+    /// <summary>
+    /// Generates a unique test account number using number sequence.
+    /// </summary>
+    public static AccountNum generateTestAccountNum(str _prefix = 'TEST')
+    {
+        NumberSeq numberSeq = NumberSeq::newGetNumFromCode('TestAccountNum', true);
+        if (!numberSeq)
+        {
+            // Fallback: use timestamp-based unique ID
+            return strFmt('%1_%2', _prefix, DateTimeUtil::toStr(DateTimeUtil::utcNow(), 1234));
+        }
+        return strFmt('%1_%2', _prefix, numberSeq.num());
+    }
+    
+    /// <summary>
+    /// Generates a unique test sales ID.
+    /// </summary>
+    public static SalesId generateTestSalesId()
+    {
+        NumberSeq numberSeq = NumberSeq::newGetNumFromCode('TestSalesId', true);
+        if (!numberSeq)
+        {
+            return strFmt('TESTSO_%1', DateTimeUtil::toStr(DateTimeUtil::utcNow(), 1234));
+        }
+        return strFmt('TESTSO_%1', numberSeq.num());
+    }
+    
+    /// <summary>
+    /// Generates a unique test item ID.
+    /// </summary>
+    public static ItemId generateTestItemId()
+    {
+        NumberSeq numberSeq = NumberSeq::newGetNumFromCode('TestItemId', true);
+        if (!numberSeq)
+        {
+            return strFmt('TESTITEM_%1', DateTimeUtil::toStr(DateTimeUtil::utcNow(), 1234));
+        }
+        return strFmt('TESTITEM_%1', numberSeq.num());
+    }
+}
+
+// Usage in factory classes
+class TestVendTable
+{
+    public static VendTable construct()
+    {
+        VendTable vendTable;
+        vendTable.initValue();
+        vendTable.AccountNum = TestDataHelper::generateTestAccountNum('VEND');
+        vendTable.Name = strFmt('Test Vendor %1', vendTable.AccountNum);
+        // ... other defaults
+        return vendTable;
+    }
+}
+```
+
+**Number Sequence Setup (in model):**
+
+```xml
+<!-- Number sequence references in model manifest -->
+<NumberSequenceReferences>
+    <NumberSequenceReference>
+        <Name>TestAccountNum</Name>
+        <Description>Test vendor/customer account numbers</Description>
+        <Scope>Company</Scope>
+        <Format>TEST_####</Format>
+    </NumberSequenceReference>
+    <NumberSequenceReference>
+        <Name>TestSalesId</Name>
+        <Description>Test sales order IDs</Description>
+        <Scope>Company</Scope>
+        <Format>TESTSO_######</Format>
+    </NumberSequenceReference>
+</NumberSequenceReferences>
+```
+
+### 3.6 Pattern 4: CompanyData / Data Partition Isolation
+
+For tests that need specific company data:
+
+```xpp
+class CrossCompanyTest extends SysTestCase
+{
+    [SysTestMethodAttribute]
+    [SysTestTransaction(SysTestTransactionMode::AutoRollback)]
+    public static void testCrossCompanyDataAccess()
+    {
+        // Switch to specific company for test
+        changeCompany('USMF')
+        {
+            // Create data in USMF
+            CustTable custTable = TestCustTable::construct();
+            custTable.insert();
+            
+            // Verify visible in USMF
+            CustTable found = CustTable::find(custTable.AccountNum);
+            this.assertNotNull(found.RecId);
+        }
+        
+        // Data automatically rolled back due to AutoRollback
+    }
+}
+```
+
+---
+
+## 4. Test Isolation and Data-Driven Testing
+
+### 4.1 Test Isolation — Why It Matters
+
+**Test isolation** means each test runs independently — no test depends on another's data or state. Without isolation:
+- Tests pass/fail depending on run order
+- Parallel test execution fails
+- Debugging becomes a nightmare
+
+### 4.2 `SysTestTransactionAttribute` — Transaction Isolation Modes
+
+```xpp
+class IsolationModeExamples extends SysTestCase
+{
+    // DEFAULT: AutoRollback — Best isolation, fastest
+    // Uses SQL savepoints — all changes rolled back automatically
+    [SysTestMethodAttribute]
+    [SysTestTransaction(SysTestTransactionMode::AutoRollback)]
+    public static void testWithAutoRollback()
+    {
+        VendTable vendTable = TestVendTable::construct();
+        vendTable.insert();
+        
+        // No cleanup needed — AutoRollback handles it
+        this.assertNotNull(VendTable::find(vendTable.AccountNum).RecId);
+    }
+    
+    // LegacyRollback — Tracks INSERTs, deletes them on cleanup
+    // Use when testing concurrency/locking behavior
+    [SysTestMethodAttribute]
+    [SysTestTransaction(SysTestTransactionMode::LegacyRollback)]
+    public static void testWithLegacyRollback()
+    {
+        VendTable vendTable = TestVendTable::construct();
+        vendTable.insert();
+        
+        // Inserts tracked, deleted after test
+        this.assertNotNull(VendTable::find(vendTable.AccountNum).RecId);
+    }
+    
+    // LegacyRollbackWithUpdateTracking — Tracks INSERT, UPDATE, DELETE
+    // Slowest — use only when testing complex transactional behavior
+    [SysTestMethodAttribute]
+    [SysTestTransaction(SysTestTransactionMode::LegacyRollbackWithUpdateTracking)]
+    public static void testWithFullTracking()
+    {
+        VendTable vendTable = TestVendTable::construct();
+        vendTable.insert();
+        
+        vendTable.CreditMax = 999999;
+        vendTable.update();  // Tracked and reverted
+        
+        this.assertEquals(999999, VendTable::find(vendTable.AccountNum).CreditMax);
+        // Reverted after test
+    }
+    
+    // None — NO isolation, data persists
+    // ONLY for debugging — NEVER in committed tests
+    [SysTestMethodAttribute]
+    [SysTestTransaction(SysTestTransactionMode::None)]
+    public static void testWithNoIsolation_DebugOnly()
+    {
+        VendTable vendTable = TestVendTable::construct();
+        vendTable.insert();
+        
+        // Data remains in database after test!
+        // Use to inspect data in browser/SQL after test runs
+        // REMOVE THIS ATTRIBUTE BEFORE COMMITTING
+    }
+}
+```
+
+| Mode | Isolation Level | Speed | Use Case |
+|------|-----------------|-------|----------|
+| `AutoRollback` | ✅ Full (savepoints) | ⚡ Fastest | **Default — use for 95% of tests** |
+| `LegacyRollback` | ⚠️ INSERT only | 🐢 Slower | Concurrency/locking tests |
+| `LegacyRollbackWithUpdateTracking` | ⚠️ INSERT/UPDATE/DELETE | 🐢🐢 Slowest | Complex transaction tests |
+| `None` | ❌ None | ⚡ Fast | **Debugging only — never commit** |
+
+### 4.3 Database Snapshots — Advanced Isolation
+
+For integration tests needing clean database state:
+
+```xpp
+class DatabaseSnapshotTest extends SysTestCase
+{
+    // Use with Tier-2+ environments that support database snapshots
+    // Not available in standard Tier-1 dev boxes
+    
+    [SysTestMethodAttribute]
+    public static void testWithSnapshot()
+    {
+        // This requires LCS environment with snapshot capability
+        // Typically used in Test/QA environments, not dev
+        
+        // 1. Create snapshot before test suite
+        // 2. Run tests
+        // 3. Restore snapshot after test suite
+        
+        // Implementation is environment-specific
+        // See: LCS documentation on database refresh/snapshots
+    }
+}
+```
+
+### 4.4 Data-Driven Testing with `SysTestRow` (v10.0.25+)
+
+Test multiple inputs with a single test method — each row becomes a separate test result.
+
+```xpp
+class MathTests extends SysTestCase
+{
+    // Each SysTestRow = one test execution
+    // Results appear as: squareTests#1, squareTests#2, etc.
+    [SysTestMethodAttribute,
+    SysTestRow(0, 0),
+    SysTestRow(1, 1),
+    SysTestRow(2, 4),
+    SysTestRow(3, 9),
+    SysTestRow(4, 16),
+    SysTestRow(-1, 1),
+    SysTestRow(-2, 4),
+    SysTestRow(-3, 9)]
+    public static void squareTests(int _value, int _expected)
+    {
+        int result = MathHelper::square(_value);
+        this.assertEquals(_expected, result, strFmt('Square of %1 should be %2', _value, _expected));
+    }
+    
+    // Disable specific rows with SysTestRowInactive
+    [SysTestMethodAttribute,
+    SysTestRow(10, 100),
+    SysTestRowInactive(11, 121),  // This row will be skipped
+    SysTestRow(12, 144)]
+    public static void squareTests_LargerNumbers(int _value, int _expected)
+    {
+        int result = MathHelper::square(_value);
+        this.assertEquals(_expected, result);
+    }
+}
+```
+
+**Data-Driven Discount Test Example:**
+
+```xpp
+class SalesOrderDiscountDataDrivenTest extends SysTestCase
+{
+    // Test data: CustomerType, OrderAmount, ExpectedDiscount, TestDescription
+    [SysTestMethodAttribute,
+    SysTestRow('Standard', 5000, 0, 'Standard customer under $10K'),
+    SysTestRow('Standard', 10000, 5, 'Standard customer at $10K boundary'),
+    SysTestRow('Standard', 15000, 5, 'Standard customer over $10K'),
+    SysTestRow('Standard', 50000, 15, 'Standard customer at $50K boundary'),
+    SysTestRow('Standard', 60000, 15, 'Standard customer over $50K'),
+    SysTestRow('VIP', 5000, 10, 'VIP customer under $10K'),
+    SysTestRow('VIP', 10000, 15, 'VIP customer at $10K (10% VIP + 5% standard)'),
+    SysTestRow('VIP', 50000, 25, 'VIP customer at $50K (10% VIP + 15% volume)'),
+    SysTestRow('VIP', 60000, 25, 'VIP customer over $50K'),
+    SysTestRow('VIP', 100000, 30, 'VIP large order capped at 30%')]
+    public static void testDiscountCalculation(
+        CustGroup _custGroup, 
+        Amount _orderAmount, 
+        Real _expectedDiscount,
+        str _description)
+    {
+        // ARRANGE — Create customer and order using parameters
+        CustTable custTable = TestCustTable::newTest(
+            TestDataHelper::generateTestAccountNum('CUST'), 
+            _custGroup, 
+            1000000
+        );
+        custTable.insert();
+        
+        SalesTable salesTable = TestSalesOrderBuilder::create()
+            .withCustomer(custTable.AccountNum)
+            .addLine('ITEM001', 1, _orderAmount)
+            .build();
+        
+        // ACT
+        Real discount = SalesOrderDiscount::calculateDiscount(salesTable);
+        
+        // ASSERT
+        this.assertEquals(_expectedDiscount, discount, _description);
+        
+        // CLEANUP (not needed with AutoRollback, but explicit is clear)
+        salesTable.delete();
+        custTable.delete();
+    }
+}
+```
+
+### 4.5 Test Filtering Attributes — Organize Test Runs
+
+```xpp
+class SalesOrderTest extends SysTestCase
+{
+    // Category: Run in specific pipelines (CheckIn, Nightly, Integration)
+    [SysTestCategory('CheckIn')]
+    [SysTestPriority(1)]  // Higher = runs first (1-10)
+    [SysTestOwner('john.doe@company.com')]
+    [SysTestProperty('module', 'Sales')]
+    [SysTestProperty('feature', 'DiscountCalculation')]
+    [SysTestMethodAttribute]
+    public static void testStandardDiscount()
+    {
+        // Fast unit test — runs in every check-in build
+    }
+    
+    [SysTestCategory('Nightly')]
+    [SysTestPriority(5)]
+    [SysTestProperty('module', 'Sales')]
+    [SysTestProperty('feature', 'DiscountCalculation')]
+    [SysTestMethodAttribute]
+    public static void testComplexDiscountScenarios()
+    {
+        // Slower integration test — runs nightly
+    }
+    
+    [SysTestCategory('Integration')]
+    [SysTestPriority(10)]
+    [SysTestProperty('module', 'Sales')]
+    [SysTestProperty('feature', 'EndToEnd')]
+    [SysTestMethodAttribute]
+    public static void testFullOrderToInvoiceFlow()
+    {
+        // Full integration test — runs in test environment
+    }
+}
+```
+
+**CI/CD Pipeline Filtering:**
+
+```yaml
+# Azure DevOps — Run only CheckIn category tests
+- task: Dynamics365Test@1
+  inputs:
+    testClasses: '*Test'
+    testFilter: 'TestCategory=CheckIn'
+
+# Run only Priority 1-3 tests
+- task: Dynamics365Test@1
+  inputs:
+    testClasses: '*Test'
+    testFilter: 'Priority<=3'
+
+# Run only Sales module tests
+- task: Dynamics365Test@1
+  inputs:
+    testClasses: '*Test'
+    testFilter: 'Property=module=Sales'
+```
+
+---
+
+## 5. Test Coverage Metrics in LCS
+
+### 5.1 What LCS Coverage Measures
+
+LCS (Lifecycle Services) provides **code coverage metrics** when you run tests in a build pipeline:
+
+| Metric | Definition | Target |
+|--------|------------|--------|
+| **Line Coverage** | % of executable lines executed by tests | > 80% |
+| **Method Coverage** | % of methods called by tests | > 75% |
+| **Class Coverage** | % of classes with at least one test | > 70% |
+| **Assembly Coverage** | % of assemblies covered | > 80% |
+
+### 5.2 Enabling Code Coverage in Build Pipeline
+
+```yaml
+# Azure DevOps pipeline — Full coverage configuration
+trigger:
+  branches:
+    include:
+      - main
+      - release/*
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  - name: BuildConfiguration
+    value: 'Release'
+  - name: CollectCoverage
+    value: 'true'
+
+steps:
+# ... restore, build steps ...
+
+# Run tests with coverage collection
+- task: Dynamics365Test@1
+  displayName: 'Run SysTest with Coverage'
+  inputs:
+    solution: '**/*.sln'
+    testClasses: '*Test'
+    configuration: '$(BuildConfiguration)'
+    collectCoverage: true
+    coverageThreshold: 70  # Fail build if coverage < 70%
+    publishResults: true
+
+# Publish coverage to LCS
+- task: PublishCodeCoverageResults@1
+  displayName: 'Publish Coverage to LCS'
+  inputs:
+    codeCoverageTool: 'Cobertura'
+    summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+    reportDirectory: '$(Agent.TempDirectory)/**/coverage/'
+    failIfCoverageEmpty: true
+```
+
+### 5.3 Interpreting LCS Coverage Reports
+
+**LCS Coverage Tab — Key Views:**
+
+1. **Coverage Summary** — Overall percentages by assembly
+2. **Class Coverage** — Drill into specific classes
+3. **Method Coverage** — See which methods are untested
+4. **Line Coverage** — Line-by-line highlighting (green=covered, red=uncovered)
+
+**Reading the Report:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Coverage Summary                                            │
+├──────────────────┬──────────┬──────────┬──────────┬─────────┤
+│ Assembly         │ Lines    │ Methods  │ Classes  │ Status  │
+├──────────────────┼──────────┼──────────┼──────────┼─────────┤
+│ Acme.Sales       │ 87%      │ 82%      │ 90%      │ ✅ Pass │
+│ Acme.Inventory   │ 45%      │ 38%      │ 52%      │ ❌ Fail │
+│ Acme.Finance     │ 72%      │ 68%      │ 75%      │ ⚠️ Warn │
+└──────────────────┴──────────┴──────────┴──────────┴─────────┘
+```
+
+**Action Items by Coverage Level:**
+
+| Coverage | Action |
+|----------|--------|
+| **> 80%** | ✅ Excellent — maintain |
+| **60–80%** | 📝 Good — add tests for critical untested paths |
+| **40–60%** | ⚠️ Moderate — prioritize testing core business logic |
+| **< 40%** | 🚨 Low — block merge, require test plan |
+
+### 5.4 Coverage ≠ Quality — Critical Distinction
+
+```xpp
+// BAD: High coverage, low quality
+[SysTestMethodAttribute]
+public static void testCalculateDiscount_CoverageOnly()
+{
+    SalesTable salesTable = TestSalesTable::construct();
+    salesTable.insert();
+    
+    SalesOrderDiscount discount = SalesOrderDiscount::construct();
+    Real result = discount.calculateDiscount(salesTable);
+    
+    // Only checks method runs — doesn't verify CORRECTNESS
+    this.assertNotNull(result);  // Weak assertion!
+    
+    salesTable.delete();
+}
+
+// GOOD: Lower coverage, high quality
+[SysTestMethodAttribute]
+public static void testCalculateDiscount_VerifiesBusinessRules()
+{
+    // Test exact business rule: 5% for orders > $10K
+    SalesTable salesTable = TestSalesOrderBuilder::create()
+        .withCustomer('STD001')
+        .addLine('ITEM001', 100, 15000)  // $15K order
+        .build();
+    
+    Real discount = SalesOrderDiscount::calculateDiscount(salesTable);
+    
+    // Verifies CORRECT behavior, not just execution
+    this.assertEquals(5.0, discount, 'Standard discount should be 5% for orders > $10K');
+    
+    salesTable.delete();
+}
+```
+
+**Best Practice:** Aim for **meaningful coverage** — test edge cases, error paths, and business rule boundaries. A test that covers 10 lines with 5 assertions is better than one covering 50 lines with 1 assertion.
+
+---
+
+## 6. Integration Testing with LCS Test Case Management
+
+### 6.1 LCS Test Case Management Overview
+
+LCS provides **Test Case Management** — a bridge between manual test cases and automated SysTest methods.
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                    LCS TEST CASE LIFECYCLE                         │
+├────────────────────────────────────────────────────────────────────┤
+│                                                                    │
+│  [1] DEFINE              [2] AUTOMATE              [3] EXECUTE    │
+│  ┌─────────────┐        ┌─────────────┐        ┌─────────────┐   │
+│  │ Test Plan   │───────▶│ Map to      │───────▶│ Run in      │   │
+│  │ Test Suite  │        │ SysTest     │        │ Environment │   │
+│  │ Test Cases  │        │ Methods     │        │ (Dev/Test/  │   │
+│  └─────────────┘        └─────────────┘        │  UAT)       │   │
+│         │                      │               └──────┬──────┘   │
+│         ▼                      ▼                      ▼          │
+│  [4] TRACK               [5] REPORT              [6] PROMOTE   │
+│  ┌─────────────┐        ┌─────────────┐        ┌─────────────┐   │
+│  │ Execution   │        │ Pass/Fail   │        │ Gate to     │   │
+│  │ History     │        │ Metrics     │        │ Next Env    │   │
+│  │ Screenshots │        │ Coverage    │        │             │   │
+│  └─────────────┘        └─────────────┘        └─────────────┘   │
+│                                                                    │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+### 6.2 Creating Test Cases in LCS
+
+**Step 1: Create Test Plan**
+1. Navigate to LCS Project → **Test Management** → **Test Plans**
+2. Click **New Test Plan**
+3. Name: `Sprint 23 - Sales Order Discount Feature`
+4. Select **Test Suite** structure (e.g., by module/feature)
+
+**Step 2: Create Test Cases**
+For each test case:
+
+| Field | Value | Example |
+|-------|-------|---------|
+| **Title** | Descriptive name | `Validate VIP + Volume discount stacks to 25%` |
+| **Area** | Module/Feature | `Sales / Discount Calculation` |
+| **Priority** | 1=Critical, 2=High, 3=Medium | `1` |
+| **Automation Status** | Automated/Manual/Not Automated | `Automated` |
+| **Associated Test Method** | SysTest class::method | `SalesOrderDiscountTest::testVIPVolumeDiscount_Over50K` |
+| **Test Steps** | Step-by-step | See below |
+| **Expected Result** | What should happen | `Discount = 25%` |
+| **Test Data** | Required data | `VIP customer, order > $50K` |
+
+**Test Steps Example:**
+```
+1. Create VIP customer (CustGroup = VIP)
+2. Create sales order for VIP customer
+3. Add line with amount > $50,000
+4. Calculate discount
+5. Verify discount = 25% (10% VIP + 15% Volume)
+```
+
+### 6.3 Associating SysTest Methods with LCS Test Cases
+
+**Method 1: Naming Convention (Automatic)**
+```xpp
+class SalesOrderDiscountTest extends SysTestCase
+{
+    // LCS auto-matches by method name if "Automation Status = Automated"
+    [SysTestMethodAttribute]
+    public static void testVIPVolumeDiscount_Over50K()
+    {
+        // LCS Test Case: "Validate VIP + Volume discount stacks to 25%"
+    }
+}
+```
+
+**Method 2: Explicit Mapping (Test Properties)**
+```xpp
+class SalesOrderDiscountTest extends SysTestCase
+{
+    [SysTestMethodAttribute]
+    [SysTestProperty('lcsTestCaseId', '12345')]
+    [SysTestProperty('lcsTestPlan', 'Sprint 23 - Sales Order Discount')]
+    public static void testVIPVolumeDiscount_Over50K()
+    {
+        // Explicitly linked to LCS Test Case ID 12345
+    }
+}
+```
+
+**Method 3: Test Case Management API (Advanced)**
+```xpp
+// For bulk import/sync from external tools (Azure DevOps, TestRail, etc.)
+// Use LCS REST API to sync test cases
+```
+
+### 6.4 Running Tests in LCS
+
+**Option A: Manual Execution (LCS UI)**
+1. Go to **Test Management** → **Test Plans**
+2. Select test plan → **Run** → **New Test Run**
+3. Choose environment (Dev/Test/UAT)
+4. Select test cases/suites
+5. Click **Run** — LCS executes and shows live results
+
+**Option B: CI/CD Pipeline (Automated)**
+```yaml
+# Azure DevOps — Runs tests and publishes to LCS
+- task: Dynamics365Test@1
+  displayName: 'Run SysTest and Publish to LCS'
+  inputs:
+    solution: '**/*.sln'
+    testClasses: 'SalesOrderDiscountTest'
+    configuration: 'Release'
+    publishResults: true
+    lcsProjectId: $(LCS_PROJECT_ID)
+    lcsEnvironmentId: $(LCS_TEST_ENV_ID)
+```
+
+**Option C: Scheduled Runs (Nightly)**
+1. LCS → **Test Management** → **Test Plans** → **Schedule**
+2. Configure: Daily at 2 AM, Test Environment, All Test Cases
+3. Results emailed to team, failures create work items
+
+### 6.5 Test Execution Results in LCS
+
+**LCS Test Run Dashboard shows:**
+
+| Column | Description |
+|--------|-------------|
+| **Test Case** | Linked test case title |
+| **Outcome** | Passed/Failed/Blocked/Not Run |
+| **Duration** | Execution time |
+| **Error Message** | Failure details (stack trace) |
+| **Attachments** | Screenshots, logs |
+| **Run By** | Pipeline or user |
+| **Timestamp** | When executed |
+
+**Failed Test Drill-Down:**
+```
+Test Case: Validate VIP + Volume discount stacks to 25%
+Status: FAILED
+Duration: 3.2s
+Error: Assert.AreEqual failed. Expected: 25. Actual: 20.
+Stack Trace:
+  at SalesOrderDiscountTest.testVIPVolumeDiscount_Over50K()
+  at SysTestRunner.executeTestMethod()
+  
+Attachments: 
+  - screenshot_20240115_143201.png (order form)
+  - test_log_20240115_143201.txt
+```
+
+---
+
+## 7. Activity: Complete Test Class for Sales Order Discount Calculation
+
+### 7.1 Requirements Recap
+
+| Rule | Description |
+|------|-------------|
+| 1 | Standard discount: 5% for orders over $10,000 |
+| 2 | VIP discount: 10% for VIP customers (CustGroup = 'VIP') |
+| 3 | Volume discount: 15% for orders over $50,000 |
+| 4 | Combined: VIP + Volume stack (25% for VIP orders > $50K) |
+| 5 | No discount for orders < $10K (unless VIP = 10%) |
+| 6 | Maximum discount cap: 30% |
+
+### 7.2 Complete Test Class — Production Ready
+
+```xpp
+/// <summary>
+/// Comprehensive test suite for SalesOrderDiscount calculation.
+/// Covers all business rules, edge cases, and error conditions.
+/// 
+/// Run with: AutoRollback isolation (default)
+/// Categories: CheckIn (fast), Nightly (comprehensive)
+/// </summary>
+class SalesOrderDiscountTest extends SysTestCase
+{
+    // ═══════════════════════════════════════════════════════════
+    // SHARED TEST DATA — Created once for all test methods
+    // ═══════════════════════════════════════════════════════════
+    
+    public void setUp()
+    {
+        // Create standard customer (non-VIP)
+        CustTable stdCust = TestCustTable::newTest(
+            TestDataHelper::generateTestAccountNum('STD'),
+            'Standard Customer',
+            'STD'
+        );
+        stdCust.insert();
+        
+        // Create VIP customer
+        CustTable vipCust = TestCustTable::newTest(
+            TestDataHelper::generateTestAccountNum('VIP'),
+            'VIP Customer',
+            'VIP'
+        );
+        vipCust.CustGroup = 'VIP';
+        vipCust.insert();
+        
+        // Create test item
+        InventTable item = TestInventTable::newTest(
+            TestDataHelper::generateTestItemId(),
+            'Test Item',
+            'FG'
+        );
+        item.insert();
+        
+        // Create warehouse and InventDim
+        InventLocation location;
+        location.initValue();
+        location.InventLocationId = 'TESTWH';
+        location.Name = 'Test Warehouse';
+        location.insert();
+        
+        InventDim inventDim;
+        inventDim.initValue();
+        inventDim.InventLocationId = 'TESTWH';
+        InventDim::findOrCreate(inventDim);
+    }
+    
+    public void tearDown()
+    {
+        // Clean up shared data
+        CustTable custTable;
+        while select custTable
+            where custTable.AccountNum like 'STD%'
+               || custTable.AccountNum like 'VIP%'
+        {
+            custTable.delete();
+        }
+        
+        InventTable item;
+        while select item
+            where item.ItemId like 'TESTITEM%'
+        {
+            item.delete();
+        }
+        
+        InventLocation location;
+        while select location
+            where location.InventLocationId == 'TESTWH'
+        {
+            location.delete();
+        }
+    }
+    
+    // ═══════════════════════════════════════════════════════════
+    // TEST METHODS — One per business rule + edge cases
+    // ═══════════════════════════════════════════════════════════
+    
+    /// <summary>
+    /// Rule 1: Standard discount 5% for orders over $10,000
+    /// </summary>
+    [SysTestMethodAttribute]
+    [SysTestCategory('CheckIn')]
+    [SysTestPriority(1)]
+    [SysTestProperty('rule', 'StandardDiscount_Over10K')]
+    public static void testStandardDiscount_Over10K()
+    {
+        // ARRANGE
+        SalesTable salesTable = TestSalesOrderBuilder::create()
+            .withCustomer('STD001')  // Standard customer from setUp
+            .addLine('ITEM001', 100, 15000)  // $15K order
+            .build();
+        
+        // ACT
+        Real discount = SalesOrderDiscount::calculateDiscount(salesTable);
+        
+        // ASSERT
+        this.assertEquals(5.0, discount, 'Standard discount should be 5% for orders over $10K');
+        
+        // CLEANUP
+        salesTable.delete();
+    }
+    
+    /// <summary>
+    /// Rule 2: VIP discount 10% for orders under $10,000
+    /// </summary>
+    [SysTestMethodAttribute]
+    [SysTestCategory('CheckIn')]
+    [SysTestPriority(1)]
+    [SysTestProperty('rule', 'VIPDiscount_Under10K')]
+    public static void testVIPDiscount_Under10K()
+    {
+        // ARRANGE
+        SalesTable salesTable = TestSalesOrderBuilder::create()
+            .withCustomer('VIP001')  // VIP customer from setUp
+            .addLine('ITEM001', 10, 5000)  // $5K order
+            .build();
+        
+        // ACT
+        Real discount = SalesOrderDiscount::calculateDiscount(salesTable);
+        
+        // ASSERT
+        this.assertEquals(10.0, discount, 'VIP discount should be 10% even for orders under $10K');
+        
+        // CLEANUP
+        salesTable.delete();
+    }
+    
+    /// <summary>
+    /// Rule 4: Combined VIP (10%) + Volume (15%) = 25% for orders over $50K
+    /// </summary>
+    [SysTestMethodAttribute]
+    [SysTestCategory('CheckIn')]
+    [SysTestPriority(1)]
+    [SysTestProperty('rule', 'CombinedVIPVolume_Over50K')]
+    public static void testVIPVolumeDiscount_Over50K()
+    {
+        // ARRANGE
+        SalesTable salesTable = TestSalesOrderBuilder::create()
+            .withCustomer('VIP001')
+            .addLine('ITEM001', 500, 60000)  // $60K order
+            .build();
+        
+        // ACT
+        Real discount = SalesOrderDiscount::calculateDiscount(salesTable);
+        
+        // ASSERT
+        this.assertEquals(25.0, discount, 'VIP + Volume discount should be 25% for orders over $50K');
+        
+        // CLEANUP
+        salesTable.delete();
+    }
+    
+    /// <summary>
+    /// Rule 3: Volume discount 15% for non-VIP orders over $50,000
+    /// </summary>
+    [SysTestMethodAttribute]
+    [SysTestCategory('CheckIn')]
+    [SysTestPriority(1)]
+    [SysTestProperty('rule', 'VolumeDiscount_NonVIP_Over50K')]
+    public static void testVolumeDiscount_NonVIP_Over50K()
+    {
+        // ARRANGE
+        SalesTable salesTable = TestSalesOrderBuilder::create()
+            .withCustomer('STD001')
+            .addLine('ITEM001', 500, 60000)  // $60K order
+            .build();
+        
+        // ACT
+        Real discount = SalesOrderDiscount::calculateDiscount(salesTable);
+        
+        // ASSERT
+        this.assertEquals(15.0, discount, 'Volume discount should be 15% for non-VIP orders over $50K');
+        
+        // CLEANUP
+        salesTable.delete();
+    }
+    
+    /// <summary>
+    /// Rule 5: No discount for non-VIP orders under $10,000
+    /// </summary>
+    [SysTestMethodAttribute]
+    [SysTestCategory('CheckIn')]
+    [SysTestPriority(1)]
+    [SysTestProperty('rule', 'NoDiscount_NonVIP_Under10K')]
+    public static void testNoDiscount_Under10K_NonVIP()
+    {
+        // ARRANGE
+        SalesTable salesTable = TestSalesOrderBuilder::create()
+            .withCustomer('STD001')
+            .addLine('ITEM001', 5, 5000)  // $5K order
+            .build();
+        
+        // ACT
+        Real discount = SalesOrderDiscount::calculateDiscount(salesTable);
+        
+        // ASSERT
+        this.assertEquals(0.0, discount, 'No discount for non-VIP orders under $10K');
+        
+        // CLEANUP
+        salesTable.delete();
+    }
+    
+    /// <summary>
+    /// Rule 6: Maximum discount cap of 30%
+    /// </summary>
+    [SysTestMethodAttribute]
+    [SysTestCategory('CheckIn')]
+    [SysTestPriority(1)]
+    [SysTestProperty('rule', 'MaxDiscountCap_30Percent')]
+    public static void testMaxDiscountCap_30Percent()
+    {
+        // ARRANGE — VIP + Volume + hypothetical "Special" = 35% but capped at 30%
+        SalesTable salesTable = TestSalesOrderBuilder::create()
+            .withCustomer('VIP001')
+            .addLine('ITEM001', 1000, 100000)  // $100K order
+            .build();
+        
+        // ACT
+        Real discount = SalesOrderDiscount::calculateDiscount(salesTable);
+        
+        // ASSERT — Cap enforced
+        this.assertLessOrEqual(discount, 30.0, 'Discount should never exceed 30%');
+        this.assertEquals(30.0, discount, 'Discount should be capped at exactly 30%');
+        
+        // CLEANUP
+        salesTable.delete();
+    }
+    
+    /// <summary>
+    /// Edge Case: Boundary value — exactly $10,000
+    /// </summary>
+    [SysTestMethodAttribute]
+    [SysTestCategory('Nightly')]
+    [SysTestPriority(2)]
+    [SysTestProperty('rule', 'Boundary_Exactly10K')]
+    public static void testBoundaryValue_Exactly10K()
+    {
+        // ARRANGE
+        SalesTable salesTable = TestSalesOrderBuilder::create()
+            .withCustomer('STD001')
+            .addLine('ITEM001', 100, 10000)  // Exactly $10K
+            .build();
+        
+        // ACT
+        Real discount = SalesOrderDiscount::calculateDiscount(salesTable);
+        
+        // ASSERT — Boundary: >= $10K qualifies for standard discount
+        this.assertEquals(5.0, discount, 'Standard discount should apply at exactly $10K (>= boundary)');
+        
+        // CLEANUP
+        salesTable.delete();
+    }
+    
+    /// <summary>
+    /// Edge Case: Boundary value — exactly $50,000
+    /// </summary>
+    [SysTestMethodAttribute]
+    [SysTestCategory('Nightly')]
+    [SysTestPriority(2)]
+    [SysTestProperty('rule', 'Boundary_Exactly50K')]
+    public static void testBoundaryValue_Exactly50K()
+    {
+        // ARRANGE
+        SalesTable salesTable = TestSalesOrderBuilder::create()
+            .withCustomer('STD001')
+            .addLine('ITEM001', 500, 50000)  // Exactly $50K
+            .build();
+        
+        // ACT
+        Real discount = SalesOrderDiscount::calculateDiscount(salesTable);
+        
+        // ASSERT — Boundary: >= $50K qualifies for volume discount
+        this.assertEquals(15.0, discount, 'Volume discount should apply at exactly $50K (>= boundary)');
+        
+        // CLEANUP
+        salesTable.delete();
+    }
+    
+    /// <summary>
+    /// Edge Case: Zero order total
+    /// </summary>
+    [SysTestMethodAttribute]
+    [SysTestCategory('Nightly')]
+    [SysTestPriority(3)]
+    [SysTestProperty('rule', 'EdgeCase_ZeroTotal')]
+    public static void testZeroOrderTotal()
+    {
+        // ARRANGE
+        SalesTable salesTable = TestSalesOrderBuilder::create()
+            .withCustomer('STD001')
+            .addLine('ITEM001', 0, 0)  // Zero quantity and amount
+            .build();
+        
+        // ACT
+        Real discount = SalesOrderDiscount::calculateDiscount(salesTable);
+        
+        // ASSERT
+        this.assertEquals(0.0, discount, 'No discount for $0 order total');
+        
+        // CLEANUP
+        salesTable.delete();
+    }
+    
+    /// <summary>
+    /// Edge Case: Negative order total — should throw error
+    /// </summary>
+    [SysTestMethodAttribute]
+    [SysTestCategory('Nightly')]
+    [SysTestPriority(3)]
+    [SysTestProperty('rule', 'EdgeCase_NegativeTotal')]
+    public static void testNegativeOrderTotal_ThrowsError()
+    {
+        // ARRANGE
+        SalesTable salesTable = TestSalesOrderBuilder::create()
+            .withCustomer('STD001')
+            .addLine('ITEM001', 1, -5000)  // Negative amount
+            .build();
+        
+        // ASSERT — Should throw error for negative total
+        this.assertException(
+            classStr(SalesOrderDiscount),
+            methodStr(SalesOrderDiscount, calculateDiscount),
+            error::Error,
+            'Negative order total should throw Error exception'
+        );
+        
+        // CLEANUP
+        salesTable.delete();
+    }
+    
+    /// <summary>
+    /// Edge Case: VIP customer at exactly $10K boundary
+    /// </summary>
+    [SysTestMethodAttribute]
+    [SysTestCategory('Nightly')]
+    [SysTestPriority(2)]
+    [SysTestProperty('rule', 'Boundary_VIP_Exactly10K')]
+    public static void testVIPBoundary_Exactly10K()
+    {
+        // ARRANGE
+        SalesTable salesTable = TestSalesOrderBuilder::create()
+            .withCustomer('VIP001')
+            .addLine('ITEM001', 100, 10000)  // Exactly $10K
+            .build();
+        
+        // ACT
+        Real discount = SalesOrderDiscount::calculateDiscount(salesTable);
+        
+        // ASSERT — VIP gets 10% + standard 5% = 15% at $10K boundary
+        this.assertEquals(15.0, discount, 'VIP at $10K boundary gets 10% VIP + 5% standard = 15%');
+        
+        // CLEANUP
+        salesTable.delete();
+    }
+    
+    /// <summary>
+    /// Data-Driven Test: Multiple scenarios in one method
+    /// </summary>
+    [SysTestMethodAttribute,
+    SysTestRow('STD', 5000, 0, 'Standard < 10K'),
+    SysTestRow('STD', 10000, 5, 'Standard = 10K'),
+    SysTestRow('STD', 15000, 5, 'Standard > 10K'),
+    SysTestRow('STD', 50000, 15, 'Standard = 50K'),
+    SysTestRow('STD', 60000, 15, 'Standard > 50K'),
+    SysTestRow('VIP', 5000, 10, 'VIP < 10K'),
+    SysTestRow('VIP', 10000, 15, 'VIP = 10K (10+5)'),
+    SysTestRow('VIP', 15000, 15, 'VIP > 10K (10+5)'),
+    SysTestRow('VIP', 50000, 25, 'VIP = 50K (10+15)'),
+    SysTestRow('VIP', 60000, 25, 'VIP > 50K (10+15)'),
+    SysTestRow('VIP', 100000, 30, 'VIP large capped at 30%')]
+    [SysTestCategory('Nightly')]
+    [SysTestPriority(5)]
+    [SysTestProperty('rule', 'DataDriven_AllScenarios')]
+    public static void testDiscountCalculation_DataDriven(
+        CustGroup _custGroup,
+        Amount _orderAmount,
+        Real _expectedDiscount,
+        str _description)
+    {
+        // ARRANGE
+        AccountNum custAccount = _custGroup == 'VIP' ? 'VIP001' : 'STD001';
+        
+        SalesTable salesTable = TestSalesOrderBuilder::create()
+            .withCustomer(custAccount)
+            .addLine('ITEM001', 1, _orderAmount)
+            .build();
+        
+        // ACT
+        Real discount = SalesOrderDiscount::calculateDiscount(salesTable);
+        
+        // ASSERT
+        this.assertEquals(_expectedDiscount, discount, _description);
+        
+        // CLEANUP
+        salesTable.delete();
+    }
+}
+```
+
+### 7.3 Supporting Classes (Factory & Builder)
+
+```xpp
+/// <summary>
+/// Test data factory for CustTable
+/// </summary>
+class TestCustTable
+{
+    public static CustTable newTest(AccountNum _accountNum, str _name, CustGroup _custGroup)
+    {
+        CustTable custTable;
+        custTable.initValue();
+        custTable.AccountNum = _accountNum;
+        custTable.Name = _name;
+        custTable.CustGroup = _custGroup;
+        custTable.Currency = 'USD';
+        custTable.PaymTermId = 'NET30';
+        custTable.InvoiceAccount = _accountNum;
+        return custTable;
+    }
+}
+
+/// <summary>
+/// Test data factory for InventTable
+/// </summary>
+class TestInventTable
+{
+    public static InventTable newTest(ItemId _itemId, str _name, ItemType _itemType)
+    {
+        InventTable item;
+        item.initValue();
+        item.ItemId = _itemId;
+        item.Name = _name;
+        item.ItemType = _itemType;
+        item.ItemGroupId = 'RAW';
+        item.UnitId = 'EA';
+        item.PurchUnit = 'EA';
+        item.SalesUnit = 'EA';
+        item.InventUnit = 'EA';
+        return item;
+    }
+}
+
+/// <summary>
+/// Fluent builder for SalesTable with lines
+/// </summary>
+class TestSalesOrderBuilder
+{
+    SalesTable salesTable;
+    List salesLines;
+    
+    private void new()
+    {
+        salesTable = SalesTable::construct();
+        salesTable.initValue();
+        salesTable.SalesDate = today();
+        salesLines = new List(Types::Record);
+    }
+    
+    public static TestSalesOrderBuilder create()
+    {
+        return new TestSalesOrderBuilder();
+    }
+    
+    public TestSalesOrderBuilder withCustomer(CustAccount _custAccount)
+    {
+        salesTable.CustomerAccount = _custAccount;
+        salesTable.initFromCustTable(CustTable::find(_custAccount));
+        return this;
+    }
+    
+    public TestSalesOrderBuilder withSalesId(SalesId _salesId)
+    {
+        salesTable.SalesId = _salesId;
+        return this;
+    }
+    
+    public TestSalesOrderBuilder addLine(ItemId _itemId, Qty _qty, Amount _lineAmount)
+    {
+        SalesLine line;
+        line.initValue();
+        line.ItemId = _itemId;
+        line.SalesQty = _qty;
+        line.LineAmount = _lineAmount;
+        line.initFromInventTable(InventTable::find(_itemId));
+        line.InventDimId = InventDim::findOrCreate(InventDim::construct().parmInventLocationId('TESTWH')).InventDimId;
+        salesLines.addEnd(line);
+        return this;
+    }
+    
+    public SalesTable build()
+    {
+        // Generate unique SalesId if not set
+        if (!salesTable.SalesId)
+        {
+            salesTable.SalesId = NumberSeq::newGetNum(SalesParameters::numRefSalesId()).num();
+        }
+        
+        salesTable.insert();
+        
+        SalesLine line;
+        while select line from salesLines
+        {
+            line.SalesTableId = salesTable.SalesId;
+            line.SalesId = salesTable.SalesId;
+            line.insert();
+        }
+        
+        return salesTable;
+    }
+}
+```
+
+### 7.4 Implementation Under Test (Reference)
+
+```xpp
+/// <summary>
+/// Discount calculation service — implementation being tested
+/// </summary>
+class SalesOrderDiscount
+{
+    private const Real StandardDiscountPercent = 5.0;
+    private const Real VIPDiscountPercent = 10.0;
+    private const Real VolumeDiscountPercent = 15.0;
+    private const Real MaxDiscountPercent = 30.0;
+    private const Amount StandardThreshold = 10000;
+    private const Amount VolumeThreshold = 50000;
+    
+    public static SalesOrderDiscount construct()
+    {
+        return new SalesOrderDiscount();
+    }
+    
+    public Real calculateDiscount(SalesTable _salesTable)
+    {
+        if (!_salesTable)
+        {
+            throw error('Sales table cannot be null');
+        }
+        
+        Amount orderTotal = this.getOrderTotal(_salesTable);
+        
+        if (orderTotal < 0)
+        {
+            throw error('Order total cannot be negative');
+        }
+        
+        if (orderTotal == 0)
+        {
+            return 0;
+        }
+        
+        Real discount = 0;
+        boolean isVIP = this.isVIPCustomer(_salesTable.CustomerAccount);
+        
+        // Standard discount
+        if (orderTotal >= StandardThreshold)
+        {
+            discount += StandardDiscountPercent;
+        }
+        
+        // VIP discount (applies regardless of order amount)
+        if (isVIP)
+        {
+            discount += VIPDiscountPercent;
+        }
+        
+        // Volume discount
+        if (orderTotal >= VolumeThreshold)
+        {
+            discount += VolumeDiscountPercent;
+        }
+        
+        // Apply cap
+        return discount > MaxDiscountPercent ? MaxDiscountPercent : discount;
+    }
+    
+    private Amount getOrderTotal(SalesTable _salesTable)
+    {
+        Amount total;
+        select sum(LineAmount) from SalesLine
+            where SalesLine.SalesId == _salesTable.SalesId;
+        return total;
+    }
+    
+    private boolean isVIPCustomer(CustAccount _custAccount)
+    {
+        CustTable custTable = CustTable::find(_custAccount);
+        return custTable && custTable.CustGroup == 'VIP';
+    }
+}
+```
+
+---
+
+## 8. Best Practices, Common Mistakes, and CI/CD Integration
+
+### 8.1 Best Practices — AAA Pattern
+
+**Arrange → Act → Assert** — Structure every test method:
+
+```xpp
+[SysTestMethodAttribute]
+public static void testExample()
+{
+    // ═══ ARRANGE ═══ — Set up test data and conditions
+    VendTable vendTable = TestVendTable::construct();
+    vendTable.CreditMax = 600000;
+    vendTable.insert();
+    
+    SalesTable salesTable = TestSalesOrderBuilder::create()
+        .withCustomer(vendTable.AccountNum)
+        .addLine('ITEM001', 100, 15000)
+        .build();
+    
+    // ═══ ACT ═══ — Execute the code under test (ONE line ideally)
+    Real discount = SalesOrderDiscount::calculateDiscount(salesTable);
+    
+    // ═══ ASSERT ═══ — Verify the outcome
+    this.assertEquals(5.0, discount, 'Standard discount should be 5%');
+    
+    // CLEANUP (optional with AutoRollback)
+    salesTable.delete();
+    vendTable.delete();
+}
+```
+
+### 8.2 Test Naming Conventions
+
+| Pattern | Example | When to Use |
+|---------|---------|-------------|
+| `test<Method>_<Scenario>_<Expected>` | `testCalculateDiscount_VIPOver50K_Returns25` | **Recommended** — clear intent |
+| `test<BusinessRule>_<Condition>` | `testStandardDiscount_Over10K` | Simple rules |
+| `test<Feature>_<EdgeCase>` | `testDiscount_BoundaryExactly10K` | Edge cases |
+| `test<Method>_Throws<Exception>` | `testCalculateDiscount_ThrowsOnNegative` | Error cases |
+
+**Avoid:**
+- `test1()`, `test2()` — meaningless
+- `testDiscount()` — too vague
+- `test_CalculateDiscount_ShouldReturn5Percent()` — C# style, not X++
+
+### 8.3 Common Mistakes — And How to Fix Them
+
+| Mistake | Problem | Fix |
+|---------|---------|-----|
+| **No isolation** — Tests share data without `AutoRollback` | Flaky tests, order-dependent | Use `[SysTestTransaction(SysTestTransactionMode::AutoRollback)]` |
+| **Hardcoded IDs** — `'VEND001'` in multiple tests | Collisions in parallel runs | Use `NumberSeq` or `TestDataHelper::generateTestAccountNum()` |
+| **Testing implementation, not behavior** | Brittle tests that break on refactor | Test business outcomes, not internal methods |
+| **Missing edge cases** — Only happy path | Bugs in production | Test boundaries, nulls, negatives, empty collections |
+| **Weak assertions** — `assertNotNull(result)` | Doesn't verify correctness | Use `assertEquals(expected, actual)` with specific values |
+| **No cleanup** — Test data leaks | Pollutes environment, slows tests | Use `AutoRollback` or explicit `delete()` in `tearDown()` |
+| **Testing multiple things in one test** | Hard to diagnose failures | One assertion concept per test method |
+| **Slow tests** — Creating full form runs | CI/CD pipeline too slow | Unit test logic classes, not forms; use `AutoRollback` |
+
+### 8.4 Running Tests in Visual Studio
+
+**Test Explorer:**
+1. Build solution (`Ctrl+Shift+B`)
+2. Open **Test Explorer**: `Test` → `Test Explorer`
+3. Tests appear grouped by class
+4. Right-click → **Run Selected Tests** or **Run All**
+
+**Test Explorer Columns to Enable:**
+- **Duration** — Spot slow tests
+- **Traits** — See Category, Priority, Owner
+
+**Filtering in Test Explorer:**
+```
+Trait:Category=CheckIn      // Run only check-in tests
+Trait:Priority<=3           // Run priority 1-3
+Trait:module=Sales          // Run Sales module tests
+```
+
+**Debugging Tests:**
+1. Set breakpoint in test method
+2. Test Explorer → Right-click test → **Debug**
+3. Step through code, inspect variables
+
+### 8.5 CI/CD Pipeline Integration
+
+**Complete Azure DevOps Pipeline:**
+
+```yaml
+# azure-pipelines.yml
+trigger:
+  branches:
+    include:
+      - main
+      - release/*
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  - group: 'd365-build-variables'
+  - name: BuildConfiguration
+    value: 'Release'
+  - name: TestFilter
+    value: 'TestCategory=CheckIn'  # Fast tests for PR validation
+
+stages:
+- stage: Build
+  displayName: 'Build & Test'
+  jobs:
+  - job: BuildAndTest
+    displayName: 'Build Solution and Run Tests'
+    timeoutInMinutes: 60
+    steps:
+    # 1. Restore NuGet
+    - task: NuGetCommand@2
+      displayName: 'Restore NuGet Packages'
+      inputs:
+        command: 'restore'
+        feedsToUse: 'config'
+        nugetConfigPath: 'nuget.config'
+
+    # 2. Build Solution
+    - task: MSBuild@1
+      displayName: 'Build D365 F&O Solution'
+      inputs:
+        solution: '**/*.sln'
+        platform: 'Any CPU'
+        configuration: '$(BuildConfiguration)'
+        msbuildArguments: >
+          /p:BuildTasksDirectory="$(Pipeline.Workspace)\NuGets\Microsoft.Dynamics.AX.Platform.CompilerPackage\DevAlm"
+          /p:MetadataDirectory="$(Build.SourcesDirectory)\Metadata"
+          /p:FrameworkDirectory="$(Pipeline.Workspace)\NuGets\Microsoft.Dynamics.AX.Platform.CompilerPackage"
+          /p:ReferenceFolder="$(Pipeline.Workspace)\NuGets"
+          /p:OutputDirectory="$(Build.BinariesDirectory)"
+
+    # 3. Run SysTest with Coverage
+    - task: Dynamics365Test@1
+      displayName: 'Run SysTest Unit Tests'
+      inputs:
+        solution: '**/*.sln'
+        testClasses: '*Test'
+        configuration: '$(BuildConfiguration)'
+        testFilter: '$(TestFilter)'
+        collectCoverage: true
+        coverageThreshold: 70
+        publishResults: true
+        lcsProjectId: $(LCS_PROJECT_ID)
+        lcsEnvironmentId: $(LCS_BUILD_ENV_ID)
+
+    # 4. Publish Coverage Report
+    - task: PublishCodeCoverageResults@1
+      displayName: 'Publish Coverage to Azure DevOps'
+      inputs:
+        codeCoverageTool: 'Cobertura'
+        summaryFileLocation: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+        reportDirectory: '$(Agent.TempDirectory)/**/coverage/'
+
+    # 5. Publish Test Results
+    - task: PublishTestResults@2
+      displayName: 'Publish Test Results'
+      inputs:
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '**/TestResults/*.trx'
+        mergeTestResults: true
+        failTaskOnFailedTests: true
+
+- stage: NightlyTests
+  displayName: 'Nightly Full Test Suite'
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - job: NightlyTests
+    displayName: 'Run All Tests Including Nightly Category'
+    steps:
+    - task: Dynamics365Test@1
+      displayName: 'Run Full Test Suite'
+      inputs:
+        solution: '**/*.sln'
+        testClasses: '*Test'
+        configuration: 'Release'
+        testFilter: ''  # No filter = all tests
+        collectCoverage: true
+        coverageThreshold: 75
+        publishResults: true
+        lcsProjectId: $(LCS_PROJECT_ID)
+        lcsEnvironmentId: $(LCS_TEST_ENV_ID)
+
+- stage: DeployToTest
+  displayName: 'Deploy to Test Environment'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - deployment: DeployTest
+    displayName: 'Deploy to Test Environment'
+    environment: 'Test'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: Dynamics365Deploy@1
+            inputs:
+              lcsProjectId: $(LCS_PROJECT_ID)
+              lcsEnvironmentId: $(LCS_TEST_ENV_ID)
+              deployablePackage: '$(Build.ArtifactStagingDirectory)/*.zip'
+```
+
+### 8.6 Release Gates with Test Results
+
+```yaml
+# Release pipeline — Gate on test results
+stages:
+- stage: DeployToUAT
+  displayName: 'Deploy to UAT'
+  dependsOn: DeployToTest
+  condition: succeeded()
+  jobs:
+  - deployment: DeployUAT
+    environment: 'UAT'
+    strategy:
+      runOnce:
+        preDeploy:
+          steps:
+          # Gate: Check test results from Test environment
+          - task: AzureCLI@2
+            displayName: 'Verify Test Results in LCS'
+            inputs:
+              azureSubscription: '$(AzureSubscription)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Query LCS API for test results
+                # Fail if any CheckIn tests failed in Test env
+                TEST_RESULTS=$(az rest --method get \
+                  --url "https://lcsapi.lcs.dynamics.com/api/v1/projects/$(LCS_PROJECT_ID)/environments/$(LCS_TEST_ENV_ID)/testresults" \
+                  --query "value[?contains(testClass, 'Test') && outcome!='Passed']")
+                
+                if [ "$TEST_RESULTS" != "[]" ]; then
+                  echo "##vso[task.logissue type=error]Failed tests found in Test environment"
+                  echo "$TEST_RESULTS"
+                  exit 1
+                fi
+                echo "All tests passed in Test environment"
+        deploy:
+          steps:
+          - task: Dynamics365Deploy@1
+            inputs:
+              lcsProjectId: $(LCS_PROJECT_ID)
+              lcsEnvironmentId: $(LCS_UAT_ENV_ID)
+              deployablePackage: '$(Build.ArtifactStagingDirectory)/*.zip'
+```
+
+---
+
+## Summary Checklist
+
+| ✅ | Item |
+|----|------|
+| **Framework** | Extend `SysTestCase`, use `[SysTestMethodAttribute]`, implement `setUp()`/`tearDown()` |
+| **Assertions** | Use `assertEquals`, `assertTrue`, `assertException`, `assertError` — avoid weak assertions |
+| **Test Data** | Factory classes with `construct()`/`newTest()`, use NumberSeq for unique IDs |
+| **Isolation** | Default `AutoRollback` — never use `None` in committed code |
+| **Data-Driven** | Use `SysTestRow` for parameterized tests (v10.0.25+) |
+| **Filtering** | Tag tests with `SysTestCategory`, `SysTestPriority`, `SysTestProperty` |
+| **Coverage** | Enable in CI/CD, target >80% line coverage, focus on meaningful tests |
+| **LCS Integration** | Map test cases, run in pipeline, gate deployments on test results |
+| **Naming** | `test<Method>_<Scenario>_<Expected>` — clear and searchable |
+| **CI/CD** | Run CheckIn tests on PR, Nightly on main, gate deployments on results |
+
+---
+
+## Microsoft Learn References
+
+| Topic | Link |
+|-------|------|
+| SysTest Framework Overview | https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/perf-test/sys-test-framework |
+| Unit Testing in D365 F&O | https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/perf-test/unit-testing |
+| Test Automation | https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/perf-test/test-automation |
+| SysTest Attributes | https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/perf-test/sys-test-attributes |
+| Test Coverage in LCS | https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/perf-test/test-coverage |
+| LCS Test Case Management | https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/lifecycle-services/test-case-management |
+| Azure DevOps Test Task | https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/test/dynamics-365-test |
+
+---
+
+*Last Updated: November 2024*  
+*Part of the D365 F&O Developer Handbook — Chapter 19*
 
 ```xpp
 class TestVendTable
@@ -12830,47 +18016,6 @@ public static Description usedOn(ExtendedTypeId _typeId)
 
 DMF enables data import/export through staging tables and data entities.
 
-# Chapter 25: Power Platform & Copilot
-
-## 25.1 Data Entities
-
-VSI Asset Management exposes 10 public data entities, each backed by a staging table:
-
-| Entity | Staging Table | Category |
-|---|---|---|
-| `VSIAssetEntity` | `VSIAssetStaging` | Master |
-| `VSIAssetLicenseEntity` | `VSIAssetLicenseStaging` | Master |
-| `VSIAssetTypeEntity` | `VSIAssetTypeStaging` | Reference |
-| `VSIFunctionalLocationEntity` | `VSIFunctionalLocationStaging` | Reference |
-| `VSIVendorEntity` | `VSIVendorStaging` | Reference |
-| `VSIWorkerEntity` | `VSIWorkerStaging` | Reference |
-| `VSIAssetAssignmentHistoryEntity` | `VSIAssetAssignmentHistoryStaging` | Transaction |
-| `VSIAssetMaintenanceEntity` | `VSIAssetMaintenanceStaging` | Transaction |
-| `VSIAssetRequestEntity` | `VSIAssetRequestStaging` | Document |
-| `VSIAssetRetirementEntity` | `VSIAssetRetirementStaging` | Transaction |
-| `VSIAssetStatusHistoryEntity` | `VSIAssetStatusHistoryStaging` | Transaction |
-
-### Entity Properties
-
-```xml
-<IsPublic>Yes</IsPublic>
-<DataManagementEnabled>Yes</DataManagementEnabled>
-<DataManagementStagingTable>VSIAssetStaging</DataManagementStagingTable>
-<PrimaryCompanyContext>DataAreaId</PrimaryCompanyContext>
-<EntityCategory>Transaction</EntityCategory>
-<PrimaryKey>EntityKey</PrimaryKey>
-<PublicEntityName>VSIAsset</PublicEntityName>
-```
-
-## 25.2 Staging Tables
-
-Staging tables are `TableGroup = Staging`, `SaveDataPerCompany = No`, and include system-generated fields:
-
-| Field | Purpose |
-|---|---|
-| `DefinitionGroup` | DMF definition group name |
-| `ExecutionId` | DMF execution identifier |
-| `IsSelected` | Whether the row is selected for processing |
 | `TransferStatus` | `DMFTransferStatus` (Pending, etc.) |
 
 Each staging table has a foreign-key relation to its data entity via the primary key fields.

@@ -59,14 +59,6 @@ If you're new to D365 F&O, start here:
 | `d365-anti-patterns.md` | Anti-pattern library documenting "What NOT to do" with code examples and fixes. | Avoiding common mistakes and upgrade issues. |
 | `d365-certification-mapping.md` | Mapping of 35 chapters to MB-310, MB-330, MB-500 exam domains. | Study planning and exam preparation. |
 
-### Chapter Deep-Dives (Standalone Files)
-
-| File | Description | Recommended Use |
-|---|---|---|
-| `data-entities-chapter.md` | Data Entities chapter: OData, staging, composite entities, DMF, Power Platform integration. | Integration reference. |
-| `systest-framework-chapter.md` | SysTest Framework chapter: `SysTestCase`, assertions, data fixtures, CI/CD integration. | Testing reference. |
-| `d365-performance-sql-tuning.md` | Performance & SQL tuning deep dive: query plans, `CacheLookup`, deadlock resolution, indexing. | Query optimization reference. |
-
 ### Reference & Legacy Files
 
 | File | Description | Recommended Use |
