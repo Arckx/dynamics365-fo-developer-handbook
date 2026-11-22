@@ -124,19 +124,19 @@ metadata:
 
 | File | Purpose | When to Use |
 |------|---------|-------------|
-| `README.md` | Overview, curriculum table, quick start | First visit, orientation |
-| `d365-learning-guide.md` | 35-chapter desktop guide with code | Deep study, daily reference |
-| `d365-fao-learning-journey.md` | 12-month structured plan | Planning, progress tracking |
-| `d365-guide-cross-reference.md` | Master navigation index | Finding chapters/exercises |
-| `d365-xpp-quick-reference.md` | Syntax cheat sheet | While coding |
-| `d365-xpp-exercises.md` | 17 hands-on exercises | Practice, skill verification |
-| `d365-glossary.md` | 100+ term definitions | Terminology lookup |
-| `d365-handbook-appendices.md` | EDT table, X++→SQL, debugging, URLs | Quick lookups |
-| `d365-anti-patterns.md` | What NOT to do with fixes | Code review, avoiding mistakes |
-| `d365-certification-mapping.md` | Chapter → exam domain mapping | Certification prep |
-| `vsi_gap_analysis.md` | VSI codebase vs guide gaps | Advanced architectural review |
-| `d365-fao-interest.md` | User context & goals | — |
-| `language-mindset-development.md` | Chapter 1.5 development notes | — |
+| `08-meta/README.md` | Overview, curriculum table, quick start | First visit, orientation |
+| `01-core-handbook/d365-learning-guide.md` | 35-chapter desktop guide with code | Deep study, daily reference |
+| `01-core-handbook/d365-fao-learning-journey.md` | 12-month structured plan | Planning, progress tracking |
+| `01-core-handbook/d365-guide-cross-reference.md` | Master navigation index | Finding chapters/exercises |
+| `01-core-handbook/d365-xpp-quick-reference.md` | Syntax cheat sheet | While coding |
+| `01-core-handbook/d365-xpp-exercises.md` | 17 hands-on exercises | Practice, skill verification |
+| `01-core-handbook/d365-glossary.md` | 100+ term definitions | Terminology lookup |
+| `01-core-handbook/d365-handbook-appendices.md` | EDT table, X++→SQL, debugging, URLs | Quick lookups |
+| `01-core-handbook/d365-anti-patterns.md` | What NOT to do with fixes | Code review, avoiding mistakes |
+| `01-core-handbook/d365-certification-mapping.md` | Chapter → exam domain mapping | Certification prep |
+| `07-reference/vsi_gap_analysis.md` | VSI codebase vs guide gaps | Advanced architectural review |
+| `07-reference/d365-fao-interest.md` | User context & goals | — |
+| `07-reference/language-mindset-development.md` | Chapter 1.5 development notes | — |
 
 ---
 
