@@ -32,7 +32,7 @@ If you're new to D365 F&O, start here:
 
 ---
 
-## 📖 How to Read This Handbook
+## How to Read This Handbook
 
 | Learning Style | Start Here | Path |
 |---|---|---|
