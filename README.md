@@ -2,9 +2,24 @@
 
 ![Chapters](https://img.shields.io/badge/Chapters-35-blue)
 ![Exercises](https://img.shields.io/badge/Exercises-17-green)
+![Files](https://img.shields.io/badge/Reference%20Files-51-blueviolet)
 ![Last Updated](https://img.shields.io/badge/Updated-Nov%202026-orange)
 
 > The definitive technical handbook, 35-chapter desktop guide, and 12-month learning journey designed for Microsoft D365 F&O developers, technical interns, and enterprise engineers.
+
+---
+
+## 🆕 What's New (Nov 2026)
+
+| Category | Additions |
+|----------|-----------|
+| **Chapter 0 Foundations** | 9 new guides: ERP basics, OOP/SQL primers, environment setup, business glossary, role day-in-life, ERP comparison, FAQ, career paths |
+| **Hands-On Practice** | 10 OOP exercises + 10 SQL exercises with practice schema & X++ mappings |
+| **Learning Tools** | 245 quiz MCQs, Anki/Quizlet flashcards, printable 12-month progress tracker |
+| **Collaborative Learning** | 10 pair programming sessions (CoC, SysOperation, batch, security, perf, debugging) |
+| **Career Guidance** | Junior→Architect paths, certifications, salaries, 12-month growth plans |
+| **Visual Aids** | 12 Mermaid.js architecture diagrams (pillars, request flow, layers, CoC, security, batch, entities) |
+| **Total Reference Files** | **51 markdown files** across 8 organized categories |
 
 ---
 
