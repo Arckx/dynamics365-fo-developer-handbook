@@ -1,0 +1,269 @@
+# Azure DevOps Build Pipeline for D365 F&O
+# File: azure-pipelines-build.yml
+# Place in repo root or .azure-pipelines/
+
+trigger:
+  branches:
+    include:
+      - main
+      - release/*
+  paths:
+    include:
+      - '*.csproj'
+      - '*.xml'
+      - 'Descriptor/ModuleDescriptor.xml'
+      - 'Source/**'
+
+pr:
+  branches:
+    include:
+      - main
+      - release/*
+
+variables:
+  # Build configuration
+  BuildConfiguration: 'Release'
+  BuildPlatform: 'Any CPU'
+
+  # D365 F&O specific
+  D365FOVersion: '10.0.40'  # Update per your version
+  ModelName: 'MyCustomModel'
+  ModelPublisher: 'MyCompany'
+  ModelVersion: '1.0.0'
+
+  # Paths
+  PackagesLocalDirectory: '$(Build.SourcesDirectory)/PackagesLocalDirectory'
+  MetadataDirectory: '$(Build.SourcesDirectory)/Metadata'
+  OutputDirectory: '$(Build.ArtifactStagingDirectory)/drop'
+
+stages:
+- stage: Build
+  displayName: 'Build D365 F&O Model'
+  jobs:
+  - job: BuildModel
+    displayName: 'Compile X++ and Generate Model'
+    pool:
+      vmImage: 'windows-latest'
+    timeoutInMinutes: 120
+
+    steps:
+    # 1. Setup NuGet
+    - task: NuGetToolInstaller@1
+      displayName: 'Install NuGet'
+      inputs:
+        versionSpec: '6.x'
+
+    # 2. Restore NuGet packages (if using .NET libraries)
+    - task: NuGetCommand@2
+      displayName: 'Restore NuGet Packages'
+      inputs:
+        command: 'restore'
+        restoreSolution: '**/*.sln'
+        feedsToUse: 'config'
+        nugetConfigPath: 'NuGet.config'
+
+    # 3. Install D365 F&O Build Tools
+    - task: PowerShell@2
+      displayName: 'Install D365 F&O Build Tools'
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Install Microsoft.Dynamics.Framework.Tools.BuildTasks
+          nuget install Microsoft.Dynamics.Framework.Tools.BuildTasks -Version $(D365FOVersion) -OutputDirectory $(Build.SourcesDirectory)/packages -Source https://www.nuget.org/api/v2
+
+          # Install Microsoft.Dynamics.AX.Framework.Compiler
+          nuget install Microsoft.Dynamics.AX.Framework.Compiler -Version $(D365FOVersion) -OutputDirectory $(Build.SourcesDirectory)/packages -Source https://www.nuget.org/api/v2
+
+    # 4. Prepare PackagesLocalDirectory
+    - task: PowerShell@2
+      displayName: 'Prepare PackagesLocalDirectory'
+      inputs:
+        targetType: 'inline'
+        script: |
+          $pkgDir = "$(PackagesLocalDirectory)"
+          if (-not (Test-Path $pkgDir)) {
+              New-Item -ItemType Directory -Path $pkgDir -Force
+          }
+
+          # Copy model source to PackagesLocalDirectory
+          $srcDir = "$(Build.SourcesDirectory)/Source"
+          if (Test-Path $srcDir) {
+              Copy-Item -Path "$srcDir/*" -Destination $pkgDir -Recurse -Force
+          }
+
+    # 5. Build Model (Compile X++)
+    - task: MSBuild@1
+      displayName: 'Build Model (X++ Compilation)'
+      inputs:
+        solution: '$(Build.SourcesDirectory)/Source/$(ModelName)/$(ModelName).csproj'
+        msbuildVersion: '17.0'
+        msbuildArchitecture: 'x64'
+        configuration: '$(BuildConfiguration)'
+        platform: '$(BuildPlatform)'
+        msbuildArguments: >
+          /p:PackagesLocalDirectory="$(PackagesLocalDirectory)"
+          /p:ModelName="$(ModelName)"
+          /p:ModelPublisher="$(ModelPublisher)"
+          /p:ModelVersion="$(ModelVersion)"
+          /p:GenerateModelFile=true
+          /p:ModelFileOutputPath="$(OutputDirectory)/$(ModelName).axmodel"
+          /verbosity:minimal
+
+    # 6. Run Best Practice Checks (AppChecker)
+    - task: PowerShell@2
+      displayName: 'Run AppChecker (Best Practices)'
+      continueOnError: true
+      inputs:
+        targetType: 'inline'
+        script: |
+          $appChecker = "$(Build.SourcesDirectory)/packages/Microsoft.Dynamics.Framework.Tools.BuildTasks.*/tools/AppChecker.exe"
+          if (Test-Path $appChecker) {
+              & $appChecker -model "$(ModelName)" -path "$(PackagesLocalDirectory)/$(ModelName)" -output "$(OutputDirectory)/AppCheckerResults.xml"
+          } else {
+              Write-Warning "AppChecker not found, skipping best practice checks"
+          }
+
+    # 7. Run Code Analysis (if configured)
+    - task: PowerShell@2
+      displayName: 'Run Static Code Analysis'
+      continueOnError: true
+      inputs:
+        targetType: 'inline'
+        script: |
+          $codeAnalysis = "$(Build.SourcesDirectory)/packages/Microsoft.Dynamics.AX.Framework.Compiler.*/tools/axcodeanalysis.exe"
+          if (Test-Path $codeAnalysis) {
+              & $codeAnalysis -model "$(ModelName)" -path "$(PackagesLocalDirectory)/$(ModelName)" -ruleset "$(Build.SourcesDirectory)/CodeAnalysisRules.ruleset" -output "$(OutputDirectory)/CodeAnalysisResults.xml"
+          } else {
+              Write-Warning "Code analysis tool not found"
+          }
+
+    # 8. Package Model Artifact
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Model Artifact (.axmodel)'
+      inputs:
+        PathtoPublish: '$(OutputDirectory)'
+        ArtifactName: 'D365FO-Model'
+        publishLocation: 'Container'
+
+- stage: UnitTests
+  displayName: 'Run SysTest Unit Tests'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: RunTests
+    displayName: 'Execute SysTest Suite'
+    pool:
+      vmImage: 'windows-latest'
+    timeoutInMinutes: 60
+
+    variables:
+      # Test environment connection (set in Library/Variable Group)
+      D365FOEnvironmentUrl: $(D365FOTestEnvironmentUrl)
+      D365FOClientId: $(D365FOClientId)
+      D365FOClientSecret: $(D365FOClientSecret)
+      D365FOTenantId: $(D365FOTenantId)
+
+    steps:
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download Model Artifact'
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'D365FO-Model'
+        downloadPath: '$(System.ArtifactsDirectory)'
+
+    - task: PowerShell@2
+      displayName: 'Deploy Model to Test Environment'
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Deploy using LCS API or local deployment
+          # This is a placeholder - implement based on your deployment method
+          Write-Host "Deploying model to test environment..."
+          # Example: LCS deploy, or local VM deploy via PowerShell
+
+    - task: PowerShell@2
+      displayName: 'Run SysTest via Command Line'
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Run SysTest using the test runner
+          $testRunner = "C:\AOSService\PackagesLocalDirectory\Bin\Microsoft.Dynamics.AX.Xpp.SysTestRunner.exe"
+          if (Test-Path $testRunner) {
+              $modelName = "$(ModelName)"
+              & $testRunner -model $modelName -output "$(Build.SourcesDirectory)/TestResults/SysTestResults.trx"
+          } else {
+              Write-Error "SysTest runner not found"
+              exit 1
+          }
+
+    - task: PublishTestResults@2
+      displayName: 'Publish SysTest Results'
+      inputs:
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '**/SysTestResults.trx'
+        mergeTestResults: true
+        testRunTitle: 'SysTest - $(ModelName)'
+
+- stage: Package
+  displayName: 'Create Deployable Package'
+  dependsOn:
+    - Build
+    - UnitTests
+  condition: succeeded()
+  jobs:
+  - job: CreatePackage
+    displayName: 'Generate Deployable Package'
+    pool:
+      vmImage: 'windows-latest'
+    timeoutInMinutes: 60
+
+    steps:
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download Model Artifact'
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'D365FO-Model'
+        downloadPath: '$(System.ArtifactsDirectory)'
+
+    - task: PowerShell@2
+      displayName: 'Create Deployable Package'
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Create deployable package structure
+          $packageDir = "$(Build.ArtifactStagingDirectory)/DeployablePackage"
+          New-Item -ItemType Directory -Path $packageDir -Force
+
+          # Copy model files
+          $modelDir = "$(System.ArtifactsDirectory)/D365FO-Model"
+          Copy-Item -Path "$modelDir/*.axmodel" -Destination $packageDir -Force
+
+          # Create ModuleDescriptor.xml if not present
+          $descriptor = @"
+<?xml version="1.0" encoding="utf-8"?>
+<Module>
+  <Name>$(ModelName)</Name>
+  <Version>$(ModelVersion)</Version>
+  <Publisher>$(ModelPublisher)</Publisher>
+  <Description>Custom D365 F&O Model</Description>
+  <Dependencies>
+    <Dependency Name="ApplicationSuite" Version="10.0.0.0" />
+    <Dependency Name="ApplicationPlatform" Version="10.0.0.0" />
+  </Dependencies>
+</Module>
+"@
+          $descriptor | Out-File -FilePath "$packageDir/Descriptor/ModuleDescriptor.xml" -Encoding utf8
+
+          # Create zip for LCS upload
+          Compress-Archive -Path "$packageDir/*" -DestinationPath "$(Build.ArtifactStagingDirectory)/$(ModelName)_$(ModelVersion)_DeployablePackage.zip" -Force
+
+          Write-Host "##vso[task.setvariable variable=DeployablePackagePath]$(Build.ArtifactStagingDirectory)/$(ModelName)_$(ModelVersion)_DeployablePackage.zip"
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Deployable Package'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/*DeployablePackage.zip'
+        ArtifactName: 'DeployablePackage'
+        publishLocation: 'Container'

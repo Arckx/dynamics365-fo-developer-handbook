@@ -1,0 +1,188 @@
+# Azure DevOps Pipeline for D365 F&O Database Sync
+# File: azure-pipelines-db-sync.yml
+# Runs database synchronization after model deployment
+
+trigger: none
+
+variables:
+  D365FOVersion: '10.0.40'
+  PackagesLocalDirectory: 'C:\AOSService\PackagesLocalDirectory'
+
+stages:
+- stage: DatabaseSync
+  displayName: 'Database Synchronization'
+  jobs:
+  - job: SyncDatabase
+    displayName: 'Sync Database Schema'
+    pool:
+      vmImage: 'windows-latest'
+    timeoutInMinutes: 120
+
+    steps:
+    - task: PowerShell@2
+      displayName: 'Run Database Sync'
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "Starting database synchronization..."
+
+          $setupExe = "$(PackagesLocalDirectory)\Bin\Microsoft.Dynamics.AX.Deployment.Setup.exe"
+
+          if (-not (Test-Path $setupExe)) {
+              Write-Error "Setup.exe not found at $setupExe"
+              exit 1
+          }
+
+          # Stop AOS to prevent conflicts
+          Write-Host "Stopping AOS service..."
+          Stop-Service -Name "AOSService" -Force -ErrorAction SilentlyContinue
+          Stop-Service -Name "MRSService" -Force -ErrorAction SilentlyContinue
+          Start-Sleep -Seconds 10
+
+          try {
+              # Run database sync
+              $result = & $setupExe `
+                  -metadatastore "$(PackagesLocalDirectory)" `
+                  -syncdatabase `
+                  -verbose `
+                  -logfile "$(Build.ArtifactStagingDirectory)\dbsync.log"
+
+              $exitCode = $LASTEXITCODE
+              Write-Host "Database sync completed with exit code: $exitCode"
+
+              if ($exitCode -ne 0) {
+                  Write-Error "Database sync failed. Check log: $(Build.ArtifactStagingDirectory)\dbsync.log"
+                  Get-Content "$(Build.ArtifactStagingDirectory)\dbsync.log" -Tail 100
+                  exit 1
+              }
+
+              Write-Host "Database synchronization SUCCESSFUL"
+          }
+          finally {
+              # Always restart services
+              Write-Host "Starting AOS service..."
+              Start-Service -Name "AOSService"
+              Start-Service -Name "MRSService"
+              Start-Sleep -Seconds 30
+          }
+
+    - task: PowerShell@2
+      displayName: 'Validate Sync Results'
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Check for common sync issues
+          $logPath = "$(Build.ArtifactStagingDirectory)\dbsync.log"
+
+          if (Test-Path $logPath) {
+              $log = Get-Content $logPath -Raw
+
+              # Check for errors
+              if ($log -match "Error|Exception|Failed") {
+                  Write-Warning "Errors found in sync log:"
+                  Select-String -Path $logPath -Pattern "Error|Exception|Failed" | ForEach-Object { Write-Warning $_ }
+              }
+
+              # Check for warnings about data loss
+              if ($log -match "Data loss|Drop column|Drop table") {
+                  Write-Warning "POTENTIAL DATA LOSS DETECTED:"
+                  Select-String -Path $logPath -Pattern "Data loss|Drop column|Drop table" | ForEach-Object { Write-Warning $_ }
+              }
+
+              # Summary
+              $tableCount = ($log -match "Table ").Count
+              $indexCount = ($log -match "Index ").Count
+              $viewCount = ($log -match "View ").Count
+
+              Write-Host "Sync Summary:"
+              Write-Host "  Tables processed: $tableCount"
+              Write-Host "  Indexes processed: $indexCount"
+              Write-Host "  Views processed: $viewCount"
+          }
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Sync Log'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)\dbsync.log'
+        ArtifactName: 'DatabaseSyncLog'
+        publishLocation: 'Container'
+
+# ============================================================
+# Alternative: Database Sync with Data Upgrade Scripts
+# ============================================================
+- stage: DataUpgrade
+  displayName: 'Run Data Upgrade Scripts (Optional)'
+  dependsOn: DatabaseSync
+  condition: succeeded()
+  jobs:
+  - job: RunDataUpgrade
+    displayName: 'Execute Data Upgrade'
+    pool:
+      vmImage: 'windows-latest'
+    timeoutInMinutes: 180
+    variables:
+      # Data upgrade scripts path in source control
+      DataUpgradeScriptsPath: '$(Build.SourcesDirectory)/DataUpgrade'
+
+    steps:
+    - task: PowerShell@2
+      displayName: 'Run Data Upgrade Scripts'
+      inputs:
+        targetType: 'inline'
+        script: |
+          $scriptsPath = "$(DataUpgradeScriptsPath)"
+
+          if (-not (Test-Path $scriptsPath)) {
+              Write-Host "No data upgrade scripts found at $scriptsPath, skipping"
+              exit 0
+          }
+
+          $scripts = Get-ChildItem -Path $scriptsPath -Filter "*.sql" | Sort-Object Name
+
+          if ($scripts.Count -eq 0) {
+              Write-Host "No SQL scripts found"
+              exit 0
+          }
+
+          Write-Host "Found $($scripts.Count) data upgrade scripts"
+
+          foreach ($script in $scripts) {
+              Write-Host "Executing: $($script.Name)"
+
+              try {
+                  # Use sqlcmd to run against the database
+                  # Connection details from Variable Group (secrets)
+                  $connStr = "Server=$(DBServer);Database=$(DBName);Authentication=Active Directory Default"
+
+                  $result = & sqlcmd `
+                      -S "$(DBServer)" `
+                      -d "$(DBName)" `
+                      -G `  # Azure AD authentication
+                      -i "$($script.FullName)" `
+                      -b `  # Exit on error
+                      -o "$(Build.ArtifactStagingDirectory)\dataupgrade_$($script.BaseName).log"
+
+                  $exitCode = $LASTEXITCODE
+
+                  if ($exitCode -ne 0) {
+                      Write-Error "Script $($script.Name) failed with exit code $exitCode"
+                      Get-Content "$(Build.ArtifactStagingDirectory)\dataupgrade_$($script.BaseName).log" -Tail 50
+                      exit 1
+                  }
+
+                  Write-Host "  SUCCESS: $($script.Name)"
+              }
+              catch {
+                  Write-Error "Exception running $($script.Name): $_"
+                  exit 1
+              }
+          }
+
+          Write-Host "All data upgrade scripts completed successfully"
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Data Upgrade Logs'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)\dataupgrade_*.log'
+        ArtifactName: 'DataUpgradeLogs'
+        publishLocation: 'Container'

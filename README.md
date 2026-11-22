@@ -65,6 +65,28 @@ If you're new to D365 F&O, start here:
 |---|---|---|
 | `d365-cheatsheet.md` | One-page printable reference card with X++ types, CRUD patterns, layer hierarchy, naming conventions, and key URLs. | Print and keep at desk for instant lookup. |
 | `d365-troubleshooting.md` | 50+ common errors with root causes and fixes (runtime, build, deployment, performance, debugging). | Quick diagnosis when things break. |
+| `d365-code-review-checklist.md` | PR review checklist: naming, CoC usage, transactions, SQL patterns, security, tests. | Code review standard for all PRs. |
+| `d365-cookbook.md` | Copy-paste patterns for tables, queries, forms, services, entities, testing. | Daily coding reference. |
+
+### Advanced Guides
+
+| File | Description | Recommended Use |
+|---|---|---|
+| `d365-migration-guide.md` | AX 2012 → D365 F&O migration: code upgrade patterns, metadata mapping, DMF data migration. | Migration projects and upgrades. |
+| `d365-copilot-guide.md` | Copilot extensibility: plugins, actions, skills, prompt engineering, Custom APIs. | AI integration and Copilot Studio. |
+| `d365-testing-patterns.md` | Property-based testing, test data factories, SysTest + TestFramework integration. | Test strategy and quality gates. |
+| `d365-observability.md` | Application Insights, custom telemetry, performance counters, alerting rules. | Production monitoring and alerting. |
+| `d365-security-patterns.md` | Role/privilege design, XDS policies, audit logging, compliance patterns. | Security architecture and review. |
+| `d365-perf-benchmark.md` | Performance benchmarking scripts, SQL queries, load testing, CI/CD gates. | Performance validation and tuning. |
+| `d365-security-audit.md` | Security audit checklist: SoD, XDS coverage, privilege creep, compliance. | Quarterly security audits. |
+
+### CI/CD Pipeline Templates
+
+| File | Description | Recommended Use |
+|---|---|---|
+| `d365-pipeline-templates/azure-pipelines-build.yml` | Build pipeline: compile, BP checks, unit tests, model packaging. | Every PR and main branch build. |
+| `d365-pipeline-templates/azure-pipelines-release.yml` | Release pipeline: Tier-1 → UAT → Prod via LCS API. | Multi-environment deployments. |
+| `d365-pipeline-templates/azure-pipelines-db-sync.yml` | Database sync and data upgrade scripts pipeline. | Post-deployment schema sync. |
 
 ### Reference & Legacy Files
 

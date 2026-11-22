@@ -1,0 +1,413 @@
+# Azure DevOps Release Pipeline for D365 F&O
+# File: azure-pipelines-release.yml
+# Deploys to Tier-1/Dev/UAT/Prod environments via LCS
+
+trigger: none
+
+variables:
+  # Model info
+  ModelName: 'MyCustomModel'
+  ModelVersion: '1.0.0'
+
+  # LCS Configuration (store secrets in Library/Variable Group)
+  LCSProjectId: $(LCSProjectId)
+  LCSEnvironmentId: $(LCSEnvironmentId)
+  LCSApiUrl: 'https://lcs.dynamics.com'
+
+stages:
+# ============================================================
+# STAGE 1: Deploy to Tier-1 / Development Environment
+# ============================================================
+- stage: DeployToDev
+  displayName: 'Deploy to Development (Tier-1)'
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - deployment: DeployDev
+    displayName: 'Deploy Model to Dev Environment'
+    pool:
+      vmImage: 'windows-latest'
+    environment: 'Development'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download Deployable Package'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'DeployablePackage'
+              downloadPath: '$(System.ArtifactsDirectory)'
+
+          - task: PowerShell@2
+            displayName: 'Deploy to Tier-1 via Local Script'
+            inputs:
+              targetType: 'inline'
+              script: |
+                # For Tier-1 (local VM), use the deployable package directly
+                $packagePath = "$(System.ArtifactsDirectory)/DeployablePackage/$(ModelName)_$(ModelVersion)_DeployablePackage.zip"
+
+                if (Test-Path $packagePath) {
+                    Write-Host "Deploying to local Tier-1 environment..."
+
+                    # Stop AOS
+                    Stop-Service -Name "AOSService" -Force -ErrorAction SilentlyContinue
+                    Stop-Service -Name "MRSService" -Force -ErrorAction SilentlyContinue
+
+                    # Extract package
+                    $extractPath = "C:\DeployPackage"
+                    if (Test-Path $extractPath) { Remove-Item -Recurse -Force $extractPath }
+                    Expand-Archive -Path $packagePath -DestinationPath $extractPath
+
+                    # Run model import
+                    $modelFile = Get-ChildItem -Path $extractPath -Filter "*.axmodel" | Select-Object -First 1
+                    if ($modelFile) {
+                        & "C:\AOSService\PackagesLocalDirectory\Bin\Microsoft.Dynamics.AX.Deployment.Setup.exe" `
+                            -metadatastore "C:\AOSService\PackagesLocalDirectory" `
+                            -model "$modelFile.FullName" `
+                            -verbose
+                    }
+
+                    # Database sync
+                    & "C:\AOSService\PackagesLocalDirectory\Bin\Microsoft.Dynamics.AX.Deployment.Setup.exe" `
+                        -metadatastore "C:\AOSService\PackagesLocalDirectory" `
+                        -syncdatabase `
+                        -verbose
+
+                    # Start services
+                    Start-Service -Name "AOSService"
+                    Start-Service -Name "MRSService"
+
+                    Write-Host "Deployment to Tier-1 complete"
+                } else {
+                    Write-Error "Deployable package not found at $packagePath"
+                    exit 1
+                }
+
+          - task: PowerShell@2
+            displayName: 'Run Post-Deploy Validation (Dev)'
+            inputs:
+              targetType: 'inline'
+              script: |
+                # Basic health checks
+                Write-Host "Running post-deploy validation..."
+
+                # Check AOS is responding
+                $aosUrl = "http://localhost:8101"  # Default Tier-1 URL
+                try {
+                    $response = Invoke-WebRequest -Uri "$aosUrl/health" -TimeoutSec 30
+                    if ($response.StatusCode -eq 200) {
+                        Write-Host "AOS health check: PASSED"
+                    }
+                } catch {
+                    Write-Warning "AOS health check failed: $_"
+                }
+
+                # Verify model is installed
+                $modelCheck = & "C:\AOSService\PackagesLocalDirectory\Bin\Microsoft.Dynamics.AX.Deployment.Setup.exe" `
+                    -metadatastore "C:\AOSService\PackagesLocalDirectory" `
+                    -listmodels
+                if ($modelCheck -match "$(ModelName)") {
+                    Write-Host "Model $(ModelName) verified in model store"
+                } else {
+                    Write-Error "Model $(ModelName) NOT found after deployment"
+                    exit 1
+                }
+
+# ============================================================
+# STAGE 2: Deploy to UAT via LCS
+# ============================================================
+- stage: DeployToUAT
+  displayName: 'Deploy to UAT (Cloud Environment)'
+  dependsOn: DeployToDev
+  condition: succeeded()
+  jobs:
+  - deployment: DeployUAT
+    displayName: 'Deploy to UAT via LCS API'
+    pool:
+      vmImage: 'windows-latest'
+    environment: 'UAT'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download Deployable Package'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'DeployablePackage'
+              downloadPath: '$(System.ArtifactsDirectory)'
+
+          - task: PowerShell@2
+            displayName: 'Upload to LCS Asset Library'
+            inputs:
+              targetType: 'inline'
+              script: |
+                # Upload deployable package to LCS Asset Library
+                $packagePath = "$(System.ArtifactsDirectory)/DeployablePackage/$(ModelName)_$(ModelVersion)_DeployablePackage.zip"
+                $lcsProjectId = "$(LCSProjectId)"
+                $pat = "$(LCSPersonalAccessToken)"  # From Variable Group (secret)
+
+                if (-not (Test-Path $packagePath)) {
+                    Write-Error "Package not found"
+                    exit 1
+                }
+
+                $headers = @{
+                    Authorization = "Bearer $pat"
+                }
+
+                # Get upload URL
+                $uploadUrlResponse = Invoke-RestMethod `
+                    -Uri "$(LCSApiUrl)/v2/projects/$lcsProjectId/assetlibrary/uploadurl" `
+                    -Method Get `
+                    -Headers $headers
+
+                $uploadUrl = $uploadUrlResponse.UploadUrl
+                $assetId = $uploadUrlResponse.AssetId
+
+                # Upload file
+                $fileBytes = [System.IO.File]::ReadAllBytes($packagePath)
+                Invoke-RestMethod `
+                    -Uri $uploadUrl `
+                    -Method Put `
+                    -Body $fileBytes `
+                    -ContentType "application/zip"
+
+                # Complete upload
+                $completeResponse = Invoke-RestMethod `
+                    -Uri "$(LCSApiUrl)/v2/projects/$lcsProjectId/assetlibrary/$assetId/complete" `
+                    -Method Post `
+                    -Headers $headers
+
+                Write-Host "Asset uploaded to LCS with ID: $assetId"
+                Write-Host "##vso[task.setvariable variable=LCSAssetId]$assetId"
+
+          - task: PowerShell@2
+            displayName: 'Deploy to UAT Environment via LCS'
+            inputs:
+              targetType: 'inline'
+              script: |
+                $lcsProjectId = "$(LCSProjectId)"
+                $lcsEnvironmentId = "$(LCSUATEnvironmentId)"
+                $assetId = "$(LCSAssetId)"
+                $pat = "$(LCSPersonalAccessToken)"
+
+                $headers = @{
+                    Authorization = "Bearer $pat"
+                    "Content-Type" = "application/json"
+                }
+
+                # Trigger deployment
+                $deployBody = @{
+                    AssetId = $assetId
+                    EnvironmentId = $lcsEnvironmentId
+                    IsProduction = $false
+                    Description = "Automated deployment from Build $(Build.BuildNumber)"
+                } | ConvertTo-Json -Depth 5
+
+                $deployResponse = Invoke-RestMethod `
+                    -Uri "$(LCSApiUrl)/v2/projects/$lcsProjectId/deployments" `
+                    -Method Post `
+                    -Headers $headers `
+                    -Body $deployBody
+
+                $deploymentId = $deployResponse.DeploymentId
+                Write-Host "Deployment started with ID: $deploymentId"
+                Write-Host "##vso[task.setvariable variable=LCSDeploymentId]$deploymentId"
+
+          - task: PowerShell@2
+            displayName: 'Wait for LCS Deployment Completion'
+            inputs:
+              targetType: 'inline'
+              script: |
+                $lcsProjectId = "$(LCSProjectId)"
+                $deploymentId = "$(LCSDeploymentId)"
+                $pat = "$(LCSPersonalAccessToken)"
+
+                $headers = @{
+                    Authorization = "Bearer $pat"
+                }
+
+                $maxWaitMinutes = 120
+                $startTime = Get-Date
+
+                do {
+                    $statusResponse = Invoke-RestMethod `
+                        -Uri "$(LCSApiUrl)/v2/projects/$lcsProjectId/deployments/$deploymentId" `
+                        -Method Get `
+                        -Headers $headers
+
+                    $status = $statusResponse.Status
+                    $elapsed = (Get-Date) - $startTime
+
+                    Write-Host "Deployment status: $status (Elapsed: $($elapsed.TotalMinutes.ToString('F1')) min)"
+
+                    if ($status -eq 'Succeeded') {
+                        Write-Host "Deployment SUCCEEDED"
+                        exit 0
+                    }
+                    elseif ($status -in @('Failed', 'Cancelled')) {
+                        Write-Error "Deployment $status: $($statusResponse.ErrorMessage)"
+                        exit 1
+                    }
+
+                    Start-Sleep -Seconds 60
+                } while ($elapsed.TotalMinutes -lt $maxWaitMinutes)
+
+                Write-Error "Deployment timed out after $maxWaitMinutes minutes"
+                exit 1
+
+          - task: PowerShell@2
+            displayName: 'Run Post-Deploy Validation (UAT)'
+            inputs:
+              targetType: 'inline'
+              script: |
+                # Run smoke tests against UAT
+                $uatUrl = "$(UATEnvironmentUrl)"  # e.g., https://uat-xxxx.sandbox.operations.dynamics.com
+
+                Write-Host "Running UAT validation against $uatUrl..."
+
+                # Health check
+                try {
+                    $health = Invoke-WebRequest -Uri "$uatUrl/health" -TimeoutSec 60
+                    if ($health.StatusCode -eq 200) {
+                        Write-Host "UAT Health check: PASSED"
+                    }
+                } catch {
+                    Write-Error "UAT Health check FAILED: $_"
+                    exit 1
+                }
+
+                # TODO: Add API smoke tests (OData endpoints, custom services)
+                # Example: Invoke-WebRequest "$uatUrl/data/CustCustomerV3Entities?`$top=1"
+
+# ============================================================
+# STAGE 3: Deploy to Production (Manual Approval)
+# ============================================================
+- stage: DeployToProd
+  displayName: 'Deploy to Production'
+  dependsOn: DeployToUAT
+  condition: succeeded()
+  jobs:
+  - deployment: DeployProd
+    displayName: 'Deploy to Production via LCS (Requires Approval)'
+    pool:
+      vmImage: 'windows-latest'
+    environment: 'Production'
+    strategy:
+      runOnce:
+        preDeploy:
+          steps:
+          - task: ManualValidation@0
+            displayName: 'Production Deployment Approval'
+            inputs:
+              instructions: 'Review UAT validation results. Approve to deploy $(ModelName) v$(ModelVersion) to Production.'
+              emailRecipients: '$(ProdApproversEmail)'  # From Variable Group
+              timeoutInMinutes: 1440  # 24 hours
+
+        deploy:
+          steps:
+          - task: PowerShell@2
+            displayName: 'Deploy to Production via LCS'
+            inputs:
+              targetType: 'inline'
+              script: |
+                $lcsProjectId = "$(LCSProjectId)"
+                $lcsEnvironmentId = "$(LCSProdEnvironmentId)"
+                $assetId = "$(LCSAssetId)"  # Same asset from UAT deploy
+                $pat = "$(LCSPersonalAccessToken)"
+
+                $headers = @{
+                    Authorization = "Bearer $pat"
+                    "Content-Type" = "application/json"
+                }
+
+                $deployBody = @{
+                    AssetId = $assetId
+                    EnvironmentId = $lcsEnvironmentId
+                    IsProduction = $true
+                    Description = "Production deployment - Build $(Build.BuildNumber) - Approved by $(Build.RequestedFor)"
+                } | ConvertTo-Json -Depth 5
+
+                $deployResponse = Invoke-RestMethod `
+                    -Uri "$(LCSApiUrl)/v2/projects/$lcsProjectId/deployments" `
+                    -Method Post `
+                    -Headers $headers `
+                    -Body $deployBody
+
+                $deploymentId = $deployResponse.DeploymentId
+                Write-Host "Production deployment started: $deploymentId"
+                Write-Host "##vso[task.setvariable variable=LCSDeploymentId]$deploymentId"
+
+          - task: PowerShell@2
+            displayName: 'Wait for Production Deployment'
+            inputs:
+              targetType: 'inline'
+              script: |
+                $lcsProjectId = "$(LCSProjectId)"
+                $deploymentId = "$(LCSDeploymentId)"
+                $pat = "$(LCSPersonalAccessToken)"
+
+                $headers = @{
+                    Authorization = "Bearer $pat"
+                }
+
+                $maxWaitMinutes = 180
+                $startTime = Get-Date
+
+                do {
+                    $statusResponse = Invoke-RestMethod `
+                        -Uri "$(LCSApiUrl)/v2/projects/$lcsProjectId/deployments/$deploymentId" `
+                        -Method Get `
+                        -Headers $headers
+
+                    $status = $statusResponse.Status
+                    $elapsed = (Get-Date) - $startTime
+
+                    Write-Host "Production deployment: $status (Elapsed: $($elapsed.TotalMinutes.ToString('F1')) min)"
+
+                    if ($status -eq 'Succeeded') {
+                        Write-Host "PRODUCTION DEPLOYMENT SUCCEEDED"
+                        exit 0
+                    }
+                    elseif ($status -in @('Failed', 'Cancelled')) {
+                        Write-Error "Production deployment $status: $($statusResponse.ErrorMessage)"
+                        exit 1
+                    }
+
+                    Start-Sleep -Seconds 60
+                } while ($elapsed.TotalMinutes -lt $maxWaitMinutes)
+
+                Write-Error "Production deployment timed out"
+                exit 1
+
+          - task: PowerShell@2
+            displayName: 'Post-Production Validation'
+            inputs:
+              targetType: 'inline'
+              script: |
+                $prodUrl = "$(ProdEnvironmentUrl)"
+
+                Write-Host "Running production validation..."
+
+                # Health check
+                try {
+                    $health = Invoke-WebRequest -Uri "$prodUrl/health" -TimeoutSec 60
+                    if ($health.StatusCode -eq 200) {
+                        Write-Host "Production Health check: PASSED"
+                    } else {
+                        Write-Error "Production health check returned $($health.StatusCode)"
+                        exit 1
+                    }
+                } catch {
+                    Write-Error "Production Health check FAILED: $_"
+                    exit 1
+                }
+
+                # Create deployment record
+                Write-Host "##vso[build.addbuildtag]DeployedToProd"
+                Write-Host "##vso[build.addbuildtag]Model:$(ModelName)"
+                Write-Host "##vso[build.addbuildtag]Version:$(ModelVersion)"
+                Write-Host "##vso[build.addbuildtag]Date:$(Get-Date -Format 'yyyy-MM-dd')"
