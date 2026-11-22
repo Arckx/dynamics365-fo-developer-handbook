@@ -1,35 +1,27 @@
-# Dynamics 365 Finance & Operations (D365 F&O) Developer Handbook
+# Dynamics 365 Finance & Operations Developer Handbook
 
-![Chapters](https://img.shields.io/badge/Chapters-35-blue)
-![Exercises](https://img.shields.io/badge/Exercises-17-green)
-![Files](https://img.shields.io/badge/Reference%20Files-51-blueviolet)
-![Last Updated](https://img.shields.io/badge/Updated-Nov%202026-orange)
+**The definitive technical handbook, 35-chapter desktop guide, and 12-month learning journey**
 
-> The definitive technical handbook, 35-chapter desktop guide, and 12-month learning journey designed for Microsoft D365 F&O developers, technical interns, and enterprise engineers.
+Production-ready D365 F&O development. No fluff. Just structured curriculum, code, and real patterns.
 
----
+[![Chapters](https://img.shields.io/badge/Chapters-35-blue)](01-core-handbook/d365-learning-guide.md) [![Exercises](https://img.shields.io/badge/Exercises-17-green)](01-core-handbook/d365-xpp-exercises.md) [![Reference Files](https://img.shields.io/badge/Reference%20Files-51-blueviolet)](#repository-structure) [![Last Updated](https://img.shields.io/badge/Updated-Nov%202026-orange)]() [![GitHub Stars](https://img.shields.io/github/stars/Arckx/dynamics365-fo-developer-handbook?style=flat)](https://github.com/Arckx/dynamics365-fo-developer-handbook/stargazers)
 
-## Why This Repository Exists
-
-This handbook bridges the gap between **generic programming knowledge** and **production-ready D365 F&O development**. Most developers arrive with C#/Java/SQL experience but struggle with D365 F&O's unique paradigms: metadata-driven architecture, Chain of Command extensibility, the AOT, and the relational-first mindset. This repo provides a structured path from "what is ERP?" to production-ready developer.
+[Quick Start](#30-minute-quick-start-new-developers) · [Core Handbook](#core-handbook-files) · [Quick Reference](#quick-reference-files) · [Foundational Guides](#foundational-guides-chapter-0--start-here-if-new) · [Advanced Guides](#advanced-guides) · [Learning Tools](#learning-tools--visual-aids) · [CI/CD Templates](#cicd-pipeline-templates) · [Curriculum](#curriculum-overview-35-chapters) · [Docs](https://Arckx.github.io/dynamics365-fo-developer-handbook/)
 
 ---
 
-## How This Repository Is Organized (And Why)
+## What is This Handbook?
 
-The repository is organized by **learning progression** and **use case**, not by file type. Each section serves a distinct purpose in the developer journey:
+This handbook bridges the gap between **generic programming knowledge** and **production-ready D365 F&O development**. Most developers arrive with C#/Java/SQL experience but struggle with D365 F&O's unique paradigms: metadata-driven architecture, Chain of Command extensibility, the AOT, and the relational-first mindset.
 
-| Section | Purpose | When to Use |
-|---------|---------|-------------|
-| **[Foundational Guides (Chapter 0)](#foundational-guides-chapter-0--start-here-if-new)** | Prerequisites: ERP concepts, OOP/SQL primers, environment setup, business context | **Before Chapter 1** — if you're new to ERP, OOP, SQL, or cloud |
-| **[Core Handbook](#core-handbook-files)** | The 35-chapter curriculum with code, tables, exercises | **Daily reference** — your primary technical manual |
-| **[Quick Reference](#quick-reference-files)** | Cheatsheets, troubleshooting, code review standards, cookbook | **While coding** — instant lookup without context switching |
-| **[Advanced Guides](#advanced-guides)** | Deep-dives: migration, Copilot, testing, observability, security, performance | **When you hit a wall** — specialized problems need specialized docs |
-| **[Learning Tools](#learning-tools--visual-aids)** | Diagrams, flashcards, quizzes, progress tracker, pair programming | **To learn effectively** — active recall, visual learning, accountability |
-| **[CI/CD Pipeline Templates](#cicd-pipeline-templates)** | Production-ready Azure DevOps pipelines | **When automating** — build, release, DB sync |
-| **[Reference & Legacy](#reference--legacy-files)** | VSI analysis, historical context | **Context only** — not for daily use |
+It provides a structured path from "what is ERP?" to production-ready developer — whether you're a technical intern, a junior X++ developer, or an enterprise architect.
 
-This structure mirrors how developers actually grow: **prerequisites → core curriculum → quick lookup → specialization → mastery**.
+| Resource | Purpose |
+|----------|---------|
+| **[Core Handbook](01-core-handbook/d365-learning-guide.md)** | 35-chapter technical desktop guide with full code examples, tables, and exercises |
+| **[Learning Journey](01-core-handbook/d365-fao-learning-journey.md)** | 12-month structured study plan with quarterly milestones and deliverables |
+| **[Quick Reference](02-quick-reference/)** | Cheatsheets, troubleshooting, code review standards, cookbook |
+| **[Advanced Guides](03-advanced-guides/)** | Deep-dives: migration, Copilot, testing, observability, security, performance |
 
 ---
 
@@ -47,7 +39,7 @@ This handbook is built around a fundamental engineering shift. D365 F&O comes wi
 
 If you're new to D365 F&O, start here:
 
-1. **Environment Setup** — [Prerequisites](#prerequisites-and-environment-setup) → Get a Tier-1 VM or Dev VM with VS + Dynamics 365 Add-in
+1. **Environment Setup** — [Prerequisites & Environment Setup](00-foundations/d365-environment-setup.md) → Get a Tier-1 VM or Dev VM with VS + Dynamics 365 Add-in
 2. **First X++ Job** — [Exercise 1](01-core-handbook/d365-xpp-exercises.md#exercise-1---variable-declaration-and-type-casting) → `conPeek`, `typeid()`, `info()`
 3. **First Query** — [Exercise 2](01-core-handbook/d365-xpp-exercises.md#exercise-2---while-select-with-filtering) → `while select` with `where`
 4. **First Table Extension** — [Learning Guide Ch 9](01-core-handbook/d365-learning-guide.md#9-table-design--edts) → `[ExtensionOf(tableStr(VendTable))]`
@@ -61,10 +53,10 @@ If you're new to D365 F&O, start here:
 
 | Learning Style | Start Here | Path |
 |---|---|---|
-| **New to D365** | 30-Minute Quick Start → Ch 1–3 | Sequential |
-| **X++ Refresher** | [01-core-handbook/d365-xpp-quick-reference.md](01-core-handbook/d365-xpp-quick-reference.md) → Exercises 1–4 | Reference-driven |
-| **Certification Prep** | [01-core-handbook/d365-certification-mapping.md](01-core-handbook/d365-certification-mapping.md) → Target chapters | Goal-driven |
-| **Architecture Review** | [07-reference/vsi_gap_analysis.md](07-reference/vsi_gap_analysis.md) → Chapters 23–35 | Deep-dive |
+| **New to D365** | [30-Minute Quick Start](#30-minute-quick-start-new-developers) → Ch 1–3 | Sequential |
+| **X++ Refresher** | [Quick Reference](01-core-handbook/d365-xpp-quick-reference.md) → Exercises 1–4 | Reference-driven |
+| **Certification Prep** | [Certification Mapping](01-core-handbook/d365-certification-mapping.md) → Target chapters | Goal-driven |
+| **Architecture Review** | [VSI Gap Analysis](07-reference/vsi_gap_analysis.md) → Chapters 23–35 | Deep-dive |
 
 ---
 
@@ -133,8 +125,6 @@ If you're new to D365 F&O, start here:
 | `04-learning-tools/d365-learning-path-tracker.md` | Printable progress tracker with checkboxes, time estimates, milestones for 12-month journey. | Accountability; mentor check-ins. |
 | `04-learning-tools/d365-oop-exercises.md` | 10 hands-on OOP exercises with solutions — beginner to intermediate, mapped to X++ patterns. | **Do BEFORE Chapter 7** if new to OOP. |
 | `04-learning-tools/d365-sql-exercises.md` | 10 hands-on SQL exercises with practice schema, X++ mappings, and solutions. | **Do BEFORE Chapter 6** if new to SQL. |
-| `00-foundations/d365-beginner-faq.md` | 50 common beginner questions — D365 basics, X++, SQL, OOP, workflow. | Quick answers when stuck. |
-| `00-foundations/d365-career-paths.md` | Junior → Architect progression — roles, skills, certs, salaries, 12-month plans. | Career planning; mentor discussions. |
 
 ### CI/CD Pipeline Templates
 
@@ -160,6 +150,7 @@ If you're new to D365 F&O, start here:
 The curriculum spans **35 chapters** organized into **four foundational quarters**. Each chapter in the learning guide has detailed code examples, tables, and activities.
 
 ### Quarter 1 (Months 1–3): Foundations & Data Layer
+
 | Ch | Topic | Key Skills | Learning Guide |
 |---|---|---|---|
 | 1 | Platform Architecture & AOT | AOS, AOT, model store, layers | [Ch 1](01-core-handbook/d365-learning-guide.md#chapter-1-platform-architecture--aot) |
@@ -172,6 +163,7 @@ The curriculum spans **35 chapters** organized into **four foundational quarters
 | 8 | VS Development & Activity | Debugging, build/deploy, customer validation service | [Ch 8](01-core-handbook/d365-learning-guide.md#chapter-8-vs-development--activity) |
 
 ### Quarter 2 (Months 4–6): Extensibility & Backend Architecture
+
 | Ch | Topic | Key Skills | Learning Guide |
 |---|---|---|---|
 | 9 | Table Design & EDTs | Field groups, relations, indexes, TempDB/InMemory, validation | [Ch 9](01-core-handbook/d365-learning-guide.md#chapter-9-table-design--edts) |
@@ -183,6 +175,7 @@ The curriculum spans **35 chapters** organized into **four foundational quarters
 | 15 | Security Model | Hierarchy, XDS, record-level, privilege assertions, audit | [Ch 15](01-core-handbook/d365-learning-guide.md#chapter-15-security-model) |
 
 ### Quarter 3 (Months 7–9): Quality, DevOps & Advanced Performance
+
 | Ch | Topic | Key Skills | Learning Guide |
 |---|---|---|---|
 | 16 | **Data Entities** | OData, staging, composite entities, DMF, Power Platform | [Ch 16](01-core-handbook/d365-learning-guide.md#1-entity-types-dataentity-vs-composite-entity-vs-derived-view) |
@@ -193,6 +186,7 @@ The curriculum spans **35 chapters** organized into **four foundational quarters
 | 21 | **Performance & SQL Tuning** | Query plans, `CacheLookup`, deadlock resolution, indexing | [Ch 21](01-core-handbook/d365-learning-guide.md#211-sql-query-optimization) |
 
 ### Quarter 4 (Months 10–12): Enterprise Solutions & Specialization
+
 | Ch | Topic | Key Skills | Learning Guide |
 |---|---|---|---|
 | 22 | Capstone Projects | End-to-end architecture, manufacturing P2P compliance | [Ch 22](01-core-handbook/d365-learning-guide.md#chapter-22-capstone-projects) |
@@ -210,44 +204,12 @@ The curriculum spans **35 chapters** organized into **four foundational quarters
 | 34 | Localization & Best Practices | Labels, AppChecker, configuration keys | [Ch 34](01-core-handbook/d365-learning-guide.md#341-label-files) |
 | 35 | Service Patterns | `SysOperation`, shared executor, JSON/CLR interop, exposure | [Ch 35](01-core-handbook/d365-learning-guide.md#351-service-pattern-overview) |
 
-### Quarter 1 (Months 1–3): Foundations & Data Layer
-| Ch | Topic | Key Skills |
-|---|---|---|
-| 1 | Platform Architecture & AOT | AOS, AOT, model store, layers |
-| 2 | Models, Layers, Packages | Model manifest, dependencies, SYS/ISV/VAR/CUS |
-| 3 | VS Setup & Language Mindset | Relational-first, metadata, extensibility, primitives, EDTs |
-| 4 | LCS & Development Lifecycle | Environments, build pipeline, release pipeline, hotfixes |
-| 5 | X++ Data Types & Variables | Primitives, composites, `real` precision, block scope |
-| 6 | Control Flow & CRUD | `while select`, `update_recordset`, `delete_from`, transactions |
-| 7 | Methods, Exceptions, Classes | `super()`/`next`, `try/catch`, inheritance, abstract, interfaces |
-| 8 | VS Development & Activity | Debugging, build/deploy, customer validation service |
-
-### Quarter 2 (Months 4–6): Extensibility & Backend Architecture
-| Ch | Topic | Key Skills |
-|---|---|---|
-| 9 | Table Design & EDTs | Field groups, relations, indexes, TempDB/InMemory, validation |
-| 10 | Form Architecture & CoC | Data sources, controls, CoC patterns, form extensions |
-| 11 | Views & Lookups | View definitions, `SysTableLookup`, multi-select lookups |
-| 12 | Class Fundamentals & RunBase | `RunBase`/`RunBaseBatch`, dialog, `SysOperation` pattern |
-| 13 | Event Handlers & Command Pattern | Pre/Post handlers, `SubscribesTo`, menu item → class chain |
-| 14 | Extensibility Deep Dive | CoC vs override vs event handler, `ExtensionOf`, attributes |
-| 15 | Security Model | Hierarchy, XDS, record-level, privilege assertions, audit |
-
-### Quarter 3 (Months 7–9): Quality, DevOps & Advanced Performance
-| Ch | Topic | Key Skills |
-|---|---|---|
-| 16 | **Data Entities** | OData, staging, composite entities, DMF, Power Platform |
-| 17 | **SSRS & Electronic Reporting** | `SrsReportDataProvider`, RDL, ER, pre-processing |
-| 18 | **Batch Processing** | `RunBaseBatch`, `SysOperation`, progress, retry, cancellation |
-| 19 | **SysTest Framework** | `SysTestCase`, assertions, data fixtures, CI/CD integration |
-| 20 | LCS Deep Dive & CI/CD | Model management, `AxModelStore`, pipeline design |
-| 21 | **Performance & SQL Tuning** | Query plans, `CacheLookup`, deadlock resolution, indexing |
-
 ---
 
 ## Core Learning Outcomes
 
 Upon completing this handbook, developers will be able to:
+
 * Write production-grade, maintainable X++ following Microsoft best practices.
 * Implement non-invasive customizations using Chain of Command.
 * Design secure tables, EDTs, forms, and custom data entities.
@@ -265,6 +227,68 @@ Upon completing this handbook, developers will be able to:
 * **Development Environment:** Access to a D365 F&O Development VM or Tier-1 Cloud Hosted Environment with Visual Studio.
 * **Prerequisites:** Basic object-oriented programming experience and relational database fundamentals (SQL).
 * **Tooling:** Visual Studio with Dynamics 365 Add-in, Azure DevOps, Lifecycle Services (LCS).
+
+---
+
+## Why This Exists (vs. Microsoft Learn)
+
+| Aspect | Microsoft Learn | This Handbook |
+|--------|-----------------|---------------|
+| **Structure** | Modular, disconnected units | Sequential 35-chapter curriculum |
+| **Code Depth** | Snippets | Full working examples + exercises |
+| **Mindset** | Feature-focused | Language mindset + architecture |
+| **Progression** | Self-directed | 12-month guided journey |
+| **Production Focus** | Concepts | Anti-patterns, code review, real constraints |
+| **Extensibility** | How-to | CoC vs override vs events decision framework |
+| **Reference** | Search-based | Cross-referenced, printable cheatsheets |
+
+---
+
+## Community & Contributing
+
+This handbook is a living document. Contributions welcome:
+
+* **Issues** — Found an error, gap, or outdated pattern? [Open an issue](https://github.com/Arckx/dynamics365-fo-developer-handbook/issues).
+* **Discussions** — Questions, study groups, career advice. [GitHub Discussions](https://github.com/Arckx/dynamics365-fo-developer-handbook/discussions).
+* **Pull Requests** — New exercises, corrections, additional patterns.
+
+---
+
+## Sponsors
+
+This handbook is independent, community-funded. Sponsorship buys gratitude and nothing else — all content is free for everyone, forever.
+
+### 🥇 Gold
+
+[Your Logo Here] · [Your Logo Here]
+
+### 🥈 Silver
+
+[Your Logo Here] · [Your Logo Here]
+
+### 🥉 Community
+
+[AutoScout24](https://www.autoscout24.com) · [Nexxion AI](https://nexxion.ai/)
+
+**[Become a Sponsor](https://github.com/sponsors/Arckx)**
+
+---
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Arckx/dynamics365-fo-developer-handbook&type=date&legend=top-left)](https://www.star-history.com/?repos=Arckx%2Fdynamics365-fo-developer-handbook&type=date&legend=top-left)
+
+---
+
+## Contributors
+
+[![Contributors](https://contrib.rocks/image?repo=Arckx/dynamics365-fo-developer-handbook&max=100&columns=20)](https://github.com/Arckx/dynamics365-fo-developer-handbook/graphs/contributors)
+
+---
+
+## License
+
+MIT. Use it however you want.
 
 ---
 
