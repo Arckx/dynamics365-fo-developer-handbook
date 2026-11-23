@@ -204,7 +204,7 @@ metadata:
 | Item | Chapter/Resource | Est. Hours | Done | Date | Notes |
 |------|------------------|------------|------|------|-------|
 | **Read Chapter 31** — Form Patterns | `d365-learning-guide.md` Ch 31 | 3 | ☐ | | |
-| **Read Chapter 32** — VSI Patterns | `d365-learning-guide.md` Ch 32 | 3 | ☐ | | |
+| **Read Chapter 32** — LEM Patterns | `d365-learning-guide.md` Ch 32 | 3 | ☐ | | |
 | **Read Chapter 33** — Advanced Batch | `d365-learning-guide.md` Ch 33 | 3 | ☐ | | |
 | **Read Chapter 34** — Localization | `d365-learning-guide.md` Ch 34 | 2 | ☐ | | |
 | **Read Chapter 35** — Services | `d365-learning-guide.md` Ch 35 | 4 | ☐ | | |

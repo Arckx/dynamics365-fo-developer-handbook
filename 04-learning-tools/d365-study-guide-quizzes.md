@@ -1041,7 +1041,7 @@ while select custTable
 
 ---
 
-## Chapter 32: VSI Patterns
+## Chapter 32: LEM Patterns
 
 ### Q1: Status change context:
 **A.** Track state transitions with context (who, when, why) ✅  
@@ -1071,7 +1071,7 @@ while select custTable
 **C.** Manual per company  
 **D. Shared batch  
 
-### Q2: VSIWorker:
+### Q2: LEMLabPersonnel:
 **A.** Framework for parallel batch processing ✅  
 **B.** Single-threaded batch  
 **C.** Batch monitoring  

@@ -244,7 +244,7 @@ metadata:
 
 ---
 
-## VSI Patterns (Chapter 32)
+## LEM Patterns (Chapter 32)
 
 | Front | Back | Tags |
 |-------|------|------|
@@ -259,7 +259,7 @@ metadata:
 | Front | Back | Tags |
 |-------|------|------|
 | Cross-company batch | `crossCompany` in query, batch runs per company | chapter33,batch |
-| VSIWorker | Framework for parallel batch processing | chapter33,batch |
+| LEMLabPersonnel | Framework for parallel batch processing | chapter33,batch |
 | Retry patterns | Exponential backoff, circuit breaker, dead letter queue | chapter33,batch |
 
 ---
@@ -380,10 +380,10 @@ ListPage,Master list with filters actions FactBoxes,chapter31 patterns
 FactBox,Related info pane (related records counts),chapter31 patterns
 Dialog,Modal form for input/confirmation,chapter31 patterns
 Status change context,Track state transitions with context (who when why),chapter32 vsi
-Notifications,Event-driven alerts via Notification Framework,chapter32 vsi
-Multi-company,crossCompany keyword DataAreaId filtering,chapter32 vsi
+Notifications,Event-driven alerts via Notification Framework,chapter32 lem
+Multi-company,crossCompany keyword DataAreaId filtering,chapter32 lem
 Cross-company batch,crossCompany in query batch runs per company,chapter33 batch
-VSIWorker,Framework for parallel batch processing,chapter33 batch
+LEMLabPersonnel,Framework for parallel batch processing,chapter33 batch
 Retry patterns,Exponential backoff circuit breaker dead letter queue,chapter33 batch
 Label files,`.xml` files per language (`@SYS12345`),chapter34 labels
 AppChecker,Static analysis for best practices naming performance,chapter34 appchecker

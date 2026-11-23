@@ -140,14 +140,14 @@ public boolean validate()
 
 ## Session 3: Batch Processing Patterns
 
-### Prompt 3.1: Parallel Batch with VSIWorker
+### Prompt 3.1: Parallel Batch with LEMLabPersonnel
 **Time:** 25 min  
 **Goal:** Process 10,000 customers in parallel batches of 1,000
 
 **Architecture:**
 - Controller splits work into ranges
 - Each range = separate batch task
-- VSIWorker coordinates (or custom)
+- LEMLabPersonnel coordinates (or custom)
 
 **Navigator focuses on:**
 - Range calculation (avoid gaps/overlaps)

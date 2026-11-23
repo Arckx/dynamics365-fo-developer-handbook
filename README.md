@@ -56,7 +56,7 @@ If you're new to D365 F&O, start here:
 | **New to D365** | [30-Minute Quick Start](#30-minute-quick-start-new-developers) → Ch 1–3 | Sequential |
 | **X++ Refresher** | [Quick Reference](01-core-handbook/d365-xpp-quick-reference.md) → Exercises 1–4 | Reference-driven |
 | **Certification Prep** | [Certification Mapping](01-core-handbook/d365-certification-mapping.md) → Target chapters | Goal-driven |
-| **Architecture Review** | [VSI Gap Analysis](07-reference/vsi_gap_analysis.md) → Chapters 23–35 | Deep-dive |
+| **Architecture Review** | [LEM Gap Analysis](07-reference/lem_gap_analysis.md) → Chapters 23–35 | Deep-dive |
 
 ---
 
@@ -66,7 +66,7 @@ If you're new to D365 F&O, start here:
 
 | File | Description | Recommended Use |
 |---|---|---|
-| `01-core-handbook/d365-learning-guide.md` | 35-chapter technical desktop guide with full code examples, tables, and exercises. Covers X++, architecture, tables, forms, workflows, services, VSI patterns, Data Entities, SysTest, Performance, and more. | In-depth technical study and daily code reference. |
+| `01-core-handbook/d365-learning-guide.md` | 35-chapter technical desktop guide with full code examples, tables, and exercises. Covers X++, architecture, tables, forms, workflows, services, LEM patterns, Data Entities, SysTest, Performance, and more. | In-depth technical study and daily code reference. |
 | `01-core-handbook/d365-fao-learning-journey.md` | 12-month structured study plan with quarterly milestones and deliverables. | Structuring internship programs and training paths. |
 | `01-core-handbook/d365-guide-cross-reference.md` | Master index mapping curriculum phases to desktop guide chapters. | Navigating between study phases and reference chapters. |
 | `01-core-handbook/d365-xpp-quick-reference.md` | X++ syntax cheat sheet covering CRUD operations, CoC, LINQ-style queries, and exception handling. | Quick syntax checks while writing code. |
@@ -138,7 +138,7 @@ If you're new to D365 F&O, start here:
 
 | File | Description | Recommended Use |
 |---|---|---|
-| `07-reference/vsi_gap_analysis.md` | Analysis of real-world VSI codebase patterns and architectural enhancement roadmap. | Advanced architectural review. |
+| `07-reference/lem_gap_analysis.md` | Analysis of real-world LEM codebase patterns and architectural enhancement roadmap. | Advanced architectural review. |
 | `07-reference/d365-fao-interest.md` | Interest tracking and learning objectives. | Personal progress tracking. |
 | `07-reference/language-mindset-development.md` | Language Mindset development notes. | Philosophy and approach reference. |
 | `07-reference/d365_combined_guide.md` | Combined guide from previous iterations. | Legacy reference. |
@@ -178,7 +178,7 @@ The curriculum spans **35 chapters** organized into **four foundational quarters
 
 | Ch | Topic | Key Skills | Learning Guide |
 |---|---|---|---|
-| 16 | **Data Entities** | OData, staging, composite entities, DMF, Power Platform | [Ch 16](01-core-handbook/d365-learning-guide.md#1-entity-types-dataentity-vs-composite-entity-vs-derived-view) |
+| 16 | **Data Entities** | OData, staging, composite entities, DMF, Power Platform | [Ch 16](01-core-handbook/d365-learning-guide.md#chapter-16-data-entities-integration-data-management-in-d365-fo) |
 | 17 | **SSRS & Electronic Reporting** | `SrsReportDataProvider`, RDL, ER, pre-processing | [Ch 17](01-core-handbook/d365-learning-guide.md#1-ssrs-report-architecture) |
 | 18 | **Batch Processing** | `RunBaseBatch`, `SysOperation`, progress, retry, cancellation | [Ch 18](01-core-handbook/d365-learning-guide.md#1-batch-processing-fundamentals--the-restaurant-analogy) |
 | 19 | **SysTest Framework** | `SysTestCase`, assertions, data fixtures, CI/CD integration | [Ch 19](01-core-handbook/d365-learning-guide.md#1-the-systest-framework--core-components) |
@@ -199,8 +199,8 @@ The curriculum spans **35 chapters** organized into **four foundational quarters
 | 29 | Workflow Architecture | Document, events, submit/action managers, enabled forms | [Ch 29](01-core-handbook/d365-learning-guide.md#chapter-29-workflow-architecture) |
 | 30 | Number Sequences | Module registration, reference API, form handler, targets | [Ch 30](01-core-handbook/d365-learning-guide.md#chapter-30-number-sequences) |
 | 31 | Form Patterns | ListPage, Grid, FactBox, Tree, Dialog, MultiSelectionHelper | [Ch 31](01-core-handbook/d365-learning-guide.md#311-list-page-pattern-listpage) |
-| 32 | VSI Patterns | Status change context, notifications, multi-company | [Ch 32](01-core-handbook/d365-learning-guide.md#chapter-32-vsi-patterns) |
-| 33 | Advanced Batch | Cross-company, `VSIWorker`, constants, retry patterns | [Ch 33](01-core-handbook/d365-learning-guide.md#chapter-33-advanced-batch) |
+| 32 | LEM Patterns | Status change context, notifications, multi-company | [Ch 32](01-core-handbook/d365-learning-guide.md#chapter-32-lem-patterns) |
+| 33 | Advanced Batch | Cross-company, `LEMLabPersonnel`, constants, retry patterns | [Ch 33](01-core-handbook/d365-learning-guide.md#chapter-33-advanced-batch) |
 | 34 | Localization & Best Practices | Labels, AppChecker, configuration keys | [Ch 34](01-core-handbook/d365-learning-guide.md#341-label-files) |
 | 35 | Service Patterns | `SysOperation`, shared executor, JSON/CLR interop, exposure | [Ch 35](01-core-handbook/d365-learning-guide.md#351-service-pattern-overview) |
 

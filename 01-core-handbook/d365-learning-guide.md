@@ -5197,7 +5197,7 @@ Permission simulation lets you test what a user can and cannot do:
 
 ---
 
-## 1. Entity Types: DataEntity vs Composite Entity vs Derived View
+## 16.1 Entity Types: DataEntity vs Composite Entity vs Derived View
 
 D365 F&O provides three distinct patterns for exposing data for integration and reporting. Choosing the right pattern is critical for performance, maintainability, and upgradeability.
 
@@ -5297,7 +5297,7 @@ A **Derived View** is a low-level pattern that creates a view in the AOT with cu
 
 ---
 
-## 2. Entity Design: IsPublic, Public Names, and Staging Tables
+## 16.2 Entity Design: IsPublic, Public Names, and Staging Tables
 
 ### 2.1 OData Exposure and Staging Mechanisms
 
@@ -5377,7 +5377,7 @@ public str FullName()
 
 ---
 
-## 3. The Staging Pattern: Design, Process, and PostProcess
+## 16.3 The Staging Pattern: Design, Process, and PostProcess
 
 The **staging pattern** is the standard approach for data entities that need to write data back to D365 F&O. It uses a three-step process:
 
@@ -5685,7 +5685,7 @@ public void process()
 
 ---
 
-## 4. Entity Mapping: Auto-Mapping vs Manual Field Mapping
+## 16.4 Entity Mapping: Auto-Mapping vs Manual Field Mapping
 
 ### 4.1 Auto-Mapping
 
@@ -5758,7 +5758,7 @@ public str FullName()
 
 ---
 
-## 5. Data Management Workspace: Import/Export and Package Deployment
+## 16.5 Data Management Workspace: Import/Export and Package Deployment
 
 The **Data Management** workspace is the central hub for importing and exporting data in D365 F&O. It provides a UI-driven interface for data operations without requiring code.
 
@@ -5843,7 +5843,7 @@ Configure recurring imports/exports using **Data Management > Recurring Data Job
 
 ---
 
-## 6. REST/OData: DictClass Reflection, Entity Publishing, HttpClient Consumption
+## 16.6 REST/OData: DictClass Reflection, Entity Publishing, HttpClient Consumption
 
 ### 6.1 Exposing Data via OData
 
@@ -6109,7 +6109,7 @@ public class D365ODataClient
 
 ---
 
-## 7. Power Platform Integration: Logic Apps and Power Automate
+## 16.7 Power Platform Integration: Logic Apps and Power Automate
 
 ### 7.1 Logic Apps Connector for D365 F&O
 
@@ -6235,7 +6235,7 @@ private void sendToServiceBus(Guid _batchId, int _success, int _failed)
 
 ---
 
-## 8. Capstone Activity: Build an HR Employee Data Integration Entity
+## 16.8 Capstone Activity: Build an HR Employee Data Integration Entity
 
 > **Objective**: Build a complete, production-ready Data Entity for HR employee data integration.
 
@@ -6853,7 +6853,7 @@ private void triggerLogicAppNotification(Guid _batchId, int _success, int _faile
 
 ---
 
-## 9. Definitions: Key Terms with Layman Explanations
+## 16.9 Definitions: Key Terms with Layman Explanations
 
 | Term | Technical Definition | Layman Explanation |
 |---|---|---|
@@ -6880,7 +6880,7 @@ private void triggerLogicAppNotification(Guid _batchId, int _success, int _faile
 
 ---
 
-## 10. Comparison Tables
+## 16.10 Comparison Tables
 
 ### 10.1 Entity Type Selection Guide
 
@@ -6926,7 +6926,7 @@ private void triggerLogicAppNotification(Guid _batchId, int _success, int _faile
 
 ---
 
-## 11. Microsoft Learn References
+## 16.11 Microsoft Learn References
 
 ### Core Data Entities Documentation
 - **Data Entities Overview**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/data-entities-intro
@@ -6963,7 +6963,7 @@ private void triggerLogicAppNotification(Guid _batchId, int _success, int _faile
 
 ---
 
-## 12. Common Mistakes to Avoid
+## 16.12 Common Mistakes to Avoid
 
 | # | Mistake | Why It's Wrong | Correct Approach |
 |---|---|---|---|
@@ -7745,7 +7745,7 @@ public void postProcess()
 
 ---
 
-## 1. SSRS Report Architecture
+## 17.1 SSRS Report Architecture
 
 ### 1.1 The Three-Tier Reporting Model
 
@@ -7823,7 +7823,7 @@ MyModelProject
 
 ---
 
-## 2. SrsReportDataProvider — The Bridge
+## 17.2 SrsReportDataProvider — The Bridge
 
 `SrsReportDataProvider` is the bridge between the SSRS report layout and the D365 F&O data. It is the most critical class in the reporting architecture.
 
@@ -7970,7 +7970,7 @@ class VendComplianceReportDP extends SrsReportDataProvider
 
 ---
 
-## 3. Data Contracts and Parameters
+## 17.3 Data Contracts and Parameters
 
 ### 3.1 The Contract Class
 
@@ -8070,7 +8070,7 @@ Create a **Display Menu Item** to launch the report:
 
 ---
 
-## 4. TempDB Pre-Processing Pattern
+## 17.4 TempDB Pre-Processing Pattern
 
 ### 4.1 Why Use `SrsReportDataProviderPreProcessTempDB`?
 
@@ -8203,7 +8203,7 @@ table VendComplianceReportTmp
 
 ---
 
-## 5. Report Design: RDL Layout and Visual Studio
+## 17.5 Report Design: RDL Layout and Visual Studio
 
 ### 5.1 Visual Studio Report Designer
 
@@ -8241,7 +8241,7 @@ The report dataset binds to the data provider's getter method:
 
 ---
 
-## 6. Electronic Reporting (ER) Overview
+## 17.6 Electronic Reporting (ER) Overview
 
 ### 6.1 What Is Electronic Reporting?
 
@@ -8282,7 +8282,7 @@ The report dataset binds to the data provider's getter method:
 
 ---
 
-## 7. ER Configurations and Format Designer
+## 17.7 ER Configurations and Format Designer
 
 ### 7.1 Creating an ER Configuration
 
@@ -8387,7 +8387,7 @@ class ERRunner
 
 ---
 
-## 8. Power BI Integration
+## 17.8 Power BI Integration
 
 ### 8.1 Power BI and D365 F&O
 
@@ -8417,7 +8417,7 @@ Power BI can connect to D365 F&O data through:
 
 ---
 
-## 9. Capstone Activity: Build a Multi-Company Vendor Compliance Report
+## 17.9 Capstone Activity: Build a Multi-Company Vendor Compliance Report
 
 > **Objective**: Build a production-ready SSRS report with TempDB pre-processing and an ER configuration for XML export.
 
@@ -8634,7 +8634,7 @@ Root: VendorComplianceExport
 
 ---
 
-## 10. Common Mistakes to Avoid
+## 17.10 Common Mistakes to Avoid
 
 | # | Mistake | Why It's Wrong | Correct Approach |
 |---|---|---|---|
@@ -8651,7 +8651,7 @@ Root: VendorComplianceExport
 
 ---
 
-## 11. Microsoft Learn References
+## 17.11 Microsoft Learn References
 
 ### SSRS Reporting
 - **SSRS Reports Overview**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/analytics/ssrs-reporting/
@@ -9494,7 +9494,7 @@ printJobSettings.parmEmailBody('Please find the monthly compliance report attach
 
 ---
 
-## 1. Batch Processing Fundamentals — The Restaurant Analogy
+## 18.1 Batch Processing Fundamentals — The Restaurant Analogy
 
 Imagine you're at a restaurant.
 
@@ -9516,7 +9516,7 @@ That's the single most useful idea to carry into both real development work and 
 
 ---
 
-## 2. RunBaseBatch vs SysOperation — Framework Comparison
+## 18.2 RunBaseBatch vs SysOperation — Framework Comparison
 
 ### 2.1 The One-Person Restaurant (RunBase)
 
@@ -9601,7 +9601,7 @@ SysOperation replaces the RunBase framework as the standard way to build interac
 ```xpp
 // 1. Data Contract
 [DataContractAttribute]
-class VSICustBlockContract
+class LEMCustBlockContract
 {
     CustAccount custAccount;
 
@@ -9614,9 +9614,9 @@ class VSICustBlockContract
 }
 
 // 2. Service — pure logic, framework-agnostic, unit-testable
-class VSICustBlockService extends SysOperationServiceBase
+class LEMCustBlockService extends SysOperationServiceBase
 {
-    public void blockCustomer(VSICustBlockContract _contract)
+    public void blockCustomer(LEMCustBlockContract _contract)
     {
         CustTable custTable = CustTable::find(_contract.parmCustAccount(), true);
         ttsBegin;
@@ -9627,13 +9627,13 @@ class VSICustBlockService extends SysOperationServiceBase
 }
 
 // 3. Controller — the entry point a menu item points to
-class VSICustBlockController extends SysOperationServiceController
+class LEMCustBlockController extends SysOperationServiceController
 {
     public static void main(Args _args)
     {
-        VSICustBlockController controller = new VSICustBlockController();
-        controller.parmClassName(classStr(VSICustBlockService));
-        controller.parmMethodName(methodStr(VSICustBlockService, blockCustomer));
+        LEMCustBlockController controller = new LEMCustBlockController();
+        controller.parmClassName(classStr(LEMCustBlockService));
+        controller.parmMethodName(methodStr(LEMCustBlockService, blockCustomer));
         controller.startOperation();
     }
 }
@@ -9666,7 +9666,7 @@ Worth committing to memory precisely: "SysOperation always runs in batch" is a c
 
 ---
 
-## 3. Batch Architecture at Platform Level
+## 18.3 Batch Architecture at Platform Level
 
 ### 3.1 What "Batch" Means at the Platform Level
 
@@ -9713,7 +9713,7 @@ Waiting → Executing → Finished/Error/Canceled
 
 ---
 
-## 4. RunBaseBatch — The Legacy Pattern
+## 18.4 RunBaseBatch — The Legacy Pattern
 
 ### 4.1 Complete RunBaseBatch Template
 
@@ -9825,7 +9825,7 @@ class VendReconciliationBatchJob extends RunBaseBatch
 
 ---
 
-## 5. SysOperation Framework — The Modern Pattern
+## 18.5 SysOperation Framework — The Modern Pattern
 
 ### 5.1 Complete SysOperation Template
 
@@ -9965,7 +9965,7 @@ class CustReconciliationController extends SysOperationServiceController
 
 ---
 
-## 6. Side-by-Side Comparison
+## 18.6 Side-by-Side Comparison
 
 | Aspect | RunBase / RunBaseBatch | SysOperation Framework |
 |---|---|---|
@@ -9981,7 +9981,7 @@ class CustReconciliationController extends SysOperationServiceController
 
 ---
 
-## 7. Production Environment Behavior
+## 18.7 Production Environment Behavior
 
 Once a job becomes a `BatchJob` row, both frameworks are executed by the identical batch engine. Everything below applies equally regardless of which framework produced the job.
 
@@ -9995,7 +9995,7 @@ Once a job becomes a `BatchJob` row, both frameworks are executed by the identic
 
 ---
 
-## 8. Parallel Processing Patterns
+## 18.8 Parallel Processing Patterns
 
 When your batch job becomes large, you start asking questions such as:
 > Who owns this piece of work? Has somebody already processed it? What happens if processing fails? Can we retry it? How do we know what succeeded? What happens if the batch server crashes? How many workers should run simultaneously? Are multiple workers locking the same records? Should everything be inside one transaction?
@@ -10015,34 +10015,34 @@ These are not really RunBase-vs-SysOperation questions anymore. They are **batch
 **Mechanism:** A bounded number of `BatchJobTask`s (say, 5 or 10 — not one per customer) are scheduled. Each task runs the same worker loop: inside a short transaction, claim the next `Ready` row from the staging table (mark it `InProgress`, tag it with the task's own identity), commit quickly, then do the actual work outside that claiming transaction, and finally mark the row `Done` (or `Error`).
 
 ```xpp
-// Staging/queue table: VSICustBlockQueue
+// Staging/queue table: LEMCustBlockQueue
 // Fields: RecId, CustAccount, Status (Ready/InProgress/Done/Error), BatchTaskId, ErrorText
 
 // --- Producer: populates the queue from the contract's criteria ---
-class VSICustBlockSelectorService extends SysOperationServiceBase
+class LEMCustBlockSelectorService extends SysOperationServiceBase
 {
-    public void selectOverdueCustomers(VSICustBlockSelectionContract _contract)
+    public void selectOverdueCustomers(LEMCustBlockSelectionContract _contract)
     {
         CustTable custTable;
-        VSICustBlockQueue queueRecord;
+        LEMCustBlockQueue queueRecord;
 
         while select custTable
             where custTable.overdueDate() <= _contract.parmOverdueSinceDate() // conceptual filter
         {
             queueRecord.clear();
             queueRecord.CustAccount = custTable.AccountNum;
-            queueRecord.Status      = VSICustBlockQueueStatus::Ready;
+            queueRecord.Status      = LEMCustBlockQueueStatus::Ready;
             queueRecord.insert();
         }
     }
 }
 
 // --- Worker: top-picking loop, run by each parallel batch task ---
-class VSICustBlockWorkerService extends SysOperationServiceBase
+class LEMCustBlockWorkerService extends SysOperationServiceBase
 {
     public void processQueue()
     {
-        VSICustBlockQueue queueRecord;
+        LEMCustBlockQueue queueRecord;
         boolean            hasWork = true;
 
         while (hasWork)
@@ -10051,11 +10051,11 @@ class VSICustBlockWorkerService extends SysOperationServiceBase
             ttsBegin;
             // Claim the next ready row — short, fast transaction
             select firstOnly forUpdate queueRecord
-                where queueRecord.Status == VSICustBlockQueueStatus::Ready;
+                where queueRecord.Status == LEMCustBlockQueueStatus::Ready;
 
             if (queueRecord.RecId)
             {
-                queueRecord.Status      = VSICustBlockQueueStatus::InProgress;
+                queueRecord.Status      = LEMCustBlockQueueStatus::InProgress;
                 queueRecord.BatchTaskId = this.getCurrentBatchTaskRecId(); // conceptual
                 queueRecord.update();
                 hasWork = true;
@@ -10069,7 +10069,7 @@ class VSICustBlockWorkerService extends SysOperationServiceBase
         }
     }
 
-    private void blockOneCustomer(CustAccount _custAccount, VSICustBlockQueue _queueRecord)
+    private void blockOneCustomer(CustAccount _custAccount, LEMCustBlockQueue _queueRecord)
     {
         CustTable custTable;
         try
@@ -10080,7 +10080,7 @@ class VSICustBlockWorkerService extends SysOperationServiceBase
             custTable.update();
 
             _queueRecord.selectForUpdate(true);
-            _queueRecord.Status = VSICustBlockQueueStatus::Done;
+            _queueRecord.Status = LEMCustBlockQueueStatus::Done;
             _queueRecord.update();
             ttsCommit;
         }
@@ -10088,7 +10088,7 @@ class VSICustBlockWorkerService extends SysOperationServiceBase
         {
             ttsBegin;
             _queueRecord.selectForUpdate(true);
-            _queueRecord.Status    = VSICustBlockQueueStatus::Error;
+            _queueRecord.Status    = LEMCustBlockQueueStatus::Error;
             _queueRecord.ErrorText = "Block failed"; // capture real infolog text in practice
             _queueRecord.update();
             ttsCommit;
@@ -10099,7 +10099,7 @@ class VSICustBlockWorkerService extends SysOperationServiceBase
 
 ---
 
-## 9. Transaction Design for Batch Jobs
+## 18.9 Transaction Design for Batch Jobs
 
 ### 9.1 Per-Item Transactions — Never One Big Transaction
 
@@ -10142,7 +10142,7 @@ while (!success && retryCount < 3)
 
 ---
 
-## 10. Capstone Activity: Nightly Overdue Customer Blocking
+## 18.10 Capstone Activity: Nightly Overdue Customer Blocking
 
 > **Scenario:** Build a job that blocks a *list* of overdue customers (not just one) for invoicing. It must be schedulable nightly, safely retryable, and — since the list can run into the thousands — ideally process customers in parallel chunks in production.
 
@@ -10344,7 +10344,7 @@ class CustOverdueBlockController extends SysOperationServiceController
 
 ---
 
-## 11. Microsoft Learn References
+## 18.11 Microsoft Learn References
 
 ### Batch Processing
 - **Batch Processing Overview**: https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/sysadmin/batch-processing-overview
@@ -10470,7 +10470,7 @@ class CustOverdueBlockController extends SysOperationServiceController
 
 ---
 
-## 18.4 `SysOperationServiceController` — Service-Based Batch Pattern
+## 18.12 `SysOperationServiceController` — Service-Based Batch Pattern
 
 As covered in Chapter 6, `SysOperationServiceController` provides a modern, contract-driven approach to batch operations. It is particularly useful when:
 
@@ -10509,7 +10509,7 @@ class VendReconciliationController extends SysOperationServiceController
 
 ---
 
-## 18.5 Progress Reporting
+## 18.13 Progress Reporting
 
 Progress reporting keeps users informed about the status of long-running batch operations.
 
@@ -10587,7 +10587,7 @@ public void run()
 
 ---
 
-## 18.6 Cancellation — `checkCancel()` in Batch Loops
+## 18.14 Cancellation — `checkCancel()` in Batch Loops
 
 The `checkCancel()` method checks whether the user has requested cancellation of the batch job. It should be called inside long-running loops to allow graceful cancellation.
 
@@ -10660,7 +10660,7 @@ public void run()
 
 ---
 
-## 18.7 Retry Logic — `Global::retry()` and Custom Retry Counters
+## 18.15 Retry Logic — `Global::retry()` and Custom Retry Counters
 
 Retry logic allows a batch job to recover from transient failures (e.g., network timeouts, deadlocks, temporary service unavailability).
 
@@ -10768,7 +10768,7 @@ class VendReconciliationRetryHandler
 
 ---
 
-## 18.8 Activity — Batch Reconciliation Job for 100K+ Records
+## 18.16 Activity — Batch Reconciliation Job for 100K+ Records
 
 > **Activity**: Create a batch reconciliation job for 100K+ vendor records with the following requirements:
 > 1. The job must process vendors in batches of 1,000 records at a time to avoid memory issues
@@ -11052,7 +11052,7 @@ class VendReconciliationBatchJob extends RunBaseBatch
 </ModelManifest>
 ```
 
-## 18.9 Batch Production Guidance
+## 18.17 Batch Production Guidance
 
 ### Idempotent Batch Jobs — `BatchInfo.Idempotent`
 
@@ -11208,7 +11208,7 @@ boolean unpack(container _packedClass)
 
 ---
 
-## 1. The SysTest Framework — Core Components
+## 19.1 The SysTest Framework — Core Components
 
 ### 1.1 What Is SysTest? (Layman Explanation)
 
@@ -11350,7 +11350,7 @@ class VendComplianceTest extends SysTestCase
 
 ---
 
-## 2. Assert Methods — Complete Reference
+## 19.2 Assert Methods — Complete Reference
 
 ### 2.1 Core Assertion Methods (Inherited from `SysTestCase`)
 
@@ -11570,7 +11570,7 @@ void assertInfo(boolean _statement, str _message = '')
 
 ---
 
-## 3. Test Data Creation Patterns
+## 19.3 Test Data Creation Patterns
 
 ### 3.1 Why Test Data Patterns Matter
 
@@ -11988,7 +11988,7 @@ class CrossCompanyTest extends SysTestCase
 
 ---
 
-## 4. Test Isolation and Data-Driven Testing
+## 19.4 Test Isolation and Data-Driven Testing
 
 ### 4.1 Test Isolation — Why It Matters
 
@@ -12242,7 +12242,7 @@ class SalesOrderTest extends SysTestCase
 
 ---
 
-## 5. Test Coverage Metrics in LCS
+## 19.5 Test Coverage Metrics in LCS
 
 ### 5.1 What LCS Coverage Measures
 
@@ -12372,7 +12372,7 @@ public static void testCalculateDiscount_VerifiesBusinessRules()
 
 ---
 
-## 6. Integration Testing with LCS Test Case Management
+## 19.6 Integration Testing with LCS Test Case Management
 
 ### 6.1 LCS Test Case Management Overview
 
@@ -12526,7 +12526,7 @@ Attachments:
 
 ---
 
-## 7. Activity: Complete Test Class for Sales Order Discount Calculation
+## 19.7 Activity: Complete Test Class for Sales Order Discount Calculation
 
 ### 7.1 Requirements Recap
 
@@ -13142,7 +13142,7 @@ class SalesOrderDiscount
 
 ---
 
-## 8. Best Practices, Common Mistakes, and CI/CD Integration
+## 19.8 Best Practices, Common Mistakes, and CI/CD Integration
 
 ### 8.1 Best Practices — AAA Pattern
 
@@ -13555,7 +13555,7 @@ public static void testIsolatedSetup()
 
 **Best practice:** Use shared setup for read-only test data. Use per-method setup for tests that modify or delete data.
 
-## 19.4 Test Isolation and Data-Driven Testing
+## 19.9 Test Isolation and Data-Driven Testing
 
 ### `SysTestTransaction` — Test Isolation
 
@@ -13636,7 +13636,7 @@ class VendComplianceTest extends SysTestCase
 
 ---
 
-## 19.4 Test Coverage Metrics in LCS
+## 19.10 Test Coverage Metrics in LCS
 
 LCS provides built-in test coverage metrics that help you understand how much of your code is covered by automated tests.
 
@@ -13681,7 +13681,7 @@ The **Test Cases** view in LCS provides:
 
 ---
 
-## 19.5 Integration Testing with LCS Test Case Management
+## 19.11 Integration Testing with LCS Test Case Management
 
 LCS provides a **Test Case Management** feature that integrates with the `SysTest` framework for end-to-end integration testing.
 
@@ -13744,7 +13744,7 @@ When tests run in the CI/CD pipeline:
 
 ---
 
-## 19.6 Activity — Write a Complete Test Class for Sales Order Discount Calculation
+## 19.12 Activity — Write a Complete Test Class for Sales Order Discount Calculation
 
 > **Activity**: Write a complete test class covering edge cases for sales order discount calculation. The discount calculation has the following rules:
 > 1. Standard discount: 5% for orders over $10,000
@@ -15928,7 +15928,7 @@ class POAutomationBatchService extends SysOperationServiceBase
         BatchHeader batchHeader = this.getCurrentBatchHeader();
         PurchReqTable purchReqTable;
         List recIdList = new List(Types::Int64);
-        int bundleSize = VSIBatchConstants::DefaultBundleSize; // 200
+        int bundleSize = LMEBatchConstants::DefaultBundleSize; // 200
         int taskCount = 0;
         
         // Collect all approved requisitions
@@ -17605,7 +17605,7 @@ Date effectivity allows data to be version-dated — different values apply to d
 ---
 
 
-D365 F&O provides a built-in workflow framework for routing business documents through approval processes. The VSI Asset Management codebase uses it extensively for asset requests, retirements, and maintenance repairs.
+D365 F&O provides a built-in workflow framework for routing business documents through approval processes. The LEM Equipment Management codebase uses it extensively for asset requests, retirements, and maintenance repairs.
 
 # Chapter 29: Workflow Architecture
 
@@ -17625,11 +17625,11 @@ D365 F&O provides a built-in workflow framework for routing business documents t
 The workflow document exposes the business record to the workflow framework via a query:
 
 ```xpp
-class VSIAssetRequestWorkflowDocument extends WorkflowDocument
+class LEMEquipmentReservationWorkflowDocument extends WorkflowDocument
 {
     public queryName getQueryName()
     {
-        return queryStr(VSIAssetRequestWorkflowQuery);
+        return queryStr(LEMEquipmentReservationWorkflowQuery);
     }
 }
 ```
@@ -17658,7 +17658,7 @@ Workflow event handlers implement one or more interfaces:
 ### Example: Request Approval Event Handler
 
 ```xpp
-public final class VSIAssetRequestApprovalEventHandler implements
+public final class LEMEquipmentReservationApprovalEventHandler implements
     WorkflowElementCanceledEventHandler,
     WorkflowElemChangeRequestedEventHandler,
     WorkflowElementCompletedEventHandler,
@@ -17668,9 +17668,9 @@ public final class VSIAssetRequestApprovalEventHandler implements
 {
     public void started(WorkflowElementEventArgs _workflowElementEventArgs)
     {
-        VSIAssetRequest::changeStatusByRecId(
+        LEMEquipmentReservation::changeStatusByRecId(
             _workflowElementEventArgs.parmWorkflowContext().parmRecId(),
-            VSIRequestStatus::PendingApproval);
+            ReservationStatus::PendingApproval);
     }
 
     public void completed(WorkflowElementEventArgs _workflowElementEventArgs)
@@ -17678,44 +17678,44 @@ public final class VSIAssetRequestApprovalEventHandler implements
         WorkflowContext context =
             _workflowElementEventArgs.parmWorkflowContext();
 
-        VSIWorkerId approver =
-            VSIWorkflowActorHelper::approverWorkerIdOrBlank(
+        PersonnelId approver =
+            LMEWorkflowActorHelper::approverWorkerIdOrBlank(
                 context.parmTableId(),
                 context.parmRecId());
 
-        VSIAssetRequest::changeStatusByRecId(
+        LEMEquipmentReservation::changeStatusByRecId(
             context.parmRecId(),
-            VSIRequestStatus::Approved,
+            ReservationStatus::Approved,
             approver);
 
-        info("@VSIAssetManagmentLabelFile:VSIAssetRequestWorkflowApproved");
+        info("@LEMEquipmentLabelFile:LEMEquipmentReservationWorkflowApproved");
     }
 
     public void changeRequested(WorkflowElementEventArgs _workflowElementEventArgs)
     {
-        VSIAssetRequest::changeStatusByRecId(
+        LEMEquipmentReservation::changeStatusByRecId(
             _workflowElementEventArgs.parmWorkflowContext().parmRecId(),
-            VSIRequestStatus::Draft);
+            ReservationStatus::Draft);
 
-        info("@VSIAssetManagmentLabelFile:VSIAssetRequestWorkflowChangeRequested");
+        info("@LEMEquipmentLabelFile:LEMEquipmentReservationWorkflowChangeRequested");
     }
 
     public void returned(WorkflowElementEventArgs _workflowElementEventArgs)
     {
-        VSIAssetRequest::changeStatusByRecId(
+        LEMEquipmentReservation::changeStatusByRecId(
             _workflowElementEventArgs.parmWorkflowContext().parmRecId(),
-            VSIRequestStatus::Rejected);
+            ReservationStatus::Rejected);
 
-        info("@VSIAssetManagmentLabelFile:VSIAssetRequestWorkflowRejected");
+        info("@LEMEquipmentLabelFile:LEMEquipmentReservationWorkflowRejected");
     }
 
     public void canceled(WorkflowElementEventArgs _workflowElementEventArgs)
     {
-        VSIAssetRequest::changeStatusByRecId(
+        LEMEquipmentReservation::changeStatusByRecId(
             _workflowElementEventArgs.parmWorkflowContext().parmRecId(),
-            VSIRequestStatus::Draft);
+            ReservationStatus::Draft);
 
-        info("@VSIAssetManagmentLabelFile:VSIAssetRequestWorkflowCanceled");
+        info("@LEMEquipmentLabelFile:LEMEquipmentReservationWorkflowCanceled");
     }
 
     public void created(WorkflowWorkItemsEventArgs _workflowWorkItemsEventArgs)
@@ -17726,10 +17726,10 @@ public final class VSIAssetRequestApprovalEventHandler implements
 
 ### Key Pattern: Status Transition Guard
 
-Notice how `changeStatusByRecId` uses `VSIDocumentStatusChangeContext` to guard direct status updates:
+Notice how `changeStatusByRecId` uses `LEMDocumentStatusChangeContext` to guard direct status updates:
 
 ```xpp
-using (VSIDocumentStatusChangeContext context = new VSIDocumentStatusChangeContext())
+using (LEMDocumentStatusChangeContext context = new LEMDocumentStatusChangeContext())
 {
     request.RequestStatus = _newStatus;
     request.update();
@@ -17745,7 +17745,7 @@ This ensures status changes only happen through the authorized workflow context,
 ```xpp
 public static void main(Args _args)
 {
-    VSIAssetRequest request = _args.record() as VSIAssetRequest;
+    LEMEquipmentReservation request = _args.record() as LEMEquipmentReservation;
     WorkflowSubmitDialog submitDialog;
 
     if (!request || !request.validateForSubmission())
@@ -17763,19 +17763,19 @@ public static void main(Args _args)
         {
             ttsBegin;
             Workflow::activateFromWorkflowType(
-                workflowTypeStr(VSIAssetRequestWorkflow),
+                workflowTypeStr(LEMEquipmentReservationWorkflow),
                 request.RecId,
                 submitDialog.parmWorkflowComment(),
                 NoYes::No);
-            VSIAssetRequest::changeStatusByRecId(
+            LEMEquipmentReservation::changeStatusByRecId(
                 request.RecId,
-                VSIRequestStatus::PendingApproval);
+                ReservationStatus::PendingApproval);
             ttsCommit;
-            info("@VSIAssetManagmentLabelFile:VSIAssetRequestWorkflowSubmitted");
+            info("@LEMEquipmentLabelFile:LEMEquipmentReservationWorkflowSubmitted");
         }
         catch (Exception::Error)
         {
-            error("@VSIAssetManagmentLabelFile:VSIWorkflowSubmitFailed");
+            error("@LEMEquipmentLabelFile:LMEWorkflowSubmitFailed");
         }
     }
 
@@ -17788,7 +17788,7 @@ public static void main(Args _args)
 ```xpp
 public static void main(Args _args)
 {
-    VSIAssetRequest request = _args.record() as VSIAssetRequest;
+    LEMEquipmentReservation request = _args.record() as LEMEquipmentReservation;
     WorkflowWorkItemTable workItem = _args.caller().getActiveWorkflowWorkItem();
     WorkflowWorkItemActionDialog actionDialog;
 
@@ -17814,15 +17814,15 @@ public static void main(Args _args)
                 actionDialog.parmTargetUser(),
                 WorkflowWorkItemActionType::Resubmit,
                 _args.menuItemName());
-            VSIAssetRequest::changeStatusByRecId(
+            LEMEquipmentReservation::changeStatusByRecId(
                 request.RecId,
-                VSIRequestStatus::PendingApproval);
+                ReservationStatus::PendingApproval);
             ttsCommit;
-            info("@VSIAssetManagmentLabelFile:VSIAssetRequestWorkflowResubmitted");
+            info("@LEMEquipmentLabelFile:LEMEquipmentReservationWorkflowResubmitted");
         }
         catch (Exception::Error)
         {
-            error("@VSIAssetManagmentLabelFile:VSIWorkflowSubmitFailed");
+            error("@LEMEquipmentLabelFile:LMEWorkflowSubmitFailed");
         }
     }
 
@@ -17838,34 +17838,34 @@ A form participates in workflow when it sets:
 |---|---|
 | `WorkflowDataSource` | The table bound to the workflow document |
 | `WorkflowEnabled` | `Yes` |
-| `WorkflowType` | The workflow type name (e.g., `VSIAssetRequestWorkflow`) |
+| `WorkflowType` | The workflow type name (e.g., `LEMEquipmentReservationWorkflow`) |
 
 The form's action pane typically includes Submit, Approve, Reject, Delegate, Request Change, and Resubmit menu item buttons bound to the workflow action menu items.
 
 ---
 
 
-Number sequences generate unique identifiers for records. VSI Asset Management registers its own module and references eight data types.
+Number sequences generate unique identifiers for records. LEM Equipment Management registers its own module and references eight data types.
 
 # Chapter 30: Number Sequences
 
 ## 30.1 Registering a Number Sequence Module
 
 ```xpp
-public class VSIAssetNumberSeqModule extends NumberSeqApplicationModule
+public class LEMEquipmentNumberSeqModule extends NumberSeqApplicationModule
 {
     protected void loadModule()
     {
         this.createDatatype(
-            extendedTypeNum(VSIVendorId),
-            literalStr("@VSIAssetManagmentLabelFile:NumSeqHelpVendor"),
+            extendedTypeNum(VendorId),
+            literalStr("@LEMEquipmentLabelFile:NumSeqHelpVendor"),
             999999, 1, true);
-        // ... repeat for VSIWorkerId, VSIRequestId, VSIAssetId, ...
+        // ... repeat for PersonnelId, ReservationId, EquipmentId, ...
     }
 
     public NumberSeqModule numberSeqModule()
     {
-        return NumberSeqModule::VSIAssetManagement;
+        return NumberSeqModule::LEMEquipmentManagement;
     }
 
     [SubscribesTo(
@@ -17874,7 +17874,7 @@ public class VSIAssetNumberSeqModule extends NumberSeqApplicationModule
     static void buildModulesMapSubscriber(Map _numberSeqModuleNamesMap)
     {
         NumberSeqGlobal::addModuleToMap(
-            classNum(VSIAssetNumberSeqModule),
+            classNum(LEMEquipmentNumberSeqModule),
             _numberSeqModuleNamesMap);
     }
 }
@@ -17885,7 +17885,7 @@ public class VSIAssetNumberSeqModule extends NumberSeqApplicationModule
 | Method | Purpose |
 |---|---|
 | `loadModule()` | Registers `NumberSeqDatatype` references for each EDT |
-| `numberSeqModule()` | Returns the module enum value (`NumberSeqModule::VSIAssetManagement`) |
+| `numberSeqModule()` | Returns the module enum value (`NumberSeqModule::LEMEquipmentManagement`) |
 | `buildModulesMapSubscriber()` | Subscribes to the global module map delegate so the module appears in the Number Sequences form |
 
 ## 30.2 Number Sequence Reference API
@@ -17893,16 +17893,16 @@ public class VSIAssetNumberSeqModule extends NumberSeqApplicationModule
 ```xpp
 // Find a reference in the current company scope
 NumberSeqReference ref = NumberSeqReference::findReference(
-    extendedTypeNum(VSIAssetId),
+    extendedTypeNum(EquipmentId),
     NumberSeqScopeFactory::createDataAreaScope(curExt()));
 
 // Find in shared (global) scope
 NumberSeqReference sharedRef = NumberSeqReference::findReference(
-    extendedTypeNum(VSIVendorId),
+    extendedTypeNum(VendorId),
     NumberSeqScopeFactory::createGlobalScope());
 
 // Generate the next number
-VSIAssetId nextId = NumberSeq::newGetNum(ref).num();
+EquipmentId nextId = NumberSeq::newGetNum(ref).num();
 
 // Check if a reference exists
 boolean exists = ref.RecId != 0;
@@ -17913,12 +17913,12 @@ boolean exists = ref.RecId != 0;
 | Scope | Use Case |
 |---|---|
 | `createDataAreaScope(curExt())` | Company-specific sequences (default) |
-| `createGlobalScope()` | Shared across all companies (e.g., VSIWorkerId, VSIVendorId) |
+| `createGlobalScope()` | Shared across all companies (e.g., PersonnelId, VendorId) |
 
 ## 30.3 Number Sequence Form Handler in Forms
 
 ```xpp
-public class VSIAssetDetails extends FormRun
+public class LEMEquipmentDetails extends FormRun
 {
     NumberSeqFormHandler numberSeqFormHandler;
 
@@ -17927,10 +17927,10 @@ public class VSIAssetDetails extends FormRun
         if (!numberSeqFormHandler)
         {
             numberSeqFormHandler = NumberSeqFormHandler::newForm(
-                VSIAssetParameters::numRefAssetId().NumberSequenceId,
+                LEMEquipmentParameters::numRefAssetId().NumberSequenceId,
                 element,
-                VSIAsset_ds,
-                fieldNum(VSIAsset, AssetId));
+                LEMEquipment_ds,
+                fieldNum(LEMEquipment, AssetId));
         }
         return numberSeqFormHandler;
     }
@@ -17996,15 +17996,15 @@ public class VSIAssetDetails extends FormRun
 
 ## 30.4 Number Sequence Targets
 
-`VSINumberSeqTargets` maps each EDT to the table field it populates:
+`LMENumberSeqTargets` maps each EDT to the table field it populates:
 
 ```xpp
 public static Description usedOn(ExtendedTypeId _typeId)
 {
     switch (_typeId)
     {
-        case extendedTypeNum(VSIAssetId): return 'VSIAsset.AssetId';
-        case extendedTypeNum(VSIRequestId): return 'VSIAssetRequest.RequestId';
+        case extendedTypeNum(EquipmentId): return 'LEMEquipment.AssetId';
+        case extendedTypeNum(ReservationId): return 'LEMEquipmentReservation.RequestId';
         // ...
     }
     return '';
@@ -18020,9 +18020,9 @@ DMF enables data import/export through staging tables and data entities.
 
 Each staging table has a foreign-key relation to its data entity via the primary key fields.
 
-## 25.3 Custom Field Mapping on Import
+## 35.3 Custom Field Mapping on Import
 
-`VSIVendorEntity` and `VSIWorkerEntity` override `mapEntityToDataSource` to control ID assignment during import:
+`LEMEquipmentVendorEntity` and `LEMLabPersonnelEntity` override `mapEntityToDataSource` to control ID assignment during import:
 
 ```xpp
 public void mapEntityToDataSource(
@@ -18031,17 +18031,17 @@ public void mapEntityToDataSource(
 {
     super(_entityCtx, _dataSourceCtx);
 
-    if (_dataSourceCtx.name() != dataEntityDataSourceStr(VSIVendorEntity, VSIVendor))
+    if (_dataSourceCtx.name() != dataEntityDataSourceStr(LEMEquipmentVendorEntity, LEMEquipmentVendor))
     {
         return;
     }
 
-    VSIVendor vendor = _dataSourceCtx.getBuffer();
+    LEMEquipmentVendor vendor = _dataSourceCtx.getBuffer();
 
     switch (_entityCtx.getDatabaseOperation())
     {
         case DataEntityDatabaseOperation::Insert:
-            vendor.VendorId = VSIVendorEntity::nextVendorId();
+            vendor.VendorId = LEMEquipmentVendorEntity::nextVendorId();
             break;
         case DataEntityDatabaseOperation::Update:
             vendor.VendorId = vendor.orig().VendorId;
@@ -18049,14 +18049,14 @@ public void mapEntityToDataSource(
     }
 }
 
-private static VSIVendorId nextVendorId()
+private static VendorId nextVendorId()
 {
-    NumberSequenceReference reference = VSIAssetParameters::numRefVendorId();
+    NumberSequenceReference reference = LEMEquipmentParameters::numRefVendorId();
     if (!reference.NumberSequenceId)
     {
         throw error(strFmt(
-            "@VSIAssetManagmentLabelFile:ImportNumSeqNotSetUpInCompany",
-            new DictType(extendedTypeNum(VSIVendorId)).label(),
+            "@LEMEquipmentLabelFile:ImportNumSeqNotSetUpInCompany",
+            new DictType(extendedTypeNum(VendorId)).label(),
             curExt()));
     }
     return NumberSeq::newGetNum(reference).num();
@@ -18069,7 +18069,7 @@ private static VSIVendorId nextVendorId()
 - **Update**: Preserve the existing ID using `orig()`; ignore changes to the ID field.
 - Throw an error if no number sequence is mapped in the current company.
 
-## 25.4 Import/Export Flow
+## 35.4 Import/Export Flow
 
 1. Create a **Definition Group** in Data management workspace.
 2. Add the data entity to the group.
@@ -18086,7 +18086,7 @@ private static VSIVendorId nextVendorId()
 
 ## 31.1 List Page Pattern (`ListPage`)
 
-Used for `VSIAssetListPage`. Key elements:
+Used for `LEMEquipmentListPage`. Key elements:
 
 - **Action Pane** with button groups for New, Details, Assign, Return, Reassign, Print Tag.
 - **Custom Filter Group** with `CustomAndQuickFilters` pattern containing filter controls (TypeFilter, StatusFilter, LocationFilter, VendorFilter, CustodianFilter).
@@ -18099,7 +18099,7 @@ Filter controls typically call `executeQuery()` on `modified()`:
 public boolean modified()
 {
     boolean ret = super();
-    VSIAsset_ds.executeQuery();
+    LEMEquipment_ds.executeQuery();
     return ret;
 }
 ```
@@ -18110,11 +18110,11 @@ public boolean modified()
 public void init()
 {
     super();
-    qbdsCustodian = this.queryBuildDataSource().addDataSource(tableNum(VSIAssetAssignmentHistory));
+    qbdsCustodian = this.queryBuildDataSource().addDataSource(tableNum(LEMEquipmentCheckoutLog));
     qbdsCustodian.joinMode(JoinMode::ExistsJoin);
     qbdsCustodian.relations(false);
-    qbdsCustodian.addLink(fieldNum(VSIAsset, AssetId), fieldNum(VSIAssetAssignmentHistory, AssetId));
-    qbdsCustodian.addRange(fieldNum(VSIAssetAssignmentHistory, ReturnedDateTime))
+    qbdsCustodian.addLink(fieldNum(LEMEquipment, AssetId), fieldNum(LEMEquipmentCheckoutLog, AssetId));
+    qbdsCustodian.addRange(fieldNum(LEMEquipmentCheckoutLog, ReturnedDateTime))
         .value(SysQuery::value(utcDateTimeNull()));
     qbdsCustodian.enabled(false);
 }
@@ -18122,7 +18122,7 @@ public void init()
 
 ## 31.2 Simple List Details — Grid Pattern (`SimpleListDetails-Grid`)
 
-Used for `VSIAssetMaintenance`. Layout:
+Used for `LEMEquipmentMaintenance`. Layout:
 
 - **Navigation List Group** (`SidePanel` style) with a grid on the left.
 - **Vertical Splitter** (`SplitterVerticalContainer`).
@@ -18135,21 +18135,21 @@ Two patterns:
 
 | Pattern | Use | Example |
 |---|---|---|
-| `FormPartFactboxGrid` | List of related records | `VSIAssetAssignmentFactBox` (assignment history grid) |
-| `FormPartFactboxCard` | Key-value summary | `VSIAssetLicenseFactBox` (seat count, renewal date) |
+| `FormPartFactboxGrid` | List of related records | `LEMEquipmentAssignmentFactBox` (assignment history grid) |
+| `FormPartFactboxCard` | Key-value summary | `LEMEquipmentLicenseFactBox` (seat count, renewal date) |
 
 FactBoxes are referenced from list pages via `AxFormPartReference`:
 ```xml
 <AxFormPartReference>
     <Name>AssignmentPart</Name>
-    <DataSource>VSIAsset</DataSource>
-    <MenuItemName>VSIAssetAssignmentFactBox</MenuItemName>
+    <DataSource>LEMEquipment</DataSource>
+    <MenuItemName>LEMEquipmentAssignmentFactBox</MenuItemName>
 </AxFormPartReference>
 ```
 
 ## 31.4 Tree Form Pattern (`SimpleListDetails-Tree`)
 
-Used for `VSIFunctionalLocation`. Key mechanics:
+Used for `LEMLabLocation`. Key mechanics:
 
 - **Tree Control** (`FormTreeControl`) on the left navigation panel.
 - Recursive tree building in `buildTree()`:
@@ -18157,7 +18157,7 @@ Used for `VSIFunctionalLocation`. Key mechanics:
 ```xpp
 public void buildTree(RefRecId _selectRecId = 0)
 {
-    VSIFunctionalLocation loc;
+    LEMLabLocation loc;
     List rows = new List(Types::Container);
     Set knownIds = new Set(Types::String);
     Map childrenByParent = new Map(Types::String, Types::Class);
@@ -18180,10 +18180,10 @@ public void buildTree(RefRecId _selectRecId = 0)
 public void selectionChanged(FormTreeItem _oldItem, FormTreeItem _newItem, FormTreeSelect _how)
 {
     RefRecId targetRecId = _newItem.data();
-    VSIFunctionalLocation target;
+    LEMLabLocation target;
     select firstonly target where target.RecId == targetRecId;
-    VSIFunctionalLocation_ds.findRecord(target);
-    element.selectNode(VSIFunctionalLocation.RecId);
+    LEMLabLocation_ds.findRecord(target);
+    element.selectNode(LEMLabLocation.RecId);
 }
 ```
 
@@ -18197,7 +18197,7 @@ public void postRun()
     super();
     checkRequestsField.registerOverrideMethod(
         methodStr(FormCheckBoxControl, modified),
-        methodStr(VSIAssetIntegrityAuditBatchUIBuilder, checkRequestsModified),
+        methodStr(LEMEquipmentIntegrityAuditBatchUIBuilder, checkRequestsModified),
         this);
 }
 
@@ -18215,7 +18215,7 @@ Used for multi-select ranges on tag label reports:
 ```xpp
 MultiSelectionHelper selection = MultiSelectionHelper::construct();
 selection.parmDatasource(formDataSource);
-VSIAsset asset = selection.getFirst();
+LEMEquipment asset = selection.getFirst();
 while (asset)
 {
     rangeValue = rangeValue ? rangeValue + ',' + queryValue(asset.AssetId) : queryValue(asset.AssetId);
@@ -18225,7 +18225,7 @@ while (asset)
 
 ## 31.7 SysQueryRangeUtil — Advanced Query Ranges
 
-`SysQueryRangeUtil` provides static methods for building complex query ranges, commonly used in VSI reports and batch jobs for date filtering:
+`SysQueryRangeUtil` provides static methods for building complex query ranges, commonly used in LEM reports and batch jobs for date filtering:
 
 ### Common Date Range Methods
 
@@ -18238,41 +18238,41 @@ while (asset)
 | `greaterThanDate(_date)` | `SysQueryRangeUtil::greaterThanDate(systemDateGet())` | `>11/11/2026` |
 | `lessThanDate(_date)` | `SysQueryRangeUtil::lessThanDate(systemDateGet())` | `<11/11/2026` |
 
-### VSI Report Usage Pattern
+### LEM Report Usage Pattern
 
 ```xpp
-public class VSIAssetIntegrityAuditReportDP extends SrsReportDataProviderPreProcessTmp
+public class LEMEquipmentIntegrityAuditReportDP extends SrsReportDataProviderPreProcessTmp
 {
-    VSIAssetIntegrityAuditTmp tmp;
+    LEMEquipmentIntegrityAuditTmp tmp;
 
     public void processReport()
     {
-        VSIAssetIntegrityAuditContract contract = this.parmDataContract();
+        LEMEquipmentIntegrityAuditContract contract = this.parmDataContract();
         QueryBuildRange qbr;
 
         // Date range filter on assignment date
-        qbr = this.query().dataSourceTable(tableNum(VSIAssetAssignmentHistory))
-            .addRange(fieldNum(VSIAssetAssignmentHistory, AssignedDateTime));
+        qbr = this.query().dataSourceTable(tableNum(LEMEquipmentCheckoutLog))
+            .addRange(fieldNum(LEMEquipmentCheckoutLog, AssignedDateTime));
         qbr.value(SysQueryRangeUtil::dateRange(
             contract.parmFromDate(), 
             contract.parmToDate()));
 
         // Status filter using enum range
-        qbr = this.query().dataSourceTable(tableNum(VSIAsset))
-            .addRange(fieldNum(VSIAsset, Status));
+        qbr = this.query().dataSourceTable(tableNum(LEMEquipment))
+            .addRange(fieldNum(LEMEquipment, Status));
         qbr.value(SysQueryRangeUtil::enumRange(
-            VSIAssetStatus::Assigned, 
-            VSIAssetStatus::Maintenance));
+            LEMEquipmentStatus::Assigned, 
+            LEMEquipmentStatus::Maintenance));
 
         // Multi-value range for asset types
-        qbr = this.query().dataSourceTable(tableNum(VSIAsset))
-            .addRange(fieldNum(VSIAsset, AssetTypeId));
+        qbr = this.query().dataSourceTable(tableNum(LEMEquipment))
+            .addRange(fieldNum(LEMEquipment, AssetTypeId));
         qbr.value(SysQueryRangeUtil::inList([
             'Laptop', 'Monitor', 'Mobile', 'DockingStation']));
 
         // Complex: date range with time component
-        qbr = this.query().dataSourceTable(tableNum(VSIAssetStatusHistory))
-            .addRange(fieldNum(VSIAssetStatusHistory, ChangedDateTime));
+        qbr = this.query().dataSourceTable(tableNum(LEMEquipmentStatusHistory))
+            .addRange(fieldNum(LEMEquipmentStatusHistory, ChangedDateTime));
         qbr.value(strFmt('%1..%2',
             DateTimeUtil::toStr(contract.parmFromDateTime()),
             DateTimeUtil::toStr(contract.parmToDateTime())));
@@ -18393,11 +18393,11 @@ public void processReport()
 ---
 
 
-# Chapter 32: VSI Patterns
+# Chapter 32: LEM Patterns
 
 ## 32.1 Action Center Notifications
 
-`VSIAssetNotificationHelper` sends notifications to asset administrators via `SystemNotificationsManager`:
+`LEMEquipmentNotificationHelper` sends notifications to asset administrators via `SystemNotificationsManager`:
 
 ```xpp
 public static boolean notifyUsers(List _userIds, str _title, str _message)
@@ -18413,10 +18413,10 @@ public static boolean notifyUsers(List _userIds, str _title, str _message)
     }
 
     notification.Title(_title);
-    notification.Message(VSIAssetNotificationHelper::truncate(_message));
-    notification.RuleId(VSIAssetNotificationHelper::RuleId);
+    notification.Message(LEMEquipmentNotificationHelper::truncate(_message));
+    notification.RuleId(LEMEquipmentNotificationHelper::RuleId);
     notification.ExpirationDateTime(
-        DateTimeUtil::addHours(DateTimeUtil::utcNow(), VSIBatchConstants::NotificationExpiryHours));
+        DateTimeUtil::addHours(DateTimeUtil::utcNow(), LMEBatchConstants::NotificationExpiryHours));
 
     SystemNotificationsManager::AddSystemNotification(notification);
     return true;
@@ -18428,11 +18428,11 @@ public static boolean notifyUsers(List _userIds, str _title, str _message)
 ```xpp
 private static str truncate(str _message)
 {
-    if (strLen(_message) <= VSIBatchConstants::MaxNotificationLength)
+    if (strLen(_message) <= LMEBatchConstants::MaxNotificationLength)
     {
         return _message;
     }
-    return subStr(_message, 1, VSIBatchConstants::MaxNotificationLength - 3) + '...';
+    return subStr(_message, 1, LMEBatchConstants::MaxNotificationLength - 3) + '...';
 }
 ```
 
@@ -18442,13 +18442,13 @@ private static str truncate(str _message)
 public static List assetAdministratorUserIds()
 {
     List userIds = new List(Types::String);
-    VSIWorker worker;
+    LEMLabPersonnel worker;
     UserInfo userInfo;
 
     while select PlatformUserId from worker
         order by worker.PlatformUserId
-        where worker.IsAssetAdmin == NoYes::Yes
-           && worker.EmploymentStatus == VSIEmploymentStatus::Active
+        where worker.IsLabManager == NoYes::Yes
+           && worker.EmploymentStatus == EmploymentStatus::Active
            && worker.PlatformUserId != ''
         exists join userInfo
             where userInfo.id == worker.PlatformUserId
@@ -18462,18 +18462,18 @@ public static List assetAdministratorUserIds()
 
 ## 32.2 IDisposable Status Change Context
 
-`VSIAssetStatusChangeContext` and `VSIDocumentStatusChangeContext` enforce that status changes only occur within an authorized scope:
+`LEMEquipmentStatusChangeContext` and `LEMDocumentStatusChangeContext` enforce that status changes only occur within an authorized scope:
 
 ```xpp
-public final class VSIAssetStatusChangeContext implements System.IDisposable
+public final class LEMEquipmentStatusChangeContext implements System.IDisposable
 {
-    private static VSIAssetStatusChangeContext instance;
+    private static LEMEquipmentStatusChangeContext instance;
 
     public void new()
     {
         if (instance)
         {
-            throw error("@VSIAssetManagmentLabelFile:StatusContextNested");
+            throw error("@LEMEquipmentLabelFile:StatusContextNested");
         }
         instance = this;
     }
@@ -18495,33 +18495,33 @@ public final class VSIAssetStatusChangeContext implements System.IDisposable
 ```xpp
 public void update()
 {
-    if (this.Status != this.orig().Status && !VSIAssetStatusChangeContext::isActive())
+    if (this.Status != this.orig().Status && !LEMEquipmentStatusChangeContext::isActive())
     {
-        throw error("@VSIAssetManagmentLabelFile:DocumentStatusChangeNotAllowed");
+        throw error("@LEMEquipmentLabelFile:DocumentStatusChangeNotAllowed");
     }
     super();
 }
 ```
 
-### Usage in `VSIAssetStatusHelper::changeStatus`
+### Usage in `LEMEquipmentStatusHelper::changeStatus`
 
 ```xpp
-using (VSIAssetStatusChangeContext context = new VSIAssetStatusChangeContext())
+using (LEMEquipmentStatusChangeContext context = new LEMEquipmentStatusChangeContext())
 {
     asset.Status = _newStatus;
     asset.update();
 }
-VSIAssetStatusHistory::log(...);
+LEMEquipmentStatusHistory::log(...);
 ```
 
 This pattern ensures status transitions are auditable and cannot be bypassed by direct table updates.
 
-## 32.3 VSIAssetStatusHelper — Complete Implementation
+## 32.3 LEMEquipmentStatusHelper — Complete Implementation
 
-The `VSIAssetStatusHelper` class encapsulates the full status change workflow including multi-field updates, history logging, and cross-company support:
+The `LEMEquipmentStatusHelper` class encapsulates the full status change workflow including multi-field updates, history logging, and cross-company support:
 
 ```xpp
-public final class VSIAssetStatusHelper
+public final class LEMEquipmentStatusHelper
 {
     /// <summary>
     /// Changes the asset status with full audit trail and validation.
@@ -18531,14 +18531,14 @@ public final class VSIAssetStatusHelper
     /// <param name="_workerId">Optional worker ID for assignment context</param>
     /// <param name="_companyId">Optional company for cross-company operations</param>
     public static void changeStatus(
-        VSIAsset _asset,
-        VSIAssetStatus _newStatus,
-        VSIWorkerId _workerId = '',
+        LEMEquipment _asset,
+        LEMEquipmentStatus _newStatus,
+        PersonnelId _workerId = '',
         str _companyId = '')
     {
         if (!_asset)
         {
-            throw error("@VSIAssetManagmentLabelFile:AssetNotFound");
+            throw error("@LEMEquipmentLabelFile:AssetNotFound");
         }
 
         if (_asset.Status == _newStatus)
@@ -18547,16 +18547,16 @@ public final class VSIAssetStatusHelper
         }
 
         // Validate status transition
-        VSIAssetStatusHelper::validateTransition(_asset.Status, _newStatus);
+        LEMEquipmentStatusHelper::validateTransition(_asset.Status, _newStatus);
 
         str company = _companyId ? _companyId : _asset.dataAreaId;
 
         changecompany(company)
         {
-            using (VSIAssetStatusChangeContext context = new VSIAssetStatusChangeContext())
+            using (LEMEquipmentStatusChangeContext context = new LEMEquipmentStatusChangeContext())
             {
                 // Capture previous status for history
-                VSIAssetStatus oldStatus = _asset.Status;
+                LEMEquipmentStatus oldStatus = _asset.Status;
 
                 // Update asset status and related fields
                 _asset.Status = _newStatus;
@@ -18564,15 +18564,15 @@ public final class VSIAssetStatusHelper
                 // Update assignment-related fields based on status
                 switch (_newStatus)
                 {
-                    case VSIAssetStatus::Assigned:
+                    case LEMEquipmentStatus::Assigned:
                         _asset.AssignedWorkerId = _workerId;
                         _asset.AssignedDateTime = DateTimeUtil::utcNow();
                         break;
-                    case VSIAssetStatus::Returned:
+                    case LEMEquipmentStatus::Returned:
                         _asset.AssignedWorkerId = '';
                         _asset.ReturnedDateTime = DateTimeUtil::utcNow();
                         break;
-                    case VSIAssetStatus::Retired:
+                    case LEMEquipmentStatus::Retired:
                         _asset.RetiredDateTime = DateTimeUtil::utcNow();
                         break;
                 }
@@ -18580,57 +18580,57 @@ public final class VSIAssetStatusHelper
                 _asset.update();
 
                 // Log status history with full context
-                VSIAssetStatusHistory::log(
+                LEMEquipmentStatusHistory::log(
                     _asset.RecId,
                     oldStatus,
                     _newStatus,
                     _workerId,
-                    VSIAssetStatusHistoryReason::ManualChange);
+                    LEMEquipmentStatusHistoryReason::ManualChange);
             }
         }
 
         // Send notification if configured
-        if (VSIAssetParameters::find().NotifyOnStatusChange)
+        if (LEMEquipmentParameters::find().NotifyOnStatusChange)
         {
-            VSIAssetNotificationHelper::notifyStatusChange(_asset, oldStatus, _newStatus);
+            LEMEquipmentNotificationHelper::notifyStatusChange(_asset, oldStatus, _newStatus);
         }
     }
 
     /// <summary>
     /// Validates that a status transition is allowed.
     /// </summary>
-    private static void validateTransition(VSIAssetStatus _from, VSIAssetStatus _to)
+    private static void validateTransition(LEMEquipmentStatus _from, LEMEquipmentStatus _to)
     {
         // Define valid transitions using a transition matrix
         Map validTransitions = new Map(Types::Integer, Types::Container);
-        validTransitions.insert(VSIAssetStatus::Available, [VSIAssetStatus::Assigned, VSIAssetStatus::Maintenance, VSIAssetStatus::Retired]);
-        validTransitions.insert(VSIAssetStatus::Assigned, [VSIAssetStatus::Available, VSIAssetStatus::Returned, VSIAssetStatus::Maintenance]);
-        validTransitions.insert(VSIAssetStatus::Maintenance, [VSIAssetStatus::Available, VSIAssetStatus::Retired]);
-        validTransitions.insert(VSIAssetStatus::Returned, [VSIAssetStatus::Available, VSIAssetStatus::Assigned]);
-        validTransitions.insert(VSIAssetStatus::Retired, []); // Terminal state
+        validTransitions.insert(LEMEquipmentStatus::Available, [LEMEquipmentStatus::Assigned, LEMEquipmentStatus::Maintenance, LEMEquipmentStatus::Retired]);
+        validTransitions.insert(LEMEquipmentStatus::Assigned, [LEMEquipmentStatus::Available, LEMEquipmentStatus::Returned, LEMEquipmentStatus::Maintenance]);
+        validTransitions.insert(LEMEquipmentStatus::Maintenance, [LEMEquipmentStatus::Available, LEMEquipmentStatus::Retired]);
+        validTransitions.insert(LEMEquipmentStatus::Returned, [LEMEquipmentStatus::Available, LEMEquipmentStatus::Assigned]);
+        validTransitions.insert(LEMEquipmentStatus::Retired, []); // Terminal state
 
         container allowed = validTransitions.lookup(_from);
         if (!conFind(allowed, _to))
         {
             throw error(strFmt(
-                "@VSIAssetManagmentLabelFile:InvalidStatusTransition",
+                "@LEMEquipmentLabelFile:InvalidStatusTransition",
                 enum2str(_from), enum2str(_to)));
         }
     }
 }
 ```
 
-### VSIAssetStatusHistory — Audit Trail Logging
+### LEMEquipmentStatusHistory — Audit Trail Logging
 
 ```xpp
 public static void log(
     RecId _assetRecId,
-    VSIAssetStatus _fromStatus,
-    VSIAssetStatus _toStatus,
-    VSIWorkerId _workerId = '',
-    VSIAssetStatusHistoryReason _reason = VSIAssetStatusHistoryReason::ManualChange)
+    LEMEquipmentStatus _fromStatus,
+    LEMEquipmentStatus _toStatus,
+    PersonnelId _workerId = '',
+    LEMEquipmentStatusHistoryReason _reason = LEMEquipmentStatusHistoryReason::ManualChange)
 {
-    VSIAssetStatusHistory history;
+    LEMEquipmentStatusHistory history;
     
     history.clear();
     history.AssetRecId = _assetRecId;
@@ -18648,7 +18648,7 @@ public static void log(
 
 ---
 
-## 32.4 VSIAssetNotificationHelper — Complete Pattern
+## 32.4 LEMEquipmentNotificationHelper — Complete Pattern
 
 The notification helper demonstrates production-ready patterns for the Action Center:
 
@@ -18682,18 +18682,18 @@ public static boolean notifyUsers(
         notification.Users().value(userIndex, enumerator.current());
     }
 
-    notification.Title(VSIAssetNotificationHelper::truncate(_title));
-    notification.Message(VSIAssetNotificationHelper::truncate(_message));
-    notification.RuleId(VSIAssetNotificationHelper::RuleId);
+    notification.Title(LEMEquipmentNotificationHelper::truncate(_title));
+    notification.Message(LEMEquipmentNotificationHelper::truncate(_message));
+    notification.RuleId(LEMEquipmentNotificationHelper::RuleId);
     notification.ExpirationDateTime(
         DateTimeUtil::addHours(
             DateTimeUtil::utcNow(), 
-            VSIBatchConstants::NotificationExpiryHours));
+            LMEBatchConstants::NotificationExpiryHours));
 
     // Optional: Link notification to a specific record
     if (_referenceRecId && _referenceTableId)
     {
-        notification.MenuItemName(menuItemDisplayStr(VSIAssetDetails));
+        notification.MenuItemName(menuItemDisplayStr(LEMEquipmentDetails));
         notification.MenuItemParameters(strFmt("%1:%2", _referenceTableId, _referenceRecId));
     }
 
@@ -18706,11 +18706,11 @@ public static boolean notifyUsers(
 
 ```xpp
 public static void notifyStatusChange(
-    VSIAsset _asset,
-    VSIAssetStatus _fromStatus,
-    VSIAssetStatus _toStatus)
+    LEMEquipment _asset,
+    LEMEquipmentStatus _fromStatus,
+    LEMEquipmentStatus _toStatus)
 {
-    List adminIds = VSIAssetNotificationHelper::assetAdministratorUserIds();
+    List adminIds = LEMEquipmentNotificationHelper::assetAdministratorUserIds();
     
     if (adminIds.elements() == 0)
     {
@@ -18718,22 +18718,22 @@ public static void notifyStatusChange(
     }
 
     str title = strFmt(
-        "@VSIAssetManagmentLabelFile:AssetStatusChangeTitle",
+        "@LEMEquipmentLabelFile:AssetStatusChangeTitle",
         _asset.AssetId);
 
     str message = strFmt(
-        "@VSIAssetManagmentLabelFile:AssetStatusChangeMessage",
+        "@LEMEquipmentLabelFile:AssetStatusChangeMessage",
         _asset.AssetId,
         enum2str(_fromStatus),
         enum2str(_toStatus),
         _asset.AssignedWorkerId);
 
-    VSIAssetNotificationHelper::notifyUsers(
+    LEMEquipmentNotificationHelper::notifyUsers(
         adminIds,
         title,
         message,
         _asset.RecId,
-        tableNum(VSIAsset));
+        tableNum(LEMEquipment));
 }
 ```
 
@@ -18745,13 +18745,13 @@ The pattern for finding enabled administrators using an `exists join` with `User
 public static List assetAdministratorUserIds()
 {
     List userIds = new List(Types::String);
-    VSIWorker worker;
+    LEMLabPersonnel worker;
     UserInfo userInfo;
 
     while select PlatformUserId from worker
         order by worker.PlatformUserId
-        where worker.IsAssetAdmin == NoYes::Yes
-           && worker.EmploymentStatus == VSIEmploymentStatus::Active
+        where worker.IsLabManager == NoYes::Yes
+           && worker.EmploymentStatus == EmploymentStatus::Active
            && worker.PlatformUserId != ''
         exists join userInfo
             where userInfo.id == worker.PlatformUserId
@@ -18774,11 +18774,11 @@ public static List assetAdministratorUserIds()
 ```xpp
 private static str truncate(str _message)
 {
-    if (strLen(_message) <= VSIBatchConstants::MaxNotificationLength)
+    if (strLen(_message) <= LMEBatchConstants::MaxNotificationLength)
     {
         return _message;
     }
-    return subStr(_message, 1, VSIBatchConstants::MaxNotificationLength - 3) + '...';
+    return subStr(_message, 1, LMEBatchConstants::MaxNotificationLength - 3) + '...';
 }
 ```
 
@@ -18794,7 +18794,7 @@ public static void notifyAdminsCrossCompany(
     str _message,
     container _companyIds = conNull())
 {
-    container companies = _companyIds ? _companyIds : VSIAssetNotificationHelper::getAllCompanies();
+    container companies = _companyIds ? _companyIds : LEMEquipmentNotificationHelper::getAllCompanies();
     
     List allAdminIds = new List(Types::String);
     
@@ -18804,7 +18804,7 @@ public static void notifyAdminsCrossCompany(
         
         changecompany(company)
         {
-            List adminIds = VSIAssetNotificationHelper::assetAdministratorUserIds();
+            List adminIds = LEMEquipmentNotificationHelper::assetAdministratorUserIds();
             ListEnumerator enum = adminIds.getEnumerator();
             while (enum.moveNext())
             {
@@ -18820,7 +18820,7 @@ public static void notifyAdminsCrossCompany(
     
     if (allAdminIds.elements() > 0)
     {
-        VSIAssetNotificationHelper::notifyUsers(allAdminIds, _title, _message);
+        LEMEquipmentNotificationHelper::notifyUsers(allAdminIds, _title, _message);
     }
 }
 
@@ -18840,25 +18840,25 @@ private static container getAllCompanies()
 
 ## 32.6 Activity — Extend Status Change Context
 
-**Objective:** Create a `VSIDocumentStatusChangeContext` that mirrors `VSIAssetStatusChangeContext` but works for any document type (requests, retirements, maintenance).
+**Objective:** Create a `LEMDocumentStatusChangeContext` that mirrors `LEMEquipmentStatusChangeContext` but works for any document type (requests, retirements, maintenance).
 
 **Requirements:**
 1. Generic singleton context class implementing `System.IDisposable`
 2. Accept a table ID and record ID in constructor for context tracking
 3. Provide `isActive()` and `getContextTableId()` / `getContextRecId()` methods
-4. Integrate with `VSIAssetRequest::update()` to guard status changes
+4. Integrate with `LEMEquipmentReservation::update()` to guard status changes
 
 **Hints:**
 - Use a static `Map` keyed by table ID to support nested contexts for different tables
 - Throw error if nested context detected for same table
-- Call `VSIAssetRequest::changeStatusByRecId()` from workflow event handlers
+- Call `LEMEquipmentReservation::changeStatusByRecId()` from workflow event handlers
 
 **Ideal Solution:**
 
 ```xpp
-public final class VSIDocumentStatusChangeContext implements System.IDisposable
+public final class LEMDocumentStatusChangeContext implements System.IDisposable
 {
-    private static Map activeContexts; // Map<TableId, VSIDocumentStatusChangeContext>
+    private static Map activeContexts; // Map<TableId, LEMDocumentStatusChangeContext>
     private TableId contextTableId;
     private RecId contextRecId;
 
@@ -18871,7 +18871,7 @@ public final class VSIDocumentStatusChangeContext implements System.IDisposable
     {
         if (activeContexts.lookup(_tableId))
         {
-            throw error("@VSIAssetManagmentLabelFile:StatusContextNested");
+            throw error("@LEMEquipmentLabelFile:StatusContextNested");
         }
         
         contextTableId = _tableId;
@@ -18879,9 +18879,9 @@ public final class VSIDocumentStatusChangeContext implements System.IDisposable
         activeContexts.insert(_tableId, this);
     }
 
-    public static VSIDocumentStatusChangeContext create(TableId _tableId, RecId _recId)
+    public static LEMDocumentStatusChangeContext create(TableId _tableId, RecId _recId)
     {
-        return new VSIDocumentStatusChangeContext(_tableId, _recId);
+        return new LEMDocumentStatusChangeContext(_tableId, _recId);
     }
 
     public void dispose()
@@ -18925,35 +18925,35 @@ public final class VSIDocumentStatusChangeContext implements System.IDisposable
 
 ## 33.1 SysOperation Batch Pattern
 
-VSI Asset Management uses `SysOperationServiceController` / `SysOperationServiceBase` for all batch operations:
+LEM Equipment Management uses `SysOperationServiceController` / `SysOperationServiceBase` for all batch operations:
 
 | Class | Purpose |
 |---|---|
-| `VSIAssetIntegrityAuditBatchController` | Controller for integrity audit |
-| `VSIAssetIntegrityAuditBatchService` | Service with `process()` and `processTask()` |
-| `VSIAssetIntegrityAuditBatchContract` | Data contract with `SysOperationValidatable` |
-| `VSIAssetIntegrityAuditBatchUIBuilder` | Dialog field overrides |
-| `VSIAssetIntegrityAuditBatchTaskContract` | Runtime task contract |
-| `VSIAssetIntegrityAuditBatchTaskController` | Task controller (`parmShowDialog(false)`) |
+| `LEMEquipmentIntegrityAuditBatchController` | Controller for integrity audit |
+| `LEMEquipmentIntegrityAuditBatchService` | Service with `process()` and `processTask()` |
+| `LEMEquipmentIntegrityAuditBatchContract` | Data contract with `SysOperationValidatable` |
+| `LEMEquipmentIntegrityAuditBatchUIBuilder` | Dialog field overrides |
+| `LEMEquipmentIntegrityAuditBatchTaskContract` | Runtime task contract |
+| `LEMEquipmentIntegrityAuditBatchTaskController` | Task controller (`parmShowDialog(false)`) |
 
 ### Controller Pattern
 
 ```xpp
-public static VSIAssetIntegrityAuditBatchController construct(
+public static LEMEquipmentIntegrityAuditBatchController construct(
     SysOperationExecutionMode _executionMode = SysOperationExecutionMode::Synchronous)
 {
-    VSIAssetIntegrityAuditBatchController controller =
-        new VSIAssetIntegrityAuditBatchController(
-            classStr(VSIAssetIntegrityAuditBatchService),
-            methodStr(VSIAssetIntegrityAuditBatchService, process),
+    LEMEquipmentIntegrityAuditBatchController controller =
+        new LEMEquipmentIntegrityAuditBatchController(
+            classStr(LEMEquipmentIntegrityAuditBatchService),
+            methodStr(LEMEquipmentIntegrityAuditBatchService, process),
             _executionMode);
-    controller.parmDialogCaption("@VSIAssetManagmentLabelFile:VSIAssetIntegrityAuditBatchCaption");
+    controller.parmDialogCaption("@LEMEquipmentLabelFile:LEMEquipmentIntegrityAuditBatchCaption");
     return controller;
 }
 
 public static void main(Args _args)
 {
-    VSIAssetIntegrityAuditBatchController controller = VSIAssetIntegrityAuditBatchController::construct();
+    LEMEquipmentIntegrityAuditBatchController controller = LEMEquipmentIntegrityAuditBatchController::construct();
     controller.parmArgs(_args);
     controller.startOperation();
 }
@@ -18979,12 +18979,12 @@ batchHeader.save();
 ### Task Controller (No Dialog)
 
 ```xpp
-public static VSIAssetIntegrityAuditBatchTaskController construct()
+public static LEMEquipmentIntegrityAuditBatchTaskController construct()
 {
-    VSIAssetIntegrityAuditBatchTaskController controller =
-        new VSIAssetIntegrityAuditBatchTaskController(
-            classStr(VSIAssetIntegrityAuditBatchService),
-            methodStr(VSIAssetIntegrityAuditBatchService, processTask),
+    LEMEquipmentIntegrityAuditBatchTaskController controller =
+        new LEMEquipmentIntegrityAuditBatchTaskController(
+            classStr(LEMEquipmentIntegrityAuditBatchService),
+            methodStr(LEMEquipmentIntegrityAuditBatchService, processTask),
             SysOperationExecutionMode::Synchronous);
     controller.parmShowDialog(false);
     return controller;
@@ -18993,7 +18993,7 @@ public static VSIAssetIntegrityAuditBatchTaskController construct()
 
 ## 33.3 Deadlock & Concurrency Retry
 
-`VSIAssetServiceHelper::execute` wraps service calls in retry logic:
+`LEMEquipmentServiceHelper::execute` wraps service calls in retry logic:
 
 ```xpp
 ttsBegin;
@@ -19019,7 +19019,7 @@ catch (Exception::Deadlock)
 
 ## 33.4 Cross-Company Queries
 
-`VSIAssetInquiryService.processWorkerAssets` queries across all companies:
+`LEMEquipmentInquiryService.processWorkerAssets` queries across all companies:
 
 ```xpp
 container companies = this.companies(_request.parmAllCompanies());
@@ -19050,7 +19050,7 @@ private container companies(boolean _allCompanies)
 
 ## 33.5 Batch Constants
 
-`VSIBatchConstants` holds shared limits:
+`LMEBatchConstants` holds shared limits:
 
 | Constant | Value | Purpose |
 |---|---|---|
@@ -19062,21 +19062,21 @@ private container companies(boolean _allCompanies)
 | `MaxNotificationLength` | 1000 | Max notification message length |
 | `MaxDigestLines` | 20 | Max lines in notification digest |
 
-## 33.6 VSIWorker Query Pattern — PlatformUserId Join
+## 33.6 LEMLabPersonnel Query Pattern — PlatformUserId Join
 
-A common VSI pattern queries active workers with enabled PlatformUserId for notifications, assignments, and cross-company lookups:
+A common LEM pattern queries active workers with enabled PlatformUserId for notifications, assignments, and cross-company lookups:
 
 ```xpp
 public static List getActiveAssetAdmins()
 {
     List userIds = new List(Types::String);
-    VSIWorker worker;
+    LEMLabPersonnel worker;
     UserInfo userInfo;
 
     while select PlatformUserId from worker
         order by worker.PlatformUserId
-        where worker.IsAssetAdmin == NoYes::Yes
-           && worker.EmploymentStatus == VSIEmploymentStatus::Active
+        where worker.IsLabManager == NoYes::Yes
+           && worker.EmploymentStatus == EmploymentStatus::Active
            && worker.PlatformUserId != ''
         exists join userInfo
             where userInfo.id == worker.PlatformUserId
@@ -19092,7 +19092,7 @@ public static List getActiveAssetAdmins()
 
 | Element | Purpose |
 |---|---|
-| `PlatformUserId` | Links `VSIWorker` to Azure AD user (`UserInfo.id`) |
+| `PlatformUserId` | Links `LEMLabPersonnel` to Azure AD user (`UserInfo.id`) |
 | `exists join` | Efficient existence check; doesn't return `UserInfo` fields |
 | `UserInfo.enable == 1` | Filters to only active/enabled AD users |
 | `EmploymentStatus == Active` | Business logic filter on worker record |
@@ -19103,16 +19103,16 @@ public static List getActiveAssetAdmins()
 For batch processes querying worker assignments across companies:
 
 ```xpp
-public static container getWorkerAssetsCrossCompany(VSIWorkerId _workerId)
+public static container getWorkerAssetsCrossCompany(PersonnelId _workerId)
 {
-    container companies = VSIAssetInquiryService::getAllCompanies();
+    container companies = LEMEquipmentInquiryService::getAllCompanies();
     container result;
 
     while select crossCompany : companies RecId, AssetId, DataAreaId
         from assignment
         join AssetId, AssetName from asset
             where asset.RecId == assignment.AssetRecId
-                && asset.Status == VSIAssetStatus::Assigned
+                && asset.Status == LEMEquipmentStatus::Assigned
         where assignment.WorkerId == _workerId
            && assignment.ReturnedDateTime == utcDateTimeNull()
     {
@@ -19160,7 +19160,7 @@ private static container getAllCompanies()
 
 ## 34.1 Label Files
 
-Labels are stored in `VSIAssetManagmentLabelFile.en-US.label.txt` and referenced via `@VSIAssetManagmentLabelFile:LabelId` syntax in X++ and XML metadata.
+Labels are stored in `LEMEquipmentLabelFile.en-US.label.txt` and referenced via `@LEMEquipmentLabelFile:LabelId` syntax in X++ and XML metadata.
 
 ### Label File Format
 
@@ -19171,11 +19171,11 @@ ActionNotAllowed=Asset %1 can't be used for this action while its status is %2.
 
 ### Label File Metadata
 
-`VSIAssetManagmentLabelFile_en-US.xml` maps the label file ID to the `.label.txt` resource file.
+`LEMEquipmentLabelFile_en-US.xml` maps the label file ID to the `.label.txt` resource file.
 
 ## 34.2 AppChecker / Best Practices
 
-The project file (`VSIAssetManagement.rnrproj`) controls build behavior:
+The project file (`LEMEquipmentManagement.rnrproj`) controls build behavior:
 
 | Property | Value | Purpose |
 |---|---|---|
@@ -19198,22 +19198,22 @@ Configuration keys gate feature visibility. The handbook mentions them in the ha
 
 ## 35.1 Service Pattern Overview
 
-VSI Asset Management exposes two custom services:
+LEM Equipment Management exposes two custom services:
 
 | Service | Operations |
 |---|---|
-| `VSIAssetAssignmentService` | `assignAsset` |
-| `VSIAssetInquiryService` | `getAssetDetails`, `getWorkerAssets` |
+| `LEMEquipmentAssignmentService` | `assignAsset` |
+| `LEMEquipmentInquiryService` | `getAssetDetails`, `getWorkerAssets` |
 
 ### Service Interface
 
 ```xpp
-public interface VSIAssetServiceProcessor
+public interface LEMEquipmentServiceProcessor
 {
     public void process(
         str _operation,
-        VSIAssetServiceRequest _request,
-        VSIAssetServiceResponse _response);
+        LEMEquipmentServiceRequest _request,
+        LEMEquipmentServiceResponse _response);
 }
 ```
 
@@ -19221,16 +19221,16 @@ public interface VSIAssetServiceProcessor
 
 ```xpp
 [DataContractAttribute]
-public final class VSIAssetAssignRequestContract implements VSIAssetServiceRequest
+public final class LEMEquipmentAssignRequestContract implements LEMEquipmentServiceRequest
 {
     [DataMemberAttribute('AssetId')]
-    public VSIAssetId parmAssetId(VSIAssetId _assetId = assetId) { ... }
+    public EquipmentId parmAssetId(EquipmentId _assetId = assetId) { ... }
     
     public str companyId() { return dataAreaId; }
 }
 
 [DataContractAttribute]
-public final class VSIAssetAssignmentResponseContract implements VSIAssetServiceResponse
+public final class LEMEquipmentAssignmentResponseContract implements LEMEquipmentServiceResponse
 {
     [DataMemberAttribute('Success')]
     public boolean parmSuccess(boolean _success = success) { ... }
@@ -19243,14 +19243,14 @@ public final class VSIAssetAssignmentResponseContract implements VSIAssetService
 
 ## 35.2 Shared Service Executor — Complete Implementation
 
-`VSIAssetServiceHelper::execute` provides the common entry point with full retry logic, infolog capture, and cross-company support:
+`LEMEquipmentServiceHelper::execute` provides the common entry point with full retry logic, infolog capture, and cross-company support:
 
 ```xpp
 public static void execute(
-    VSIAssetServiceProcessor _processor,
+    LEMEquipmentServiceProcessor _processor,
     str _operation,
-    VSIAssetServiceRequest _request,
-    VSIAssetServiceResponse _response)
+    LEMEquipmentServiceRequest _request,
+    LEMEquipmentServiceResponse _response)
 {
     int infologStart = infologLine();
     str company;
@@ -19261,13 +19261,13 @@ public static void execute(
     {
         if (!_request)
         {
-            throw error("@VSIAssetManagmentLabelFile:ServiceRequestMissing");
+            throw error("@LEMEquipmentLabelFile:ServiceRequestMissing");
         }
 
-        company = VSIAssetServiceHelper::resolveCompany(_request.companyId());
+        company = LEMEquipmentServiceHelper::resolveCompany(_request.companyId());
         _response.setCompany(company);
 
-        while (!success && retryCount <= VSIBatchConstants::MaxRetries)
+        while (!success && retryCount <= LMEBatchConstants::MaxRetries)
         {
             try
             {
@@ -19281,7 +19281,7 @@ public static void execute(
             }
             catch (Exception::Deadlock)
             {
-                if (appl.ttsLevel() == 0 && xSession::currentRetryCount() < VSIBatchConstants::MaxRetries)
+                if (appl.ttsLevel() == 0 && xSession::currentRetryCount() < LMEBatchConstants::MaxRetries)
                 {
                     retryCount++;
                     continue; // Retry the transaction
@@ -19290,7 +19290,7 @@ public static void execute(
             }
             catch (Exception::UpdateConflict)
             {
-                if (appl.ttsLevel() == 0 && xSession::currentRetryCount() < VSIBatchConstants::MaxRetries)
+                if (appl.ttsLevel() == 0 && xSession::currentRetryCount() < LMEBatchConstants::MaxRetries)
                 {
                     retryCount++;
                     continue; // Retry the transaction
@@ -19302,18 +19302,18 @@ public static void execute(
     catch (Exception::Error)
     {
         // Capture infolog messages for the response
-        str errorMessage = VSIAssetServiceHelper::getInfologText(infologStart);
-        _response.markFailure(VSIAssetServiceHelper::stringToList(errorMessage));
+        str errorMessage = LEMEquipmentServiceHelper::getInfologText(infologStart);
+        _response.markFailure(LEMEquipmentServiceHelper::stringToList(errorMessage));
     }
     catch
     {
         // Catch any other exception
-        str errorMessage = VSIAssetServiceHelper::getInfologText(infologStart);
+        str errorMessage = LEMEquipmentServiceHelper::getInfologText(infologStart);
         if (strLen(errorMessage) == 0)
         {
-            errorMessage = "@VSIAssetManagmentLabelFile:ServiceUnexpectedError";
+            errorMessage = "@LEMEquipmentLabelFile:ServiceUnexpectedError";
         }
-        _response.markFailure(VSIAssetServiceHelper::stringToList(errorMessage));
+        _response.markFailure(LEMEquipmentServiceHelper::stringToList(errorMessage));
     }
 }
 
@@ -19329,7 +19329,7 @@ private static str resolveCompany(str _requestedCompany)
     select firstOnly Id from dataArea where dataArea.Id == company;
     if (!dataArea)
     {
-        throw error(strFmt("@VSIAssetManagmentLabelFile:InvalidCompany", company));
+        throw error(strFmt("@LEMEquipmentLabelFile:InvalidCompany", company));
     }
     
     return company;
@@ -19383,14 +19383,14 @@ private static List stringToList(str _text)
 
 ---
 
-## 35.3 JSON Serialization with CLR Interop — Complete VSIAssetServiceCatalog
+## 35.3 JSON Serialization with CLR Interop — Complete LEMEquipmentServiceCatalog
 
-`VSIAssetServiceCatalog` provides a comprehensive test harness for service development and debugging:
+`LEMEquipmentServiceCatalog` provides a comprehensive test harness for service development and debugging:
 
 ### Full Test Harness Implementation
 
 ```xpp
-public final class VSIAssetServiceCatalog
+public final class LEMEquipmentServiceCatalog
 {
     public static str RequestParameterName = 'request';
     public static str ResponseParameterName = 'response';
@@ -19400,50 +19400,50 @@ public final class VSIAssetServiceCatalog
     /// </summary>
     public static str runTest(str _operationName, str _inboundJson)
     {
-        VSIAssetServiceProcessor processor;
-        VSIAssetServiceRequest request;
-        VSIAssetServiceResponse response;
+        LEMEquipmentServiceProcessor processor;
+        LEMEquipmentServiceRequest request;
+        LEMEquipmentServiceResponse response;
 
         // Deserialize request
-        request = VSIAssetServiceCatalog::deserializeRequest(_operationName, _inboundJson);
+        request = LEMEquipmentServiceCatalog::deserializeRequest(_operationName, _inboundJson);
         if (!request)
         {
-            return VSIAssetServiceCatalog::wrapError(
-                strFmt("@VSIAssetManagmentLabelFile:ServiceDeserializeFailed", _operationName));
+            return LEMEquipmentServiceCatalog::wrapError(
+                strFmt("@LEMEquipmentLabelFile:ServiceDeserializeFailed", _operationName));
         }
 
         // Get processor instance
-        processor = VSIAssetServiceCatalog::getProcessor(_operationName);
+        processor = LEMEquipmentServiceCatalog::getProcessor(_operationName);
         if (!processor)
         {
-            return VSIAssetServiceCatalog::wrapError(
-                strFmt("@VSIAssetManagmentLabelFile:ServiceUnknownOperation", _operationName));
+            return LEMEquipmentServiceCatalog::wrapError(
+                strFmt("@LEMEquipmentLabelFile:ServiceUnknownOperation", _operationName));
         }
 
         // Create response contract
-        response = VSIAssetServiceCatalog::createResponse(_operationName);
+        response = LEMEquipmentServiceCatalog::createResponse(_operationName);
 
         // Execute service
-        VSIAssetServiceHelper::execute(processor, _operationName, request, response);
+        LEMEquipmentServiceHelper::execute(processor, _operationName, request, response);
 
         // Serialize response
-        return VSIAssetServiceCatalog::serializeResponse(response);
+        return LEMEquipmentServiceCatalog::serializeResponse(response);
     }
 
     /// <summary>
     /// Deserializes the request JSON to the appropriate contract.
     /// </summary>
-    private static VSIAssetServiceRequest deserializeRequest(str _operationName, str _inboundJson)
+    private static LEMEquipmentServiceRequest deserializeRequest(str _operationName, str _inboundJson)
     {
-        str requestJson = VSIAssetServiceCatalog::extractRequestJson(_inboundJson);
-        ClassId contractClass = VSIAssetServiceCatalog::getRequestContractClass(_operationName);
+        str requestJson = LEMEquipmentServiceCatalog::extractRequestJson(_inboundJson);
+        ClassId contractClass = LEMEquipmentServiceCatalog::getRequestContractClass(_operationName);
         
         if (!contractClass)
         {
             return null;
         }
 
-        return FormJsonSerializer::deserializeObject(contractClass, requestJson) as VSIAssetServiceRequest;
+        return FormJsonSerializer::deserializeObject(contractClass, requestJson) as LEMEquipmentServiceRequest;
     }
 
     /// <summary>
@@ -19452,7 +19452,7 @@ public final class VSIAssetServiceCatalog
     private static str extractRequestJson(str _inboundJson)
     {
         Newtonsoft.Json.Linq.JObject jObject = Newtonsoft.Json.Linq.JObject::Parse(_inboundJson);
-        Newtonsoft.Json.Linq.JToken requestToken = jObject.get_Item(VSIAssetServiceCatalog::RequestParameterName);
+        Newtonsoft.Json.Linq.JToken requestToken = jObject.get_Item(LEMEquipmentServiceCatalog::RequestParameterName);
         return requestToken ? requestToken.ToString() : '';
     }
 
@@ -19464,11 +19464,11 @@ public final class VSIAssetServiceCatalog
         switch (_operationName)
         {
             case 'assignAsset':
-                return classNum(VSIAssetAssignRequestContract);
+                return classNum(LEMEquipmentAssignRequestContract);
             case 'getAssetDetails':
-                return classNum(VSIAssetGetDetailsRequestContract);
+                return classNum(LEMEquipmentGetDetailsRequestContract);
             case 'getWorkerAssets':
-                return classNum(VSIAssetGetWorkerAssetsRequestContract);
+                return classNum(LEMEquipmentGetWorkerAssetsRequestContract);
         }
         return 0;
     }
@@ -19476,15 +19476,15 @@ public final class VSIAssetServiceCatalog
     /// <summary>
     /// Maps operation name to processor instance.
     /// </summary>
-    private static VSIAssetServiceProcessor getProcessor(str _operationName)
+    private static LEMEquipmentServiceProcessor getProcessor(str _operationName)
     {
         switch (_operationName)
         {
             case 'assignAsset':
-                return VSIAssetAssignmentService::construct();
+                return LEMEquipmentAssignmentService::construct();
             case 'getAssetDetails':
             case 'getWorkerAssets':
-                return VSIAssetInquiryService::construct();
+                return LEMEquipmentInquiryService::construct();
         }
         return null;
     }
@@ -19492,16 +19492,16 @@ public final class VSIAssetServiceCatalog
     /// <summary>
     /// Creates the appropriate response contract for the operation.
     /// </summary>
-    private static VSIAssetServiceResponse createResponse(str _operationName)
+    private static LEMEquipmentServiceResponse createResponse(str _operationName)
     {
         switch (_operationName)
         {
             case 'assignAsset':
-                return new VSIAssetAssignmentResponseContract();
+                return new LEMEquipmentAssignmentResponseContract();
             case 'getAssetDetails':
-                return new VSIAssetGetDetailsResponseContract();
+                return new LEMEquipmentGetDetailsResponseContract();
             case 'getWorkerAssets':
-                return new VSIAssetGetWorkerAssetsResponseContract();
+                return new LEMEquipmentGetWorkerAssetsResponseContract();
         }
         return null;
     }
@@ -19509,11 +19509,11 @@ public final class VSIAssetServiceCatalog
     /// <summary>
     /// Serializes the response contract to JSON.
     /// </summary>
-    private static str serializeResponse(VSIAssetServiceResponse _response)
+    private static str serializeResponse(LEMEquipmentServiceResponse _response)
     {
         str json = FormJsonSerializer::serializeClass(_response);
-        return VSIAssetServiceCatalog::prettyPrint(
-            '{"' + VSIAssetServiceCatalog::ResponseParameterName + '":' + json + '}');
+        return LEMEquipmentServiceCatalog::prettyPrint(
+            '{"' + LEMEquipmentServiceCatalog::ResponseParameterName + '":' + json + '}');
     }
 
     /// <summary>
@@ -19533,8 +19533,8 @@ public final class VSIAssetServiceCatalog
         Map errorMap = new Map(Types::String, Types::String);
         errorMap.insert('error', _message);
         str json = FormJsonSerializer::serializeClass(errorMap);
-        return VSIAssetServiceCatalog::prettyPrint(
-            '{"' + VSIAssetServiceCatalog::ResponseParameterName + '":' + json + '}');
+        return LEMEquipmentServiceCatalog::prettyPrint(
+            '{"' + LEMEquipmentServiceCatalog::ResponseParameterName + '":' + json + '}');
     }
 
     /// <summary>
@@ -19553,7 +19553,7 @@ public final class VSIAssetServiceCatalog
         try
         {
             Newtonsoft.Json.Linq.JObject jObject = Newtonsoft.Json.Linq.JObject::Parse(_inboundJson);
-            Newtonsoft.Json.Linq.JToken requestToken = jObject.get_Item(VSIAssetServiceCatalog::RequestParameterName);
+            Newtonsoft.Json.Linq.JToken requestToken = jObject.get_Item(LEMEquipmentServiceCatalog::RequestParameterName);
             if (requestToken)
             {
                 Newtonsoft.Json.Linq.JToken companyToken = requestToken.get_Item('companyId');
@@ -19577,66 +19577,66 @@ public final class VSIAssetServiceCatalog
 ```xpp
 public void runTest()
 {
-    str inboundJson = VSIAssetServiceOperationTmp.InboundJson;
-    str operationName = VSIAssetServiceOperationTmp.OperationName;
+    str inboundJson = LEMEquipmentServiceOperationTmp.InboundJson;
+    str operationName = LEMEquipmentServiceOperationTmp.OperationName;
 
     // Confirm write operations
-    if (VSIAssetServiceCatalog::isWriteOperation(operationName)
+    if (LEMEquipmentServiceCatalog::isWriteOperation(operationName)
         && Box::yesNo(
-            strFmt("@VSIAssetManagmentLabelFile:ServiceTestConfirm",
-                   VSIAssetServiceCatalog::requestCompany(inboundJson)),
+            strFmt("@LEMEquipmentLabelFile:ServiceTestConfirm",
+                   LEMEquipmentServiceCatalog::requestCompany(inboundJson)),
             DialogButton::No) != DialogButton::Yes)
     {
         return;
     }
 
     // Execute test
-    VSIAssetServiceOperationTmp.OutboundJson = VSIAssetServiceCatalog::runTest(
+    LEMEquipmentServiceOperationTmp.OutboundJson = LEMEquipmentServiceCatalog::runTest(
         operationName, inboundJson);
     
     // Refresh form
-    VSIAssetServiceOperationTmp_ds.write();
-    VSIAssetServiceOperationTmp_ds.refresh();
+    LEMEquipmentServiceOperationTmp_ds.write();
+    LEMEquipmentServiceOperationTmp_ds.refresh();
 }
 ```
 
 ### Deserializing Inbound JSON — Complete Pattern
 
 ```xpp
-// In VSIAssetAssignmentService::process()
-public void process(str _operation, VSIAssetServiceRequest _request, VSIAssetServiceResponse _response)
+// In LEMEquipmentAssignmentService::process()
+public void process(str _operation, LEMEquipmentServiceRequest _request, LEMEquipmentServiceResponse _response)
 {
-    VSIAssetAssignRequestContract assignRequest = _request as VSIAssetAssignRequestContract;
-    VSIAssetAssignmentResponseContract assignResponse = _response as VSIAssetAssignmentResponseContract;
+    LEMEquipmentAssignRequestContract assignRequest = _request as LEMEquipmentAssignRequestContract;
+    LEMEquipmentAssignmentResponseContract assignResponse = _response as LEMEquipmentAssignmentResponseContract;
 
     if (_operation == 'assignAsset')
     {
         // Validate request
         if (!assignRequest.parmAssetId())
         {
-            assignResponse.markFailure(VSIAssetServiceHelper::stringToList(
-                "@VSIAssetManagmentLabelFile:AssetIdRequired"));
+            assignResponse.markFailure(LEMEquipmentServiceHelper::stringToList(
+                "@LEMEquipmentLabelFile:AssetIdRequired"));
             return;
         }
 
         // Find asset
-        VSIAsset asset;
+        LEMEquipment asset;
         select firstOnly asset where asset.AssetId == assignRequest.parmAssetId();
         if (!asset)
         {
-            assignResponse.markFailure(VSIAssetServiceHelper::stringToList(
-                strFmt("@VSIAssetManagmentLabelFile:AssetNotFound", assignRequest.parmAssetId())));
+            assignResponse.markFailure(LEMEquipmentServiceHelper::stringToList(
+                strFmt("@LEMEquipmentLabelFile:AssetNotFound", assignRequest.parmAssetId())));
             return;
         }
 
         // Assign asset using status helper (respects context guard)
-        VSIAssetStatusHelper::changeStatus(
+        LEMEquipmentStatusHelper::changeStatus(
             asset,
-            VSIAssetStatus::Assigned,
+            LEMEquipmentStatus::Assigned,
             assignRequest.parmWorkerId());
 
         assignResponse.markSuccess(
-            strFmt("@VSIAssetManagmentLabelFile:AssetAssigned", asset.AssetId));
+            strFmt("@LEMEquipmentLabelFile:AssetAssigned", asset.AssetId));
     }
 }
 ```
@@ -19665,8 +19665,8 @@ public static Object deserializeContract(str _json, ClassId _contractClass)
 /// </summary>
 public static str wrapRequest(Object _contract)
 {
-    return VSIAssetServiceCatalog::prettyPrint(
-        '{"' + VSIAssetServiceCatalog::RequestParameterName + '":'
+    return LEMEquipmentServiceCatalog::prettyPrint(
+        '{"' + LEMEquipmentServiceCatalog::RequestParameterName + '":'
         + FormJsonSerializer::serializeClass(_contract)
         + '}');
 }
@@ -19676,19 +19676,19 @@ public static str wrapRequest(Object _contract)
 
 ## 35.5 Activity — Build a Custom Service End-to-End
 
-**Objective:** Create a new custom service `VSIAssetTransferService` with operation `transferAsset` that moves an asset between workers.
+**Objective:** Create a new custom service `LEMEquipmentTransferService` with operation `transferAsset` that moves an asset between workers.
 
 **Requirements:**
 1. Create request/response contracts with `DataContractAttribute`/`DataMemberAttribute`
-2. Implement `VSIAssetServiceProcessor` interface
+2. Implement `LEMEquipmentServiceProcessor` interface
 3. Register in `AxServiceGroup` metadata
 4. Add security privilege for the operation
-5. Test using `VSIAssetServiceCatalog` harness
+5. Test using `LEMEquipmentServiceCatalog` harness
 
 **Hints:**
 - Request: AssetId, FromWorkerId, ToWorkerId, CompanyId
 - Response: Success, Message, NewAssignmentRecId
-- Use `VSIAssetStatusHelper::changeStatus()` for status transitions
+- Use `LEMEquipmentStatusHelper::changeStatus()` for status transitions
 - Validate both workers exist and are active
 - Handle cross-company scenario
 
@@ -19696,31 +19696,31 @@ public static str wrapRequest(Object _contract)
 
 ```xpp
 [DataContractAttribute]
-public final class VSIAssetTransferRequestContract implements VSIAssetServiceRequest
+public final class LEMEquipmentTransferRequestContract implements LEMEquipmentServiceRequest
 {
     [DataMemberAttribute('AssetId')]
-    public VSIAssetId parmAssetId(VSIAssetId _assetId = assetId) { ... }
+    public EquipmentId parmAssetId(EquipmentId _assetId = assetId) { ... }
 
     [DataMemberAttribute('FromWorkerId')]
-    public VSIWorkerId parmFromWorkerId(VSIWorkerId _fromWorkerId = fromWorkerId) { ... }
+    public PersonnelId parmFromWorkerId(PersonnelId _fromWorkerId = fromWorkerId) { ... }
 
     [DataMemberAttribute('ToWorkerId')]
-    public VSIWorkerId parmToWorkerId(VSIWorkerId _toWorkerId = toWorkerId) { ... }
+    public PersonnelId parmToWorkerId(PersonnelId _toWorkerId = toWorkerId) { ... }
 
     public str companyId() { return dataAreaId; }
 }
 
-public final class VSIAssetTransferService implements VSIAssetServiceProcessor
+public final class LEMEquipmentTransferService implements LEMEquipmentServiceProcessor
 {
-    public static VSIAssetTransferService construct()
+    public static LEMEquipmentTransferService construct()
     {
-        return new VSIAssetTransferService();
+        return new LEMEquipmentTransferService();
     }
 
-    public void process(str _operation, VSIAssetServiceRequest _request, VSIAssetServiceResponse _response)
+    public void process(str _operation, LEMEquipmentServiceRequest _request, LEMEquipmentServiceResponse _response)
     {
-        VSIAssetTransferRequestContract request = _request as VSIAssetTransferRequestContract;
-        VSIAssetTransferResponseContract response = _response as VSIAssetTransferResponseContract;
+        LEMEquipmentTransferRequestContract request = _request as LEMEquipmentTransferRequestContract;
+        LEMEquipmentTransferResponseContract response = _response as LEMEquipmentTransferResponseContract;
 
         if (_operation != 'transferAsset') { return; }
 
@@ -19733,8 +19733,8 @@ public final class VSIAssetTransferService implements VSIAssetServiceProcessor
 **Register in AxServiceGroup:**
 ```xml
 <AxServiceGroupService>
-    <Name>VSIAssetTransferService</Name>
-    <Service>VSIAssetTransferService</Service>
+    <Name>LEMEquipmentTransferService</Name>
+    <Service>LEMEquipmentTransferService</Service>
 </AxServiceGroupService>
 ```
 
@@ -19742,20 +19742,20 @@ public final class VSIAssetTransferService implements VSIAssetServiceProcessor
 ```xml
 <AxSecurityEntryPointReference>
     <Name>transferAsset</Name>
-    <ObjectName>VSIAssetTransferService</ObjectName>
+    <ObjectName>LEMEquipmentTransferService</ObjectName>
     <ObjectType>ServiceOperation</ObjectType>
 </AxSecurityEntryPointReference>
 ```
 
 ## 35.3 JSON Serialization with CLR Interop
 
-`VSIAssetServiceCatalog` provides a test harness that serializes contracts to/from JSON using `FormJsonSerializer` and `Newtonsoft.Json`:
+`LEMEquipmentServiceCatalog` provides a test harness that serializes contracts to/from JSON using `FormJsonSerializer` and `Newtonsoft.Json`:
 
 ```xpp
 private static str wrapRequest(Object _contract)
 {
-    return VSIAssetServiceCatalog::prettyPrint(
-        '{"' + VSIAssetServiceCatalog::RequestParameterName + '":'
+    return LEMEquipmentServiceCatalog::prettyPrint(
+        '{"' + LEMEquipmentServiceCatalog::RequestParameterName + '":'
         + FormJsonSerializer::serializeClass(_contract)
         + '}');
 }
@@ -19771,21 +19771,21 @@ private static str prettyPrint(str _json)
 ```xpp
 public void runTest()
 {
-    str inboundJson = VSIAssetServiceOperationTmp.InboundJson;
+    str inboundJson = LEMEquipmentServiceOperationTmp.InboundJson;
 
-    if (VSIAssetServiceCatalog::isWriteOperation(VSIAssetServiceOperationTmp.OperationName)
+    if (LEMEquipmentServiceCatalog::isWriteOperation(LEMEquipmentServiceOperationTmp.OperationName)
         && Box::yesNo(
-            strFmt("@VSIAssetManagmentLabelFile:ServiceTestConfirm",
-                   VSIAssetServiceCatalog::requestCompany(inboundJson)),
+            strFmt("@LEMEquipmentLabelFile:ServiceTestConfirm",
+                   LEMEquipmentServiceCatalog::requestCompany(inboundJson)),
             DialogButton::No) != DialogButton::Yes)
     {
         return;
     }
 
-    VSIAssetServiceOperationTmp.OutboundJson = VSIAssetServiceCatalog::runTest(
-        VSIAssetServiceOperationTmp.OperationName, inboundJson);
-    VSIAssetServiceOperationTmp_ds.write();
-    VSIAssetServiceOperationTmp_ds.refresh();
+    LEMEquipmentServiceOperationTmp.OutboundJson = LEMEquipmentServiceCatalog::runTest(
+        LEMEquipmentServiceOperationTmp.OperationName, inboundJson);
+    LEMEquipmentServiceOperationTmp_ds.write();
+    LEMEquipmentServiceOperationTmp_ds.refresh();
 }
 ```
 
@@ -19794,8 +19794,8 @@ public void runTest()
 ```xpp
 response = assignmentService.assignAsset(
     FormJsonSerializer::deserializeObject(
-        classNum(VSIAssetAssignRequestContract), requestJson)
-        as VSIAssetAssignRequestContract);
+        classNum(LEMEquipmentAssignRequestContract), requestJson)
+        as LEMEquipmentAssignRequestContract);
 ```
 
 ## 35.4 Service Exposure
@@ -19804,11 +19804,11 @@ Services are registered in `AxService` and `AxServiceGroup` metadata:
 
 ```xml
 <AxServiceGroup>
-    <Name>VSIAssetServiceGroup</Name>
+    <Name>LEMEquipmentServiceGroup</Name>
     <AutoDeploy>Yes</AutoDeploy>
     <Services>
-        <AxServiceGroupService><Name>VSIAssetAssignmentService</Name><Service>VSIAssetAssignmentService</Service></AxServiceGroupService>
-        <AxServiceGroupService><Name>VSIAssetInquiryService</Name><Service>VSIAssetInquiryService</Service></AxServiceGroupService>
+        <AxServiceGroupService><Name>LEMEquipmentAssignmentService</Name><Service>LEMEquipmentAssignmentService</Service></AxServiceGroupService>
+        <AxServiceGroupService><Name>LEMEquipmentInquiryService</Name><Service>LEMEquipmentInquiryService</Service></AxServiceGroupService>
     </Services>
 </AxServiceGroup>
 ```
@@ -19817,7 +19817,7 @@ Service operations are secured via `AxSecurityPrivilege` entries:
 ```xml
 <AxSecurityEntryPointReference>
     <Name>assignAsset</Name>
-    <ObjectName>VSIAssetAssignmentService</ObjectName>
+    <ObjectName>LEMEquipmentAssignmentService</ObjectName>
     <ObjectType>ServiceOperation</ObjectType>
 </AxSecurityEntryPointReference>
 ```

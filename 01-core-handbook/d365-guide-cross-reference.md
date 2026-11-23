@@ -58,7 +58,7 @@ metadata:
 | 29 | Workflow Architecture | 5 | — | 3–4 |
 | 30 | Number Sequences | 5 | Ex 16 | 2–3 |
 | 31 | Form Patterns | 5 | — | 3–4 |
-| 32 | VSI Patterns | 5 | — | 3–4 |
+| 32 | LEM Patterns | 5 | — | 3–4 |
 | 33 | Advanced Batch | 5 | — | 3–4 |
 | 34 | Localization & Best Practices | 5 | — | 2–3 |
 | 35 | Service Patterns | 5 | — | 3–4 |
@@ -134,7 +134,7 @@ metadata:
 | `01-core-handbook/d365-handbook-appendices.md` | EDT table, X++→SQL, debugging, URLs | Quick lookups |
 | `01-core-handbook/d365-anti-patterns.md` | What NOT to do with fixes | Code review, avoiding mistakes |
 | `01-core-handbook/d365-certification-mapping.md` | Chapter → exam domain mapping | Certification prep |
-| `07-reference/vsi_gap_analysis.md` | VSI codebase vs guide gaps | Advanced architectural review |
+| `07-reference/lem_gap_analysis.md` | LEM codebase vs guide gaps | Advanced architectural review |
 | `07-reference/d365-fao-interest.md` | User context & goals | — |
 | `07-reference/language-mindset-development.md` | Chapter 1.5 development notes | — |
 
