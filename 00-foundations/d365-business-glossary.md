@@ -12,7 +12,7 @@ metadata:
 
 ---
 
-## 📦 Procure-to-Pay (P2P) — Buying Stuff
+## Procure-to-Pay (P2P) — Buying Stuff
 
 | Term | Definition | D365 F&O Area |
 |------|------------|---------------|
@@ -29,7 +29,7 @@ metadata:
 
 ---
 
-## 💰 Order-to-Cash (O2C) — Selling Stuff
+## Order-to-Cash (O2C) — Selling Stuff
 
 | Term | Definition | D365 F&O Area |
 |------|------------|---------------|
@@ -47,7 +47,7 @@ metadata:
 
 ---
 
-## 🏭 Manufacturing & Planning
+## Manufacturing & Planning
 
 | Term | Definition | D365 F&O Area |
 |------|------------|---------------|
@@ -68,7 +68,7 @@ metadata:
 
 ---
 
-## 📊 Inventory & Warehouse
+## Inventory & Warehouse
 
 | Term | Definition | D365 F&O Area |
 |------|------------|---------------|
@@ -88,7 +88,7 @@ metadata:
 
 ---
 
-## 💵 Financial Terms
+## Financial Terms
 
 | Term | Definition | D365 F&O Area |
 |------|------------|---------------|
@@ -110,7 +110,7 @@ metadata:
 
 ---
 
-## 👥 HR & Payroll
+## HR & Payroll
 
 | Term | Definition | D365 F&O Area |
 |------|------------|---------------|
@@ -127,7 +127,7 @@ metadata:
 
 ---
 
-## 🔧 Common Acronyms
+## Common Acronyms
 
 | Acronym | Full Form |
 |---------|-----------|
@@ -156,7 +156,7 @@ metadata:
 
 ---
 
-## 🎯 How to Use This
+## How to Use This
 
 1. **When you hear a term in meetings** → Look it up here
 2. **Before each module chapter** → Review relevant section

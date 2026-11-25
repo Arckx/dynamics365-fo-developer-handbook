@@ -337,7 +337,7 @@ metadata:
 | Resource | Link | Duration | Key Timestamps |
 |----------|------|----------|----------------|
 | **YouTube: Cross-Company Batch** | https://www.youtube.com/watch?v=cross-company-batch | 25 min | 0:00-10:00 (Query), 10:00-20:00 (Execution), 20:00-25:00 (Monitoring) |
-| **YouTube: LEMLabPersonnel Framework** | https://www.youtube.com/watch?v=vsiworker-framework | 30 min | 0:00-12:00 (Architecture), 12:00-22:00 (Parallel), 22:00-30:00 (Retry) |
+| **YouTube: LEMLabPersonnel Framework** | https://www.youtube.com/watch?v=lemlabpersonnel-framework | 30 min | 0:00-12:00 (Architecture), 12:00-22:00 (Parallel), 22:00-30:00 (Retry) |
 | **YouTube: Batch Retry Patterns** | https://www.youtube.com/watch?v=batch-retry-patterns | 25 min | 0:00-10:00 (Exponential backoff), 10:00-20:00 (Circuit breaker), 20:00-25:00 (Dead letter) |
 
 ---

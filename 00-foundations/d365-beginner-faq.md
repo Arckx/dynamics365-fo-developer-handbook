@@ -12,7 +12,7 @@ metadata:
 
 ---
 
-## 🏗️ D365 F&O Basics (Q1-Q10)
+## D365 F&O Basics (Q1-Q10)
 
 ### Q1: What does "F&O" stand for?
 **Finance & Operations** — the ERP module of Dynamics 365. Formerly "Dynamics AX."
@@ -46,7 +46,7 @@ Your personal **development sandbox** with full admin rights. Free with LCS proj
 
 ---
 
-## 💻 X++ Language (Q11-Q20)
+## X++ Language (Q11-Q20)
 
 ### Q11: What's the difference between `select` and `while select`?
 - `select` → single row (or `firstOnly`)
@@ -88,7 +88,7 @@ Your personal **development sandbox** with full admin rights. Free with LCS proj
 
 ---
 
-## 🗄️ SQL & Database (Q21-Q30)
+## SQL & Database (Q21-Q30)
 
 ### Q21: Does X++ run SQL directly?
 **X++ compiles to IL** → AOS generates parameterized SQL. You write `while select`, AOS runs `SELECT`.
@@ -134,7 +134,7 @@ Two sessions lock resources in opposite order. **Catch `Exception::Deadlock`, re
 
 ---
 
-## 🏗️ OOP & Patterns (Q31-Q40)
+## OOP & Patterns (Q31-Q40)
 
 ### Q31: What's the difference between a class and an object?
 - **Class** = blueprint (definition)
@@ -174,7 +174,7 @@ Service depends on **interface**, not concrete class. Pass implementation via co
 
 ---
 
-## 🔧 Development Workflow (Q41-Q50)
+## Development Workflow (Q41-Q50)
 
 ### Q41: How do I create a deployable package?
 **Build pipeline** → compiles → `.axmodel` + `ModuleDescriptor.xml` → LCS Asset Library → Deploy.
@@ -211,7 +211,7 @@ Creates/updates SQL tables from AOT metadata. Run after model changes.
 
 ---
 
-## 🎯 Quick Reference Card
+## Quick Reference Card
 
 | I Need To... | Go To |
 |--------------|-------|

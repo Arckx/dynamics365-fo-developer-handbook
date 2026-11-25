@@ -12,7 +12,7 @@ metadata:
 
 ---
 
-## 👩‍💼 Accounts Payable Clerk — "Maria"
+## Accounts Payable Clerk — "Maria"
 
 ### Profile
 - **Experience:** 3 years AP, 1 year D365 F&O
@@ -41,7 +41,7 @@ metadata:
 
 ---
 
-## 📦 Warehouse Worker — "James"
+## Warehouse Worker — "James"
 
 ### Profile
 - **Experience:** 5 years warehouse, 6 months D365 (mobile app)
@@ -69,7 +69,7 @@ metadata:
 
 ---
 
-## 💰 Controller — "David"
+## Controller — "David"
 
 ### Profile
 - **Experience:** 15 years finance, CPA, 2 years D365
@@ -96,7 +96,7 @@ metadata:
 
 ---
 
-## 🛒 Buyer / Planner — "Priya"
+## Buyer / Planner — "Priya"
 
 ### Profile
 - **Experience:** 4 years procurement, CIPS certified
@@ -123,7 +123,7 @@ metadata:
 
 ---
 
-## 👨‍💻 D365 F&O Developer — "Alex" (You!)
+## D365 F&O Developer — "Alex" (You!)
 
 ### Profile
 - **Experience:** 2 years .NET, 6 months D365
@@ -150,7 +150,7 @@ metadata:
 
 ---
 
-## 🎭 Role Empathy Exercise
+## Role Empathy Exercise
 
 **Do this once per sprint:**
 
@@ -162,7 +162,7 @@ metadata:
 
 ---
 
-## 📋 Developer Checklist per Role
+## Developer Checklist per Role
 
 | Role | Must-Test Scenarios |
 |------|---------------------|

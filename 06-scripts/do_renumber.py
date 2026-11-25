@@ -154,7 +154,7 @@ new_chapters = {
     29: "Chapter 29: Workflow Architecture",
     30: "Chapter 30: Number Sequences",
     31: "Chapter 31: Form Patterns",
-    32: "Chapter 32: VSI Patterns",
+    32: "Chapter 32: LEM Patterns",
     33: "Chapter 33: Advanced Batch",
     34: "Chapter 34: Localization & Best Practices",
     35: "Chapter 35: Service Patterns"

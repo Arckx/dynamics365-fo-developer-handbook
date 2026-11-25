@@ -248,9 +248,9 @@ metadata:
 
 | Front | Back | Tags |
 |-------|------|------|
-| Status change context | Track state transitions with context (who, when, why) | chapter32,vsi |
-| Notifications | Event-driven alerts via Notification Framework | chapter32,vsi |
-| Multi-company | crossCompany keyword, DataAreaId filtering | chapter32,vsi |
+| Status change context | Track state transitions with context (who, when, why) | chapter32,lem |
+| Notifications | Event-driven alerts via Notification Framework | chapter32,lem |
+| Multi-company | crossCompany keyword, DataAreaId filtering | chapter32,lem |
 
 ---
 
@@ -379,7 +379,7 @@ Preallocation,Caches numbers in memory for performance,chapter30 numseq
 ListPage,Master list with filters actions FactBoxes,chapter31 patterns
 FactBox,Related info pane (related records counts),chapter31 patterns
 Dialog,Modal form for input/confirmation,chapter31 patterns
-Status change context,Track state transitions with context (who when why),chapter32 vsi
+Status change context,Track state transitions with context (who when why),chapter32 lem
 Notifications,Event-driven alerts via Notification Framework,chapter32 lem
 Multi-company,crossCompany keyword DataAreaId filtering,chapter32 lem
 Cross-company batch,crossCompany in query batch runs per company,chapter33 batch

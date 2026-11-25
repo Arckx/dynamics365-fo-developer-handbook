@@ -12,7 +12,7 @@ metadata:
 
 ---
 
-## 📊 Audit Overview
+## Audit Overview
 
 | Audit Area | Frequency | Owner | Tool/Method |
 |------------|-----------|-------|-------------|

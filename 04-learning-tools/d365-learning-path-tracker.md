@@ -233,7 +233,7 @@ metadata:
 
 ---
 
-## 📊 Annual Summary
+## Annual Summary
 
 | Quarter | Target Hours | Actual Hours | Completion % |
 |---------|--------------|--------------|--------------|
@@ -263,7 +263,7 @@ metadata:
 
 ---
 
-## 📝 Weekly Reflection Template
+## Weekly Reflection Template
 
 **Week of:** ___________ | **Hours this week:** ___
 
@@ -276,7 +276,7 @@ metadata:
 
 ---
 
-## 💡 Tips for Success
+## Tips for Success
 
 1. **Consistency > Intensity** — 10 hrs/week > 40 hrs once a month
 2. **Pair program** — Use `d365-pair-programming-prompts.md` weekly

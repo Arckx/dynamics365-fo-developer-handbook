@@ -12,7 +12,7 @@ metadata:
 
 ---
 
-## 📈 Career Progression Ladder
+## Career Progression Ladder
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -40,7 +40,7 @@ metadata:
 
 ---
 
-## 🎯 Role Definitions
+## Role Definitions
 
 ### Junior Developer (0-2 years)
 
@@ -118,7 +118,7 @@ metadata:
 
 ---
 
-## 🎓 Certification Roadmap
+## Certification Roadmap
 
 ### Microsoft Certifications (Priority Order)
 
@@ -143,7 +143,7 @@ Architect:  All above + industry certs (PMP, TOGAF, CISSP)
 
 ---
 
-## 💡 Specialization Matrix
+## Specialization Matrix
 
 | Specialization | Core Skills | Adjacent Skills | Career Value |
 |----------------|-------------|-----------------|--------------|
@@ -161,7 +161,7 @@ Architect:  All above + industry certs (PMP, TOGAF, CISSP)
 
 ---
 
-## 📊 Salary Benchmarks (US, 2024)
+## Salary Benchmarks (US, 2024)
 
 | Role | Low | Median | High | Factors |
 |------|-----|--------|------|---------|
@@ -186,7 +186,7 @@ Architect:  All above + industry certs (PMP, TOGAF, CISSP)
 
 ---
 
-## 🎯 12-Month Growth Plan by Level
+## 12-Month Growth Plan by Level
 
 ### If You're Junior (0-1 year)
 
@@ -227,7 +227,7 @@ Architect:  All above + industry certs (PMP, TOGAF, CISSP)
 
 ---
 
-## 📝 Personal Development Plan Template
+## Personal Development Plan Template
 
 ```
 NAME: _________________________    CURRENT LEVEL: ___________    DATE: ___________

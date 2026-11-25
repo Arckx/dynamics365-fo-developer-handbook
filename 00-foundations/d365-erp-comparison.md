@@ -23,7 +23,7 @@ metadata:
 
 ---
 
-## ⚖️ Detailed Comparison
+## Detailed Comparison
 
 ### Architecture & Deployment
 
@@ -58,9 +58,9 @@ metadata:
 
 ---
 
-## 🎯 Why Choose D365 F&O?
+## Why Choose D365 F&O?
 
-### ✅ Strengths
+### Strengths
 
 | Area | Why It Matters |
 |------|----------------|
@@ -73,7 +73,7 @@ metadata:
 | **Continuous Updates** | Monthly quality, biannual features — no big bang upgrades |
 | **Tier-1 Dev Environments** | Free sandbox per developer — no shared dev conflicts |
 
-### ⚠️ Considerations
+### Considerations
 
 | Concern | Reality |
 |---------|---------|
@@ -84,7 +84,7 @@ metadata:
 
 ---
 
-## 📊 Decision Matrix
+## Decision Matrix
 
 | Your Situation | Recommended |
 |----------------|-------------|
@@ -99,7 +99,7 @@ metadata:
 
 ---
 
-## 💰 Total Cost of Ownership (3-Year Estimate)
+## Total Cost of Ownership (3-Year Estimate)
 
 | Cost Component | D365 F&O (100 users) | SAP S/4HANA | NetSuite |
 |----------------|---------------------|-------------|----------|
@@ -114,7 +114,7 @@ metadata:
 
 ---
 
-## 🛣️ Migration Paths
+## Migration Paths
 
 | From | To D365 F&O | Complexity |
 |------|-------------|------------|
@@ -139,7 +139,7 @@ metadata:
 
 ---
 
-## 📈 Market Trends (2024)
+## Market Trends (2024)
 
 | Trend | Impact on D365 F&O |
 |-------|-------------------|
@@ -152,7 +152,7 @@ metadata:
 
 ---
 
-## 🎓 Certification Value
+## Certification Value
 
 | Cert | Vendor | Market Recognition |
 |------|--------|-------------------|
@@ -163,7 +163,7 @@ metadata:
 
 ---
 
-## 💡 Quick Decision Flowchart
+## Quick Decision Flowchart
 
 ```
 START: What's your current stack?

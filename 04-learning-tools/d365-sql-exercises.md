@@ -13,7 +13,7 @@ metadata:
 
 ---
 
-## 🏗️ Practice Schema
+## Practice Schema
 
 Run this first to create your practice database:
 
@@ -838,7 +838,7 @@ INCLUDE (SalesId, SalesAmount, OrderDate);
 
 ---
 
-## 📋 Exercise Completion Checklist
+## Exercise Completion Checklist
 
 | Exercise | Topic | Done? |
 |----------|-------|-------|
@@ -855,7 +855,7 @@ INCLUDE (SalesId, SalesAmount, OrderDate);
 
 ---
 
-## 🎯 Practice Tips
+## Practice Tips
 
 1. **Run every query** — don't just read
 2. **Compare SQL ↔ X++** side by side
@@ -865,7 +865,7 @@ INCLUDE (SalesId, SalesAmount, OrderDate);
 
 ---
 
-## 🔗 Next Steps
+## Next Steps
 
 After completing all 10:
 1. **Read Chapter 6** — Control Flow & CRUD

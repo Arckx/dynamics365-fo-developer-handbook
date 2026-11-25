@@ -12,7 +12,7 @@ metadata:
 
 ---
 
-## 📋 Pre-Review Setup
+## Pre-Review Setup
 
 - [ ] **Branch named correctly:** `feature/`, `bugfix/`, `hotfix/`, `release/` prefix
 - [ ] **PR title follows convention:** `[Module] Short description (Ticket-123)`
@@ -23,7 +23,7 @@ metadata:
 
 ---
 
-## 🏗️ Architecture & Design
+## Architecture & Design
 
 ### Extensibility
 - [ ] **No over-layering:** Zero modifications to SYS/ISV layer objects
@@ -40,7 +40,7 @@ metadata:
 
 ---
 
-## 💻 X++ Code Quality
+## X++ Code Quality
 
 ### Naming Conventions
 | Element | Convention | ✅ Check |
@@ -71,7 +71,7 @@ metadata:
 
 ---
 
-## 🗄️ Database & SQL Patterns
+## Database & SQL Patterns
 
 ### CRUD Operations
 - [ ] **Bulk insert:** `insert_recordset` for multiple records
@@ -101,7 +101,7 @@ metadata:
 
 ---
 
-## 🔒 Security
+## Security
 
 ### Access Control
 - [ ] **Privileges declared:** New menu items have `NeededAccessLevel` and `NeededPermission`
@@ -118,7 +118,7 @@ metadata:
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ### Unit Tests (SysTest)
 - [ ] **Tests exist:** New functionality has test coverage
@@ -137,7 +137,7 @@ metadata:
 
 ---
 
-## 📦 Deployment & Operations
+## Deployment & Operations
 
 ### Build & Package
 - [ ] **Model version bumped:** `ModuleDescriptor.xml` version incremented
@@ -159,7 +159,7 @@ metadata:
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 ### Code Documentation
 - [ ] **XML comments:** Public classes/methods have `/// <summary>`
@@ -174,7 +174,7 @@ metadata:
 
 ---
 
-## ✅ Reviewer Sign-Off
+## Reviewer Sign-Off
 
 | Review Area | Reviewer | Status | Comments |
 |-------------|----------|--------|----------|
@@ -190,7 +190,7 @@ metadata:
 
 ---
 
-## 🛠️ Quick Commands for Reviewers
+## Quick Commands for Reviewers
 
 ```bash
 # Check for over-layering (should return empty)

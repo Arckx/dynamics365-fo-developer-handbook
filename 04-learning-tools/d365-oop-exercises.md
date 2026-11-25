@@ -1232,7 +1232,7 @@ static void TestComposition(Args _args)
 
 ---
 
-## 📋 Exercise Completion Checklist
+## Exercise Completion Checklist
 
 | Exercise | Concept | Done? | Notes |
 |----------|---------|-------|-------|
@@ -1249,7 +1249,7 @@ static void TestComposition(Args _args)
 
 ---
 
-## 🎯 Next Steps
+## Next Steps
 
 After completing all 10:
 1. **Read Chapter 7** (Methods, Exceptions, Classes) — you'll understand it deeply
