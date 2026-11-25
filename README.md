@@ -179,9 +179,9 @@ The curriculum spans **35 chapters** organized into **four foundational quarters
 | Ch | Topic | Key Skills | Learning Guide |
 |---|---|---|---|
 | 16 | **Data Entities** | OData, staging, composite entities, DMF, Power Platform | [Ch 16](01-core-handbook/d365-learning-guide.md#chapter-16-data-entities-integration-data-management-in-d365-fo) |
-| 17 | **SSRS & Electronic Reporting** | `SrsReportDataProvider`, RDL, ER, pre-processing | [Ch 17](01-core-handbook/d365-learning-guide.md#1-ssrs-report-architecture) |
-| 18 | **Batch Processing** | `RunBaseBatch`, `SysOperation`, progress, retry, cancellation | [Ch 18](01-core-handbook/d365-learning-guide.md#1-batch-processing-fundamentals--the-restaurant-analogy) |
-| 19 | **SysTest Framework** | `SysTestCase`, assertions, data fixtures, CI/CD integration | [Ch 19](01-core-handbook/d365-learning-guide.md#1-the-systest-framework--core-components) |
+| 17 | **SSRS & Electronic Reporting** | `SrsReportDataProvider`, RDL, ER, pre-processing | [Ch 17](01-core-handbook/d365-learning-guide.md#chapter-17-ssrs--electronic-reporting) |
+| 18 | **Batch Processing** | `RunBaseBatch`, `SysOperation`, progress, retry, cancellation | [Ch 18](01-core-handbook/d365-learning-guide.md#chapter-18-batch-processing) |
+| 19 | **SysTest Framework** | `SysTestCase`, assertions, data fixtures, CI/CD integration | [Ch 19](01-core-handbook/d365-learning-guide.md#chapter-19-systest-framework--complete-guide) |
 | 20 | LCS Deep Dive & CI/CD | Model management, `AxModelStore`, pipeline design | [Ch 20](01-core-handbook/d365-learning-guide.md#chapter-20-lcs-deep-dive--cicd) |
 | 21 | **Performance & SQL Tuning** | Query plans, `CacheLookup`, deadlock resolution, indexing | [Ch 21](01-core-handbook/d365-learning-guide.md#211-sql-query-optimization) |
 
@@ -249,7 +249,6 @@ Upon completing this handbook, developers will be able to:
 This handbook is a living document. Contributions welcome:
 
 * **Issues** — Found an error, gap, or outdated pattern? [Open an issue](https://github.com/Arckx/dynamics365-fo-developer-handbook/issues).
-* **Discussions** — Questions, study groups, career advice. [GitHub Discussions](https://github.com/Arckx/dynamics365-fo-developer-handbook/discussions).
 * **Pull Requests** — New exercises, corrections, additional patterns.
 
 ---
