@@ -1,5 +1,32 @@
 # Dynamics 365 Finance & Operations Developer Handbook
 
+A concise, production‑ready guide for developers new to Dynamics 365 Finance & Operations. It combines a 4‑week onboarding roadmap, a 35‑chapter technical handbook, quick‑reference cheat‑sheets, and a 12‑month learning journey.
+
+
+## Getting Started Roadmap
+
+> **4‑Week Learning Path**
+>
+> 1️⃣ **Week 1 – Foundations** – Set up your environment and learn core concepts.
+>    - `00-foundations/d365-environment-setup.md`
+>    - `00-foundations/d365-foundations.md`
+>    - `00-foundations/d365-oop-primer.md`
+>    - `00-foundations/d365-sql-primer.md`
+> 2️⃣ **Week 2 – Core Handbook** – Dive into best practices and anti‑patterns.
+>    - `01-core-handbook/d365-learning-guide.md`
+>    - `01-core-handbook/d365-anti-patterns.md`
+>    - `01-core-handbook/d365-certification-mapping.md`
+> 3️⃣ **Week 3 – Quick Reference & Debugging** – Master the cheat‑sheet, debugging, and testing.
+>    - `02-quick-reference/d365-cheatsheet.md`
+>    - `02-quick-reference/d365-code-review-checklist.md`
+>    - `03-advanced-guides/d365-debugging-basics.md` *(new)*
+> 4️⃣ **Week 4 – Advanced Topics** – Observability, security, data management, and integration.
+>    - `03-advanced-guides/d365-observability.md`
+>    - `03-advanced-guides/d365-security-patterns.md`
+>    - `00-foundations/d365-data-management-basics.md` *(new)*
+>
+> Follow this path sequentially; each week builds on the previous one. Links open the relevant markdown files for deeper reading.
+
 **The definitive technical handbook, 35-chapter desktop guide, and 12-month learning journey**
 
 Production-ready D365 F&O development. No fluff. Just structured curriculum, code, and real patterns.

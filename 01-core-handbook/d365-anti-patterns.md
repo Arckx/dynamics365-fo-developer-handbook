@@ -1,5 +1,7 @@
 # Chapter 36: D365 F&O Anti-Pattern Library
 
+> **Glossary:** See the [Business Glossary](../00-foundations/d365-business-glossary.md) for term definitions.
+
 In Dynamics 365 Finance & Operations, writing clean, high-performance X++ code is not just a stylistic preference—it is a critical requirement for maintaining an evergreen, scalable system. Anti-patterns are common solutions to recurring problems that ultimately prove to be counterproductive, leading to performance bottlenecks, security vulnerabilities, or upgrade nightmares.
 
 This chapter details the major anti-patterns in D365 F&O development, structured into four main domains: SQL, X++, Architecture, and Performance.
@@ -457,3 +459,10 @@ public static MyParameters find(boolean _update = false)
 | **Performance** | InMemory for Large Datasets | AOS OutOfMemory Crashes | Use `TempDB` table type for large temp data |
 | **Performance** | Unbounded Cross-Company | Unscoped SQL Scans | Limit `crossCompany` with container of DataAreaIds |
 | **Performance** | Missing Caching | Excessive SQL Load | Enable `CacheLookup` or static code caching |
+
+---
+
+## Official Microsoft Documentation
+- [Dynamics 365 Finance & Operations docs](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/)
+- [Performance best practices](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/performance/performance-best-practices)
+- [Security model overview](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/security/security-model)

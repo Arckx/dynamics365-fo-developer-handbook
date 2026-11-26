@@ -7,6 +7,8 @@ metadata:
 
 # D365 F&O — Quick Reference Card
 
+> **Glossary:** See the [Business Glossary](../00-foundations/d365-business-glossary.md) for term definitions.
+
 > **Print this page** — Keep at your desk for instant syntax lookup. Covers 90% of daily X++ patterns.
 
 ---

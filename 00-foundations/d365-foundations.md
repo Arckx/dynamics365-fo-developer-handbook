@@ -8,6 +8,8 @@ metadata:
 
 # D365 F&O Foundations — Chapter 0
 
+> **Glossary:** See the [Business Glossary](d365-business-glossary.md) for term definitions.
+
 > **Read this BEFORE Chapter 1** if you're new to ERP, enterprise software, or cloud platforms. This chapter assumes zero prior knowledge.
 
 ---
@@ -310,6 +312,10 @@ Before writing code, complete these:
 
 ---
 
+## Official Microsoft Documentation
+- [Dynamics 365 Finance & Operations docs](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/)
+- [X++ programming guide](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/dev-ref/xpp-programming-language)
+- [Data entities overview](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/data-entities)
 ## 10. Quick Self-Test
 
 Before moving to Chapter 1, answer these:

@@ -1,5 +1,7 @@
 # D365 Finance & Operations — Certification Mapping
 
+> **Glossary:** See the [Business Glossary](../00-foundations/d365-business-glossary.md) for term definitions.
+
 > **Mapping the 35-chapter curriculum to Microsoft Certification Exam Domains.**
 > Use this guide to target your study based on your professional goals.
 
@@ -51,6 +53,14 @@ This handbook is the primary study resource for the MB-500 developer certificati
 ---
 
 ## 3. Recommended Study Paths
+
+---
+
+## Official Microsoft Documentation
+- [Certification exams overview](https://learn.microsoft.com/en-us/certifications/browse/?resource_type=certification)
+- [MB-500 exam guide](https://learn.microsoft.com/en-us/certifications/dynamics-365-finance-and-operations-developer/)
+- [MB-310 exam guide](https://learn.microsoft.com/en-us/certifications/dynamics-365-finance-and-operations-functional-consultant/)
+- [MB-330 exam guide](https://learn.microsoft.com/en-us/certifications/dynamics-365-supply-chain-management-functional-consultant/)
 
 | Goal | Primary Chapters | Recommended Exercises |
 | :--- | :--- | :--- |

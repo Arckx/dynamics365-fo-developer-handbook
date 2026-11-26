@@ -8,6 +8,8 @@ metadata:
 
 # SQL Primer for D365 F&O Developers
 
+> **Glossary:** See the [Business Glossary](d365-business-glossary.md) for term definitions.
+
 > **Read this alongside Chapter 5 (X++ Data Types) and Chapter 6 (Control Flow & CRUD)** if you're new to relational databases.
 
 ---
@@ -488,5 +490,10 @@ CacheLookup values:
 ```
 
 ---
+
+## Official Microsoft Documentation
+- [Dynamics 365 Finance & Operations docs](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/)
+- [SQL guide for D365](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/sql-guide)
+- [X++ programming guide](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/dev-ref/xpp-programming-language)
 
 *Last verified: 2026-11-22 | Part of 35-Chapter Handbook*

@@ -10,6 +10,8 @@ metadata:
 
 # X++ Practice Exercises with Solutions
 
+> **Glossary:** See the [Business Glossary](../00-foundations/d365-business-glossary.md) for term definitions.
+
 > **Hands-on coding practice for D365 F&O developers.**
 > Each exercise has a problem statement, hints, and a worked solution.
 > Try to solve each one yourself before reading the solution.
@@ -1168,3 +1170,10 @@ static void exercise17_sysOperation(Args _args)
 | 15 | Putting It All Together | Complete end-to-end job |
 | 16 | Number Sequence | `NumberSeq`, `NumberSeqReference` |
 | 17 | SysOperation Service | `SysOperationServiceBase`, `SysOperationServiceController` |
+
+---
+
+## Official Microsoft Documentation
+- [X++ programming guide](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/dev-ref/xpp-programming-language)
+- [SysOperation services](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/services/sysoperation-services)
+- [Data entities overview](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/data-entities)

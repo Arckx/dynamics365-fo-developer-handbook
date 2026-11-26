@@ -10,6 +10,8 @@ metadata:
 
 # X++ Quick Reference Card
 
+> **Glossary:** See the [Business Glossary](../00-foundations/d365-business-glossary.md) for term definitions.
+
 > **D365 Finance & Operations — X++ Syntax at a Glance**
 > Keep this open while coding. For full details, refer to the Desktop Guide (Chapters 1–2).
 

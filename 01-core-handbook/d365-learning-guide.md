@@ -10,6 +10,8 @@ metadata:
 
 # D365 Finance & Operations — Technical Intern Learning Guide
 
+> **Glossary:** See the [Business Glossary](../00-foundations/d365-business-glossary.md) for term definitions.
+
 > **Your 4–12 month foundational reference.** Every concept below is rooted in the official Microsoft documentation at [learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/). For the latest updates, always verify against that source — this guide is your scaffold, not your end point.
 
 ---
@@ -19848,8 +19850,18 @@ Your handbook now covers:
 | **Services & JSON/CLR** (New) | Custom services, contracts, FormJsonSerializer, Newtonsoft.Json, service security | ✅ New |
 
 **Next Steps for the Intern:**
+
 1. Complete all 30 chapters with hands-on exercises
 2. Build a capstone project spanning at least two modules (e.g., Finance + SCM)
 3. Set up a CI/CD pipeline with automated testing
 4. Prepare for Microsoft certification (MB-310 or MB-330)
 5. Contribute to the standard codebase using extension patterns only
+
+---
+
+## Official Microsoft Documentation
+
+- [Dynamics 365 Finance & Operations docs](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/)
+- [X++ programming guide](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/dev-ref/xpp-programming-language)
+- [Data entities overview](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/data-entities)
+- [Performance best practices](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/performance/performance-best-practices)

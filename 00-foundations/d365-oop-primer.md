@@ -8,6 +8,8 @@ metadata:
 
 # OOP Primer for D365 F&O Developers
 
+> **Glossary:** See the [Business Glossary](d365-business-glossary.md) for term definitions.
+
 > **Read this alongside Chapter 3 (Language Mindset) and Chapter 7 (Methods, Exceptions, Classes)** if you're new to object-oriented programming.
 
 ---
@@ -705,5 +707,10 @@ abstract class ReportGenerator
    - Define interfaces, inject implementations via constructor
 
 ---
+
+## Official Microsoft Documentation
+- [Dynamics 365 Finance & Operations docs](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/)
+- [X++ programming guide](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/dev-ref/xpp-programming-language)
+- [Data entities overview](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/data-entities)
 
 *Last verified: 2026-11-22 | Part of 35-Chapter Handbook*
