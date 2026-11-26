@@ -8,6 +8,8 @@ metadata:
 
 # D365 F&O Architecture Diagrams
 
+> **Glossary:** See the [Business Glossary](../00-foundations/d365-business-glossary.md) for term definitions.
+
 > **Copy-paste these into Markdown viewers that support Mermaid** (GitHub, VS Code, Notion, Obsidian, mkdocs-material)
 
 ---
@@ -16,7 +18,7 @@ metadata:
 
 ```mermaid
 graph TB
-    subgraph Presentation["🖥️ Presentation Tier"]
+    subgraph Presentation["Presentation Tier"]
         Browser[Browser: Edge/Chrome/Safari]
         HTML5[HTML5/CSS/JS]
     end
@@ -72,7 +74,7 @@ sequenceDiagram
     participant Browser as 🌐 Browser
     participant AOS as ⚙️ AOS
     participant SQL as 🗄️ SQL
-    participant Client as 🖥️ Client
+    participant Client as Client
 
     User->>Browser: Click button
     Browser->>AOS: HTTP Request + Context
@@ -201,7 +203,7 @@ flowchart TD
 
 ```mermaid
 graph TB
-    subgraph Client["🖥️ Client"]
+    subgraph Client["Client"]
         UI[User submits batch]
     end
 
@@ -436,3 +438,10 @@ All diagrams above are **Mermaid.js source** — edit the code blocks to customi
 ---
 
 *Last verified: 2026-11-22 | Part of 35-Chapter Handbook*
+
+---
+
+## Official Microsoft Documentation
+- [Dynamics 365 Finance & Operations docs](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/)
+- [Architecture overview](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/architecture/)
+- [Security model](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/security/security-model)

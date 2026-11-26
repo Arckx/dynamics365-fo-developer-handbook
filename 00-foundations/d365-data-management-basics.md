@@ -73,3 +73,11 @@ You can query, filter, and paginate using standard OData query options (`$filter
 
 ---
 *Part of the foundational improvements to give new developers a clear entry point into data management.*
+
+---
+
+## Official Microsoft Documentation
+- [Data entities overview](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/data-entities)
+- [Data Management Framework (DMF)](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/data-management-framework)
+- [OData services](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/odata-services)
+- [Dynamics 365 Finance & Operations docs](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/)

@@ -8,6 +8,8 @@ metadata:
 
 # D365 F&O Role Day-in-Life
 
+> **Glossary:** See the [Business Glossary](d365-business-glossary.md) for term definitions.
+
 > **Understand your users** — What they do, what screens they use, what pain points they have. This makes you a better developer.
 
 ---
@@ -175,3 +177,10 @@ metadata:
 ---
 
 *Last verified: 2026-11-22 | Part of 35-Chapter Handbook*
+
+---
+
+## Official Microsoft Documentation
+- [Dynamics 365 Finance & Operations docs](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/)
+- [Finance module overview](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/finance/)
+- [Supply chain module overview](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/supply-chain/)

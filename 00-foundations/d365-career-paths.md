@@ -8,6 +8,8 @@ metadata:
 
 # D365 F&O Career Paths
 
+> **Glossary:** See the [Business Glossary](d365-business-glossary.md) for term definitions.
+
 > **From Junior to Architect** — Roles, skills, certifications, and growth trajectory.
 
 ---
@@ -322,3 +324,9 @@ SIGNATURE: _________________________    DATE: ___________
 ---
 
 *Last verified: 2026-11-22 | Part of 35-Chapter Handbook*
+
+---
+
+## Official Microsoft Documentation
+- [Dynamics 365 Finance & Operations docs](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/)
+- [Career and certification guide](https://learn.microsoft.com/en-us/certifications/browse/?resource_type=certification)

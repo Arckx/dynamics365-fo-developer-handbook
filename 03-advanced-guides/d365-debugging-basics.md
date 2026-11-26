@@ -71,3 +71,11 @@ For performance‑related problems (slow forms, long‑running batches):
 
 ---
 *This file is part of the **Foundational Improvements** effort to give new developers a clear, step‑by‑step debugging workflow.*
+
+---
+
+## Official Microsoft Documentation
+- [Debug X++ code](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/debugging/debug-xpp-code)
+- [Trace Parser tool](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/debugging/trace-parser)
+- [Performance profiler](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/performance/performance-profiler)
+- [Dynamics 365 Finance & Operations docs](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/)

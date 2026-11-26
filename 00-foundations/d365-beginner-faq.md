@@ -8,6 +8,8 @@ metadata:
 
 # D365 F&O Beginner FAQ
 
+> **Glossary:** See the [Business Glossary](d365-business-glossary.md) for term definitions.
+
 > **50 questions every beginner asks** — organized by topic. Search (Ctrl+F) for your question.
 
 ---
@@ -233,3 +235,9 @@ Creates/updates SQL tables from AOT metadata. Run after model changes.
 ---
 
 *Last verified: 2026-11-22 | Part of 35-Chapter Handbook*
+
+---
+
+## Official Microsoft Documentation
+- [Dynamics 365 Finance & Operations docs](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/)
+- [Getting started guide](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/get-started/)

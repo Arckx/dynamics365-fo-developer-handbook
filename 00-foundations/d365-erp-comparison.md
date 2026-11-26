@@ -8,11 +8,13 @@ metadata:
 
 # ERP Comparison: Why D365 F&O?
 
+> **Glossary:** See the [Business Glossary](d365-business-glossary.md) for term definitions.
+
 > **For developers and decision-makers** — Understand where D365 F&O fits in the ERP landscape.
 
 ---
 
-## 🏢 The Big Four ERP Vendors (2024 Market)
+## The Big Four ERP Vendors (2024 Market)
 
 | Vendor | Product | Best For | Market Position |
 |--------|---------|----------|-----------------|
@@ -127,7 +129,7 @@ metadata:
 
 ---
 
-## 👨‍💻 For Developers: What This Means
+## For Developers: What This Means
 
 | If You Know... | D365 F&O Learning Curve |
 |----------------|------------------------|
@@ -184,3 +186,11 @@ START: What's your current stack?
 ---
 
 *Last verified: 2026-11-22 | Part of 35-Chapter Handbook*
+
+---
+
+## Official Microsoft Documentation
+- [Dynamics 365 Finance & Operations docs](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/)
+- [ERP fundamentals](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/erp-fundamentals)
+- [Data entities overview](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/data-entities/data-entities)
+- [Power Platform integration](https://learn.microsoft.com/en-us/power-platform/)
