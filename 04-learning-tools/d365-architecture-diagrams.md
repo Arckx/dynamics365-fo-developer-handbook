@@ -179,18 +179,18 @@ graph TD
 ```mermaid
 flowchart TD
     User[User Query] --> Kernel[Kernel Query Execution]
-    Kernel --> Policy{XDS Policy<br/>Assigned to Role?}
-    Policy -->|No| Normal[Normal Query<br/>All Rows]
+    Kernel --> Policy{XDS Policy Assigned to Role?}
+    Policy -->|No| Normal[Normal Query All Rows]
     Policy -->|Yes| Filter[Apply Policy Filter]
-    Filter --> Constrained[Constrained<br/>Fixed Value]
-    Filter --> Contextual[Contextual<br/>currentCompany()]
-    Filter --> RoleBased[Role-Based<br/>UserHasRole()]
-    Filter --> Hierarchical[Hierarchical<br/>Org Structure]
+    Filter --> Constrained[Constrained Fixed Value]
+    Filter --> Contextual[Contextual currentCompany()]
+    Filter --> RoleBased[Role-Based UserHasRole()]
+    Filter --> Hierarchical[Hierarchical Org Structure]
     Constrained --> SQL
     Contextual --> SQL
     RoleBased --> SQL
     Hierarchical --> SQL
-    SQL[Modified SQL<br/>WHERE PolicyCondition] --> Results[Filtered Results]
+    SQL[Modified SQL WHERE PolicyCondition] --> Results[Filtered Results]
 
     style Policy fill:#fff3e0,stroke:#e65100
     style Normal fill:#e8f5e9,stroke:#2e7d32
@@ -308,11 +308,11 @@ sequenceDiagram
 ```mermaid
 flowchart TD
     Request[Code calls NumberSeq::newGetNum()] --> Scope{Scope?}
-    Scope -->|Company| CompanyScope[Company Scope<br/>DataAreaId]
-    Scope -->|Shared| SharedScope[Shared Scope<br/>Global]
-    Scope -->|Legal Entity| LegalScope[Legal Entity Scope<br/>Partition + Company]
+    Scope -->|Company| CompanyScope[Company Scope DataAreaId]
+    Scope -->|Shared| SharedScope[Shared Scope Global]
+    Scope -->|Legal Entity| LegalScope[Legal Entity Scope Partition + Company]
     
-    CompanyScope --> Format[Format String<br/>e.g. INV-####]
+    CompanyScope --> Format[Format String e.g. INV-####]
     SharedScope --> Format
     LegalScope --> Format
     
@@ -366,7 +366,7 @@ graph TB
 
 ```mermaid
 graph TD
-    E2E[E2E/UI Tests<br/>RSAT, Playwright<br/>🐢 Slow, Expensive<br/>▲ Few (5%)]
+    E2E[E2E/UI Tests RSAT, Playwright 🐢 Slow, Expensive ▲ Few (5%)]
     Integration[Integration Tests<br/>SysTest + DB<br/>⚡ Medium<br/>■ Some (15%)]
     Unit[Unit Tests<br/>Property-based, SysTest<br/>🚀 Fast, Cheap<br/>● Many (80%)]
 
