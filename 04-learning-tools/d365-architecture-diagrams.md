@@ -178,19 +178,19 @@ graph TD
 
 ```mermaid
 flowchart TD
-    User[User Query] --> Kernel[Kernel Query Execution]
+    User["User Query"] --> Kernel["Kernel Query Execution"]
     Kernel --> Policy{XDS Policy Assigned to Role?}
-    Policy -->|No| Normal[Normal Query All Rows]
-    Policy -->|Yes| Filter[Apply Policy Filter]
-    Filter --> Constrained[Constrained Fixed Value]
-    Filter --> Contextual[Contextual currentCompany()]
-    Filter --> RoleBased[Role-Based UserHasRole()]
-    Filter --> Hierarchical[Hierarchical Org Structure]
-    Constrained --> SQL
+    Policy -->|No| Normal["Normal Query All Rows"]
+    Policy -->|Yes| Filter["Apply Policy Filter"]
+    Filter --> Constrained["Constrained Fixed Value"]
+    Filter --> Contextual["Contextual currentCompany()"]
+    Filter --> RoleBased["Role-Based UserHasRole()"]
+    Filter --> Hierarchical["Hierarchical Org Structure"]
+    Constrained --> SQL["Modified SQL WHERE PolicyCondition"]
     Contextual --> SQL
     RoleBased --> SQL
     Hierarchical --> SQL
-    SQL[Modified SQL WHERE PolicyCondition] --> Results[Filtered Results]
+    SQL --> Results["Filtered Results"]
 
     style Policy fill:#fff3e0,stroke:#e65100
     style Normal fill:#e8f5e9,stroke:#2e7d32
@@ -307,19 +307,19 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    Request[Code calls NumberSeq::newGetNum()] --> Scope{Scope?}
-    Scope -->|Company| CompanyScope[Company Scope DataAreaId]
-    Scope -->|Shared| SharedScope[Shared Scope Global]
-    Scope -->|Legal Entity| LegalScope[Legal Entity Scope Partition + Company]
+    Request["Code calls NumberSeq_newGetNum"] --> Scope{Scope?}
+    Scope -->|Company| CompanyScope["Company Scope DataAreaId"]
+    Scope -->|Shared| SharedScope["Shared Scope Global"]
+    Scope -->|Legal Entity| LegalScope["Legal Entity Scope Partition + Company"]
     
-    CompanyScope --> Format[Format String e.g. INV-####]
+    CompanyScope --> Format["Format String e.g. INV-####"]
     SharedScope --> Format
     LegalScope --> Format
     
-    Format --> Alloc[Allocate Next<br/>from Sequence Table]
-    Alloc --> Cache[Cache in Memory<br/>(Qty = Preallocation)]
-    Cache --> Return[Return Number]
-    Return --> DB[Persist to DB<br/>Async]
+    Format --> Alloc["Allocate Next from Sequence Table"]
+    Alloc --> Cache["Cache in Memory (Qty = Preallocation)"]
+    Cache --> Return["Return Number"]
+    Return --> DB["Persist to DB Async"]
     
     style Alloc fill:#e3f2fd,stroke:#1565c0
     style Cache fill:#fff3e0,stroke:#e65100
@@ -366,9 +366,9 @@ graph TB
 
 ```mermaid
 graph TD
-    E2E[E2E/UI Tests RSAT, Playwright 🐢 Slow, Expensive ▲ Few (5%)]
-    Integration[Integration Tests<br/>SysTest + DB<br/>⚡ Medium<br/>■ Some (15%)]
-    Unit[Unit Tests<br/>Property-based, SysTest<br/>🚀 Fast, Cheap<br/>● Many (80%)]
+    E2E["E2E/UI Tests RSAT, Playwright 🐢 Slow, Expensive ▲ Few (5%)"]
+    Integration["Integration Tests SysTest + DB ⚡ Medium ■ Some (15%)"]
+    Unit["Unit Tests Property-based, SysTest 🚀 Fast, Cheap ● Many (80%)"]
 
     E2E --> Integration
     Integration --> Unit
@@ -441,7 +441,3 @@ All diagrams above are **Mermaid.js source** — edit the code blocks to customi
 
 ---
 
-## Official Microsoft Documentation
-- [Dynamics 365 Finance & Operations docs](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/)
-- [Architecture overview](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/architecture/)
-- [Security model](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/security/security-model)
